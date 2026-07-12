@@ -1,0 +1,191 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   RTL typography refinements
+   ============================================================ */
+@import "../styles/rtl.css";
+
+/* ============================================================
+   Design-system CSS variables (mirror of design-tokens.ts)
+   Exposed as CSS custom properties so they can be referenced in
+   plain CSS / keyframes and stay in sync with the token system.
+   ============================================================ */
+:root {
+  --font-vazirmatn: var(--font-vazirmatn), "IranSans", system-ui, sans-serif;
+
+  /* Brand — authority (blue) + success (gold) */
+  --brand-navy: #1e3a5f;
+  --brand-blue: #2563eb;
+  --brand-amber: #d4a017;
+  --brand-gold: #f5c518;
+
+  /* Theme — dynamically overridden by the hero carousel each slide.
+     Defaults match the luxury accent palette. */
+  --theme-accent: #1b4fd4;
+  --theme-accent-hover: #153aa8;
+  --theme-accent-soft: #e8edf8;
+  --theme-text-gradient: linear-gradient(120deg, #1E3A5F 0%, #1B4FD4 40%, #D4A017 70%, #F5C518 100%);
+  --theme-brand-gradient: linear-gradient(90deg, #1E3A5F 0%, #2563EB 33%, #D4A017 66%, #F5C518 100%);
+  --theme-scrim: rgba(30, 58, 95, 0.45);
+
+  /* Surfaces */
+  --background: #ffffff;
+  --surface: #ffffff;
+  --surface-muted: #f8f7fb;
+  --surface-subtle: #efece7;
+
+  /* Text */
+  --text-primary: #0f172a;
+  --text-secondary: #3d4551;
+
+  /* Borders */
+  --border-subtle: #e8e4df;
+  --border: #d9d5d0;
+
+  /* Durations & easings */
+  --dur-base: 0.3s;
+  --dur-slow: 0.5s;
+  --dur-reveal: 0.65s;
+  --dur-marquee: 40s;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* Alias kept for components referencing the legacy "luxury" ease. */
+  --ease-luxury: cubic-bezier(0.4, 0, 0.2, 1);
+
+  --header-h: 4.5rem;
+}
+
+@layer base {
+  * {
+    @apply border-app-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: calc(var(--header-h) + 1rem);
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-background text-fg-primary font-sans antialiased;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "ss01", "ss02";
+  }
+
+  /* Persian typography: numbers & punctuation render correctly */
+  body,
+  button,
+  input,
+  select,
+  textarea {
+    font-family: var(--font-vazirmatn);
+    font-feature-settings: "ss01", "ss02";
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display font-extrabold tracking-tight text-fg-primary;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* Visible focus states for keyboard users (WCAG AA) */
+  :focus-visible {
+    @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-background;
+    border-radius: 4px;
+  }
+
+  /* Selection */
+  ::selection {
+    background-color: rgba(27, 79, 212, 0.18);
+    color: #111827;
+  }
+
+  /* Custom scrollbar — warm, premium */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #c9c5c0;
+    border-radius: 999px;
+    border: 2px solid var(--background);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #b0aaa3;
+  }
+}
+
+@layer components {
+  /* Brand-gradient text utility */
+  .text-brand-gradient {
+    @apply bg-text-gradient bg-clip-text text-transparent;
+  }
+
+  /* Glassmorphism surface (header, floating cards) */
+  .glass {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  /* Decorative gradient ring/border */
+  .ring-brand {
+    background: linear-gradient(90deg, #1e3a5f, #2563eb, #d4a017, #f5c518);
+  }
+
+  /* Section vertical rhythm */
+  .section-padding {
+    @apply py-16 md:py-24 lg:py-28;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .text-pretty {
+    text-wrap: pretty;
+  }
+
+  /* Gradient shimmer for skeletons */
+  .skeleton-shimmer {
+    @apply relative overflow-hidden bg-surface-subtle;
+  }
+  .skeleton-shimmer::after {
+    content: "";
+    @apply absolute inset-0;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(27, 79, 212, 0.12),
+      transparent
+    );
+    transform: translateX(-100%);
+    animation: shimmer 1.6s linear infinite;
+  }
+}
+
+/* ============================================================
+   Reduced motion — disable non-essential animation.
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+}

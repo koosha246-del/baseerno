@@ -1,0 +1,32 @@
+/**
+ * RTL-specific utilities and overrides.
+ * Imported via @import in globals.css for clean separation.
+ *
+ * Most RTL behavior is handled natively by Tailwind logical properties
+ * (ms-, me-, ps-, pe-, start-, end-) and <html dir="rtl">.
+ * This file covers edge cases that Tailwind alone can't handle.
+ */
+
+/* Force LTR for phone numbers, URLs, and technical identifiers. */
+[dir="rtl"] [dir="ltr"],
+[dir="rtl"] .ltr {
+  direction: ltr;
+  text-align: left;
+  unicode-bidi: isolate;
+}
+
+/* Persian-specific typographic refinements. */
+[dir="rtl"] .fa-text {
+  font-feature-settings: "ss01";
+  word-spacing: 0.02em;
+}
+
+/* Ensure icons don't flip in RTL unless explicitly marked. */
+[dir="rtl"] svg:not(.rtl-flip) {
+  transform: none;
+}
+
+/* Marquee needs explicit LTR to animate correctly in both directions. */
+[dir="rtl"] [dir="ltr"] .marquee-track {
+  direction: ltr;
+}

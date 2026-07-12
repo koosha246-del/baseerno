@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" role="img" aria-label="همشهری">
+  <defs>
+    <linearGradient id="ham-grad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#D4A017"/>
+      <stop offset="1" stop-color="#F5C518"/>
+    </linearGradient>
+  </defs>
+  <rect width="200" height="60" fill="url(#ham-grad)" rx="8"/>
+  <text x="100" y="32" font-family="Vazirmatn, sans-serif" font-size="18" font-weight="800" fill="#1E3A5F" text-anchor="middle">همشهری</text>
+  <text x="100" y="48" font-family="sans-serif" font-size="9" font-weight="600" fill="#1E3A5F" text-anchor="middle" letter-spacing="2">HAMSHAHRI</text>
+</svg>

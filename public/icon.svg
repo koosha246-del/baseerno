@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="6" fill="url(#g)"/>
+  <text x="16" y="22" font-family="system-ui,sans-serif" font-size="16" font-weight="800" fill="white" text-anchor="middle">ب</text>
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7E57C2"/>
+      <stop offset="0.33" stop-color="#9C4DCC"/>
+      <stop offset="0.66" stop-color="#C653C6"/>
+      <stop offset="1" stop-color="#FF6B9D"/>
+    </linearGradient>
+  </defs>
+</svg>

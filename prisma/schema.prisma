@@ -1,0 +1,197 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  STUDENT
+  TEACHER
+  ADMIN
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  COMPLETED
+  DROPPED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(STUDENT)
+  avatar       String?
+  phone        String?
+  bio          String?
+  createdAt    DateTime @default(now())
+
+  mentorCourses     Course[]        @relation("MentorCourses")
+  enrollments       Enrollment[]
+  grades            Grade[]         @relation("StudentGrades")
+  taughtGrades      Grade[]         @relation("TeacherGrades")
+  certificates      Certificate[]
+  payments          Payment[]
+  sentMessages      Message[]       @relation("SentMessages")
+  receivedMessages  Message[]       @relation("ReceivedMessages")
+  passwordResets    PasswordReset[]
+
+  @@index([email])
+  @@index([role])
+}
+
+model Course {
+  id            String   @id @default(cuid())
+  title         String
+  subtitle      String
+  description   String   @db.Text
+  mentorId      String
+  price         Int?
+  originalPrice Int?
+  level         String   @default("مقدماتی")
+  category      String
+  durationHours Int
+  lessons       Int
+  rating        Float    @default(0)
+  glyph         String
+  accent        String
+  published     Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  mentor        User         @relation("MentorCourses", fields: [mentorId], references: [id])
+  enrollments   Enrollment[]
+  grades        Grade[]
+  certificates  Certificate[]
+  payments      Payment[]
+  lessonItems   Lesson[]
+
+  @@index([mentorId])
+  @@index([published])
+  @@index([category])
+}
+
+model Enrollment {
+  id          String           @id @default(cuid())
+  userId      String
+  courseId    String
+  progress    Int              @default(0)
+  status      EnrollmentStatus @default(ACTIVE)
+  enrolledAt  DateTime         @default(now())
+  completedAt DateTime?
+
+  user        User         @relation(fields: [userId], references: [id])
+  course      Course       @relation(fields: [courseId], references: [id])
+  grades      Grade[]
+  certificate Certificate?
+
+  @@unique([userId, courseId])
+  @@index([userId])
+  @@index([courseId])
+}
+
+model Grade {
+  id           String   @id @default(cuid())
+  userId       String
+  courseId     String
+  enrollmentId String
+  score        Float
+  feedback     String?
+  gradedAt     DateTime @default(now())
+  teacherId    String
+
+  user         User       @relation("StudentGrades", fields: [userId], references: [id])
+  course       Course     @relation(fields: [courseId], references: [id])
+  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id])
+  teacher      User       @relation("TeacherGrades", fields: [teacherId], references: [id])
+
+  @@index([userId])
+  @@index([teacherId])
+  @@index([enrollmentId])
+}
+
+model Certificate {
+  id                String   @id @default(cuid())
+  userId            String
+  courseId          String
+  enrollmentId      String   @unique
+  certificateNumber String   @unique
+  issueDate         DateTime @default(now())
+
+  user              User       @relation(fields: [userId], references: [id])
+  course            Course     @relation(fields: [courseId], references: [id])
+  enrollment        Enrollment @relation(fields: [enrollmentId], references: [id])
+
+  @@index([userId])
+}
+
+model Payment {
+  id        String        @id @default(cuid())
+  userId    String
+  courseId  String
+  amount    Int
+  status    PaymentStatus @default(PENDING)
+  method    String
+  paidAt    DateTime?
+  createdAt DateTime      @default(now())
+
+  user      User   @relation(fields: [userId], references: [id])
+  course    Course @relation(fields: [courseId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  senderId   String
+  receiverId String
+  body       String   @db.Text
+  read       Boolean  @default(false)
+  sentAt     DateTime @default(now())
+
+  sender     User @relation("SentMessages", fields: [senderId], references: [id])
+  receiver   User @relation("ReceivedMessages", fields: [receiverId], references: [id])
+
+  @@index([senderId])
+  @@index([receiverId])
+}
+
+model PasswordReset {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+
+  user      User @relation(fields: [userId], references: [id])
+
+  @@index([token])
+  @@index([userId])
+}
+
+model Lesson {
+  id             String   @id @default(cuid())
+  courseId       String
+  title          String
+  type           String   @default("video")
+  durationMinutes Int
+  sortOrder      Int      @default(0)
+  isFree         Boolean  @default(false)
+  published      Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  course         Course   @relation(fields: [courseId], references: [id])
+
+  @@index([courseId])
+  @@index([sortOrder])
+}
