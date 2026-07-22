@@ -33,6 +33,15 @@ export const fadeUp: Variants = {
   },
 };
 
+/** Pure opacity fade — no positional offset. */
+export const fadeIn: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: revealTransition,
+  },
+};
+
 export const fadeDown: Variants = {
   hidden: { opacity: 0, y: -28 },
   visible: {

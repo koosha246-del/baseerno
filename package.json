@@ -25,6 +25,7 @@
     "@radix-ui/react-slot": "^1.1.1",
     "@radix-ui/react-tabs": "^1.1.2",
     "@radix-ui/react-tooltip": "^1.1.6",
+    "@react-pdf/renderer": "^4.5.1",
     "@sentry/nextjs": "^10.65.0",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
@@ -40,6 +41,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.54.2",
+    "recharts": "^3.9.2",
     "resend": "^6.16.0",
     "tailwind-merge": "^2.6.0",
     "zod": "^3.24.1"

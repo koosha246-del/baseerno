@@ -10,7 +10,15 @@ import { siteConfig } from "@/config/site";
  *  - FAQPage (FAQ section content)
  */
 
-const OG_IMAGE = "/og/default.svg";
+/**
+ * Open Graph image. The PNG version (`/og/default.png`, 1424×752) is
+ * preferred because most social platforms rasterize/transform SVG
+ * inconsistently — they often render with no fonts, broken glyphs,
+ * or refuse to fetch it altogether.
+ */
+const OG_IMAGE = "/og/default.png";
+const OG_IMAGE_WIDTH = 1424;
+const OG_IMAGE_HEIGHT = 752;
 
 /** Base site metadata applied at the root layout. */
 export function buildBaseMetadata(): Metadata {
@@ -49,8 +57,8 @@ export function buildBaseMetadata(): Metadata {
       images: [
         {
           url: OG_IMAGE,
-          width: 1200,
-          height: 630,
+          width: OG_IMAGE_WIDTH,
+          height: OG_IMAGE_HEIGHT,
           alt: siteConfig.name,
         },
       ],

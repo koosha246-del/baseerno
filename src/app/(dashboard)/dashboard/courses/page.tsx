@@ -1,8 +1,9 @@
 import { getCurrentUser } from "@/lib/auth/session";
 import { repository } from "@/lib/db/repository";
 import { toPersianDigits } from "@/lib/format";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { StatusBadge } from "@/components/shared/StatusBadge";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { BookOpen } from "lucide-react";
 
 export default async function CoursesPage() {
   const user = await getCurrentUser();
@@ -16,61 +17,65 @@ export default async function CoursesPage() {
     return (
       <div className="flex flex-col gap-6">
         <h1 className="text-2xl font-extrabold text-white">دوره‌های من</h1>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {enrollments.map((e) => {
-            const course = courses.find((c) => c.id === e.courseId);
-            if (!course) return null;
-            const grade = grades.find((g) => g.enrollmentId === e.id);
-            return (
-              <div
-                key={e.id}
-                className="rounded-xl border border-white/10 bg-slate-800/50 p-5"
-              >
-                <div className="mb-3 flex items-center gap-2">
-                  <span className="text-3xl">{course.glyph}</span>
-                  <div className="flex flex-col">
-                    <h3 className="text-sm font-bold text-white">{course.title}</h3>
-                    <span className="text-xs text-slate-400">{course.level}</span>
-                  </div>
-                </div>
-
-                {/* Progress bar */}
-                <div className="mb-2">
-                  <div className="flex items-center justify-between text-xs text-slate-400">
-                    <span>پیشرفت</span>
-                    <span>{toPersianDigits(e.progress)}%</span>
-                  </div>
-                  <div className="mt-1 h-2 overflow-hidden rounded-full bg-white/10">
-                    <div
-                      className="h-full rounded-full bg-accent transition-all"
-                      style={{ width: `${e.progress}%` }}
-                    />
-                  </div>
-                </div>
-
-                {grade ? (
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className="text-slate-400">نمره:</span>
-                    <span className="font-bold text-green-400">
-                      {toPersianDigits(grade.score)} از ۲۰
-                    </span>
-                  </div>
-                ) : null}
-
-                <Badge
-                  className={cn(
-                    "mt-3",
-                    e.status === "COMPLETED"
-                      ? "bg-emerald-500/15 text-emerald-400"
-                      : "bg-blue-500/15 text-blue-400"
-                  )}
+        {enrollments.length === 0 ? (
+          <EmptyState
+            icon={BookOpen}
+            title="هنوز دوره‌ای نداری"
+            description="از صفحه اصلی یک درس انگلیسی انتخاب کن و شروع کن."
+          />
+        ) : (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {enrollments.map((e) => {
+              const course = courses.find((c) => c.id === e.courseId);
+              if (!course) return null;
+              const grade = grades.find((g) => g.enrollmentId === e.id);
+              return (
+                <div
+                  key={e.id}
+                  className="rounded-xl border border-white/10 bg-slate-800/50 p-5 transition-colors hover:border-white/20 hover:bg-slate-800"
                 >
-                  {e.status === "COMPLETED" ? "تکمیل‌شده" : "فعال"}
-                </Badge>
-              </div>
-            );
-          })}
-        </div>
+                  <div className="mb-3 flex items-center gap-2">
+                    <span className="text-3xl">{course.glyph}</span>
+                    <div className="flex flex-col">
+                      <h3 className="text-sm font-bold text-white">{course.title}</h3>
+                      <span className="text-xs text-slate-400">{course.level}</span>
+                    </div>
+                  </div>
+
+                  <div className="mb-2">
+                    <div className="flex items-center justify-between text-xs text-slate-400">
+                      <span>پیشرفت</span>
+                      <span>{toPersianDigits(e.progress)}%</span>
+                    </div>
+                    <div className="mt-1 h-2 overflow-hidden rounded-full bg-white/10">
+                      <div
+                        className="h-full rounded-full bg-accent transition-all"
+                        style={{ width: `${e.progress}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {grade ? (
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="text-slate-400">نمره:</span>
+                      <span className="font-bold text-green-400">
+                        {toPersianDigits(grade.score)} از ۲۰
+                      </span>
+                    </div>
+                  ) : null}
+
+                  <StatusBadge className="mt-3" status={e.status}>
+                    {e.status === "COMPLETED"
+                      ? "تکمیل‌شده"
+                      : e.status === "DROPPED"
+                        ? "لغو شده"
+                        : "فعال"}
+                  </StatusBadge>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     );
   }
@@ -104,16 +109,9 @@ export default async function CoursesPage() {
                   <span>·</span>
                   <span>{toPersianDigits(c.lessons)} درس</span>
                 </div>
-                <Badge
-                  className={cn(
-                    "mt-3",
-                    c.published
-                      ? "bg-emerald-500/15 text-emerald-400"
-                      : "bg-amber-500/15 text-amber-400"
-                  )}
-                >
+                <StatusBadge className="mt-3" status={c.published ? "PUBLISHED" : "DRAFT"}>
                   {c.published ? "منتشرشده" : "پیش‌نویس"}
-                </Badge>
+                </StatusBadge>
               </div>
             );
           })}
@@ -139,7 +137,10 @@ export default async function CoursesPage() {
           </thead>
           <tbody>
             {courses.map((c) => (
-              <tr key={c.id} className="border-b border-white/5 hover:bg-white/[0.03]">
+              <tr
+                key={c.id}
+                className="border-b border-white/5 transition-colors hover:bg-white/[0.06]"
+              >
                 <td className="px-4 py-3 font-medium text-white">
                   {c.glyph} {c.title}
                 </td>
@@ -148,9 +149,9 @@ export default async function CoursesPage() {
                   {c.price ? `${toPersianDigits(c.price.toLocaleString())} ت` : "رایگان"}
                 </td>
                 <td className="px-4 py-3">
-                  <Badge className={c.published ? "bg-emerald-500/15 text-emerald-400" : "bg-amber-500/15 text-amber-400"}>
+                  <StatusBadge status={c.published ? "PUBLISHED" : "DRAFT"}>
                     {c.published ? "فعال" : "غیرفعال"}
-                  </Badge>
+                  </StatusBadge>
                 </td>
               </tr>
             ))}

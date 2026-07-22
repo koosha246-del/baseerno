@@ -26,7 +26,7 @@ export const headerData: HeaderData = {
 
 /** Phone CTA shown on desktop (contact shortcut). */
 export const headerPhone = {
-  label: "تماس با ما",
+  label: "کمک می‌خوای؟",
   href: "tel:" + siteConfig.contact.phoneHref,
   iconKey: "phone" as const,
   display: siteConfig.contact.phone,

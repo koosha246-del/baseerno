@@ -17,3 +17,18 @@ export function humanize(value: string): string {
     .replace(/\s+/g, " ")
     .trim();
 }
+
+/**
+ * Group items by a key selector into a Map.
+ * Avoids pulling lodash for a one-liner used across dashboard pages.
+ */
+export function groupBy<T, K>(items: readonly T[], key: (item: T) => K): Map<K, T[]> {
+  const map = new Map<K, T[]>();
+  for (const item of items) {
+    const k = key(item);
+    const arr = map.get(k);
+    if (arr) arr.push(item);
+    else map.set(k, [item]);
+  }
+  return map;
+}

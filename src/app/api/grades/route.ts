@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/session";
 import { repository } from "@/lib/db/repository";
 import { isSameOriginRequest, csrfRejectedResponse } from "@/lib/csrf";
+import { notifyGradePosted } from "@/lib/notifications";
 
 const schema = z.object({
   userId: z.string().min(1),
@@ -56,6 +57,8 @@ export async function POST(req: Request) {
     feedback,
     teacherId: user.id,
   });
+
+  await notifyGradePosted(userId, course.title, score);
 
   return NextResponse.json({ grade }, { status: 201 });
 }

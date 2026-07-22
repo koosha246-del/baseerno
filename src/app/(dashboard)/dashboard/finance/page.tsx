@@ -1,22 +1,36 @@
 import { getCurrentUser } from "@/lib/auth/session";
 import { repository } from "@/lib/db/repository";
-import { toPersianDigits, formatToman } from "@/lib/format";
-import { DollarSign, TrendingUp } from "lucide-react";
+import { toPersianDigits, formatToman, formatDate } from "@/lib/format";
+import { DollarSign, TrendingUp, Wallet } from "lucide-react";
 import { StatCard } from "@/features/dashboard/components/StatCard";
-import { cn } from "@/lib/utils";
+import { Pagination } from "@/components/shared/Pagination";
+import { StatusBadge } from "@/components/shared/StatusBadge";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { getCachedCountPayments, getCachedPaymentsList, getCachedTotalRevenue } from "@/lib/db/queries";
 
-export default async function FinancePage() {
+const PAGE_SIZE = 20;
+
+interface PageProps {
+  searchParams: Promise<{ page?: string }>;
+}
+
+export default async function FinancePage({ searchParams }: PageProps) {
   const user = await getCurrentUser();
   if (!user) return null;
 
-  const payments = await repository.listPayments({ userId: user.id });
-  const paidPayments = payments.filter((p) => p.status === "PAID");
-  const totalPaid = paidPayments.reduce((s, p) => s + p.amount, 0);
+  const sp = await searchParams;
+  const currentPage = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);
+  const skip = (currentPage - 1) * PAGE_SIZE;
 
-  const pendingPayments = payments.filter((p) => p.status === "PENDING");
-  const totalPending = pendingPayments.reduce((s, p) => s + p.amount, 0);
-
+  // Student view: their own payments, paginated
   if (user.role === "STUDENT") {
+    const [payments, total, paidSum, pendingSum] = await Promise.all([
+      getCachedPaymentsList(skip, PAGE_SIZE, user.id),
+      getCachedCountPayments(user.id),
+      repository.sumPaymentsByUser({ userId: user.id, status: "PAID" }),
+      repository.sumPaymentsByUser({ userId: user.id, status: "PENDING" }),
+    ]);
+
     return (
       <div className="flex flex-col gap-6">
         <div>
@@ -25,58 +39,104 @@ export default async function FinancePage() {
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <StatCard label="پرداخت‌شده" value={formatToman(totalPaid)} icon={DollarSign} accent="green" />
-          <StatCard label="در انتظار" value={formatToman(totalPending)} icon={TrendingUp} accent="amber" />
-          <StatCard label="تعداد تراکنش" value={toPersianDigits(payments.length)} icon={DollarSign} accent="blue" />
+          <StatCard label="پرداخت‌شده (کل)" value={formatToman(paidSum)} icon={DollarSign} accent="green" />
+          <StatCard label="در انتظار (کل)" value={formatToman(pendingSum)} icon={TrendingUp} accent="amber" />
+          <StatCard label="تعداد کل" value={toPersianDigits(total)} icon={DollarSign} accent="blue" />
         </div>
 
         <div className="flex flex-col gap-3">
           {payments.map((p) => (
             <div
               key={p.id}
-              className="flex items-center justify-between rounded-xl border border-white/10 bg-slate-800/50 px-5 py-4"
+              className="flex items-center justify-between rounded-xl border border-white/10 bg-slate-800/50 px-5 py-4 transition-colors hover:border-white/20 hover:bg-slate-800"
             >
               <div className="flex flex-col">
                 <span className="text-sm font-semibold text-white">{formatToman(p.amount)}</span>
                 <span className="text-xs text-slate-400">
-                  {p.method} · {new Date(p.createdAt).toLocaleDateString("fa-IR")}
+                  {p.method} · {formatDate(p.createdAt)}
                 </span>
               </div>
-              <span
-                className={cn(
-                  "rounded-full px-3 py-1 text-xs font-bold",
-                  p.status === "PAID" ? "bg-emerald-500/15 text-emerald-400" : "bg-amber-500/15 text-amber-400"
-                )}
-              >
-                {p.status === "PAID" ? "موفق" : "در انتظار"}
-              </span>
+              <StatusBadge status={p.status}>
+                {p.status === "PAID" ? "موفق" : p.status === "FAILED" ? "ناموفق" : "در انتظار"}
+              </StatusBadge>
             </div>
           ))}
+          {payments.length === 0 && (
+            <EmptyState
+              icon={Wallet}
+              title="پرداختی نداری"
+              description="وقتی در دوره‌ای ثبت‌نام کنی، سابقه پرداخت اینجا می‌آید."
+            />
+          )}
         </div>
+
+        <Pagination total={total} pageSize={PAGE_SIZE} currentPage={currentPage} />
       </div>
     );
   }
 
   if (user.role === "TEACHER") {
-    const revenue = await repository.teacherRevenue(user.id);
+    const courses = await repository.listCourses({ mentorId: user.id });
+    const courseIds = courses.map((c) => c.id);
+    const [revenue, paidCount, pendingCount] = await Promise.all([
+      repository.teacherRevenue(user.id),
+      repository.countPaymentsForCourses(courseIds, "PAID"),
+      repository.countPaymentsForCourses(courseIds, "PENDING"),
+    ]);
     return (
       <div className="flex flex-col gap-6">
         <div>
           <h1 className="text-2xl font-extrabold text-white">درآمد</h1>
           <p className="mt-1 text-sm text-slate-400">درآمد حاصل از دوره‌های شما</p>
         </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <StatCard label="کل درآمد" value={formatToman(revenue)} icon={DollarSign} accent="brand" />
-          <StatCard label="تعداد تراکنش" value={toPersianDigits(paidPayments.length)} icon={TrendingUp} accent="green" />
+          <StatCard
+            label="پرداخت موفق"
+            value={toPersianDigits(paidCount)}
+            icon={TrendingUp}
+            accent="green"
+          />
+          <StatCard
+            label="در انتظار"
+            value={toPersianDigits(pendingCount)}
+            icon={TrendingUp}
+            accent="amber"
+          />
+        </div>
+        <div className="text-xs text-slate-500">
+          فقط تراکنش‌های دوره‌های شما نمایش داده می‌شود. از {toPersianDigits(courses.length)} دوره شما.
         </div>
       </div>
     );
   }
 
-  // ADMIN
-  const allPayments = await repository.listPayments();
-  const totalRevenue = allPayments.filter((p) => p.status === "PAID").reduce((s, p) => s + p.amount, 0);
-  const allUsers = await repository.listUsers();
+  // ADMIN: global view with pagination.
+  // Everything in parallel: page rows + count + total + paid/pending counts.
+  const [
+    allPayments,
+    totalPayments,
+    totalRevenue,
+    paidCount,
+    pendingCount,
+  ] = await Promise.all([
+    getCachedPaymentsList(skip, PAGE_SIZE),
+    getCachedCountPayments(),
+    getCachedTotalRevenue(),
+    repository.countPayments({ status: "PAID" }),
+    repository.countPayments({ status: "PENDING" }),
+  ]);
+
+  // Build a user-name map from the payment user IDs using targeted
+  // ID-based lookup (avoids fetching unnecessary users).
+  const neededUserIds = Array.from(new Set(allPayments.map((p) => p.userId)));
+  const usersById = new Map<string, { id: string; name: string; email: string }>();
+  if (neededUserIds.length > 0) {
+    const batch = await repository.listUsers({ ids: neededUserIds });
+    for (const u of batch) {
+      usersById.set(u.id, { id: u.id, name: u.name, email: u.email });
+    }
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -85,10 +145,20 @@ export default async function FinancePage() {
         <p className="mt-1 text-sm text-slate-400">خلاصه مالی کل پلتفرم</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
         <StatCard label="درآمد کل" value={formatToman(totalRevenue)} icon={DollarSign} accent="green" />
-        <StatCard label="پرداخت موفق" value={toPersianDigits(allPayments.filter((p) => p.status === "PAID").length)} icon={TrendingUp} accent="blue" />
-        <StatCard label="پرداخت معلق" value={toPersianDigits(allPayments.filter((p) => p.status === "PENDING").length)} icon={TrendingUp} accent="amber" />
+        <StatCard label="پرداخت موفق" value={toPersianDigits(paidCount)} icon={TrendingUp} accent="blue" />
+        <StatCard label="پرداخت معلق" value={toPersianDigits(pendingCount)} icon={TrendingUp} accent="amber" />
+        <StatCard
+          label="میانگین پرداخت"
+          value={
+            paidCount > 0
+              ? formatToman(Math.round(totalRevenue / paidCount))
+              : "—"
+          }
+          icon={DollarSign}
+          accent="brand"
+        />
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-white/10 bg-slate-800/50">
@@ -103,28 +173,42 @@ export default async function FinancePage() {
             </tr>
           </thead>
           <tbody>
-            {allPayments.map((p) => {
-              const payer = allUsers.find((u) => u.id === p.userId);
-              return (
-                <tr key={p.id} className="border-b border-white/5 hover:bg-white/[0.03]">
-                  <td className="px-4 py-3 font-medium text-white">{payer?.name ?? "—"}</td>
-                  <td className="px-4 py-3">{formatToman(p.amount)}</td>
-                  <td className="px-4 py-3">{p.method}</td>
-                  <td className="px-4 py-3">
-                    <span className={cn(
-                      "rounded-full px-2.5 py-0.5 text-[0.65rem] font-bold",
-                      p.status === "PAID" ? "bg-emerald-500/15 text-emerald-400" : "bg-amber-500/15 text-amber-400"
-                    )}>
-                      {p.status === "PAID" ? "موفق" : "معلق"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-xs">{new Date(p.createdAt).toLocaleDateString("fa-IR")}</td>
-                </tr>
-              );
-            })}
+            {allPayments.map((p) => (
+              <tr
+                key={p.id}
+                className="border-b border-white/5 transition-colors hover:bg-white/[0.06]"
+              >
+                <td className="px-4 py-3 font-medium text-white">
+                  {usersById.get(p.userId)?.name ?? "—"}
+                </td>
+                <td className="px-4 py-3">{formatToman(p.amount)}</td>
+                <td className="px-4 py-3 text-xs">{p.method}</td>
+                <td className="px-4 py-3">
+                  <StatusBadge status={p.status}>
+                    {p.status === "PAID" ? "موفق" : p.status === "FAILED" ? "ناموفق" : "در انتظار"}
+                  </StatusBadge>
+                </td>
+                <td className="px-4 py-3 text-xs">{formatDate(p.createdAt)}</td>
+              </tr>
+            ))}
+            {allPayments.length === 0 && (
+              <tr>
+                <td colSpan={5} className="px-4 py-10">
+                  <EmptyState
+                    size="sm"
+                    icon={Wallet}
+                    title="پرداختی نیست"
+                    description="هنوز تراکنشی ثبت نشده."
+                    className="border-0 bg-transparent"
+                  />
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
+
+      <Pagination total={totalPayments} pageSize={PAGE_SIZE} currentPage={currentPage} />
     </div>
   );
 }

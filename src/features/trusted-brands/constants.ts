@@ -6,18 +6,15 @@ export interface BrandLogo {
 }
 
 /**
- * Trusted brands shown in the infinite marquee (section #4).
- *
- * Brand logos are rendered as styled wordmarks (no external SVG dependency)
- * so the strip is crisp, themeable, and has zero layout shift.
+ * Partner schools / learning names — simple wordmarks (not corporate brands).
  */
 export const trustedBrands: BrandLogo[] = [
-  { name: "بانک ملت", tagline: "Bank Mellat" },
-  { name: "ایران‌خودرو", tagline: "Iran Khodro" },
-  { name: "همشهری", tagline: "Hamshahri" },
-  { name: "دیجی‌کالا", tagline: "Digikala" },
-  { name: "اسنپ", tagline: "Snapp" },
-  { name: "شتاب‌دهنده مونتاژ", tagline: "Montaj" },
-  { name: "تپسی", tagline: "Tapsi" },
-  { name: "بانک پاسارگاد", tagline: "Pasargad" },
+  { name: "مدرسه امید", tagline: "Omid School" },
+  { name: "دبیرستان نور", tagline: "Noor High" },
+  { name: "کانون دانش", tagline: "Danesh" },
+  { name: "آموزشگاه سپهر", tagline: "Sepehr" },
+  { name: "مدرسه آفتاب", tagline: "Aftab" },
+  { name: "مرکز زبان پارس", tagline: "Pars English" },
+  { name: "مدرسه بهار", tagline: "Bahar" },
+  { name: "کلاس‌های روشن", tagline: "Roshan" },
 ];

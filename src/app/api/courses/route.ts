@@ -3,6 +3,8 @@ import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/session";
 import { repository } from "@/lib/db/repository";
 import { isSameOriginRequest, csrfRejectedResponse } from "@/lib/csrf";
+import { withRateLimit } from "@/lib/api-middleware";
+import { RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
 
 const createSchema = z.object({
   title: z.string().min(3),
@@ -19,7 +21,7 @@ const createSchema = z.object({
   published: z.boolean().default(true),
 });
 
-export async function GET(req: Request) {
+async function listCoursesHandler(req: Request) {
   const { searchParams } = new URL(req.url);
   const mentorId = searchParams.get("mentorId") ?? undefined;
   const publishedOnly = searchParams.get("published") === "true";
@@ -28,7 +30,7 @@ export async function GET(req: Request) {
   return NextResponse.json({ courses });
 }
 
-export async function POST(req: Request) {
+async function createCourseHandler(req: Request) {
   // CSRF: course creation mutates the catalog as the logged-in teacher/admin.
   if (!isSameOriginRequest(req)) {
     return csrfRejectedResponse();
@@ -36,7 +38,10 @@ export async function POST(req: Request) {
 
   const user = await getCurrentUser();
   if (!user || (user.role !== "TEACHER" && user.role !== "ADMIN")) {
-    return NextResponse.json({ error: "فقط معلم یا مدیر می‌تواند دوره ایجاد کند." }, { status: 403 });
+    return NextResponse.json(
+      { error: "فقط معلم یا مدیر می‌تواند دوره ایجاد کند." },
+      { status: 403 }
+    );
   }
 
   let body: unknown;
@@ -59,3 +64,13 @@ export async function POST(req: Request) {
   });
   return NextResponse.json({ course }, { status: 201 });
 }
+
+/** READ: max=60, burst=10 per minute — public course listing. */
+export const GET = withRateLimit(listCoursesHandler, RATE_LIMIT_PRESETS.READ, {
+  keyPrefix: "courses:list",
+});
+
+/** API: max=20, burst=5 — course creation (mutations). */
+export const POST = withRateLimit(createCourseHandler, RATE_LIMIT_PRESETS.API, {
+  keyPrefix: "courses:create",
+});

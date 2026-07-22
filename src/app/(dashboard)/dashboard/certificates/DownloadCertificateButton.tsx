@@ -1,25 +1,49 @@
 "use client";
 
-import Link from "next/link";
-import { Printer } from "lucide-react";
+import { pdf } from "@react-pdf/renderer";
+import { CertificatePdfDocument } from "@/components/certificates/CertificatePdfDocument";
 
-interface DownloadCertificateButtonProps {
+interface Props {
   certificateId: string;
   certificateNumber: string;
 }
 
-export function DownloadCertificateButton({
-  certificateId,
-  certificateNumber: _certificateNumber,
-}: DownloadCertificateButtonProps) {
+export function DownloadCertificateButton({ certificateId, certificateNumber }: Props) {
+  async function handleDownload() {
+    try {
+      const res = await fetch(`/api/certificates/${certificateId}/data`);
+      if (!res.ok) throw new Error("Failed to fetch certificate data");
+      const data = await res.json();
+
+      const blob = await pdf(
+        <CertificatePdfDocument
+          studentName={data.studentName}
+          courseTitle={data.courseTitle}
+          certificateNumber={data.certificateNumber}
+          issueDate={data.issueDate}
+          durationHours={data.durationHours}
+          mentorName={data.mentorName}
+        />
+      ).toBlob();
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `certificate-${certificateNumber}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("PDF generation failed:", err);
+      alert("خطا در تولید PDF");
+    }
+  }
+
   return (
-    <Link
-      href={`/dashboard/certificates/${certificateId}/print`}
-      target="_blank"
-      className="inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1 text-xs font-bold text-white transition-colors hover:bg-accent-hover"
+    <button
+      onClick={handleDownload}
+      className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-bold text-white hover:bg-accent-hover"
     >
-      <Printer className="size-3" />
-      دانلود / چاپ
-    </Link>
+      دانلود PDF
+    </button>
   );
 }

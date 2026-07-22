@@ -18,3 +18,5 @@ export interface SafeUser {
   bio: string | null;
   createdAt: string;
 }
+
+

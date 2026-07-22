@@ -37,10 +37,10 @@ export function FooterNewsletter({ className }: { className?: string }) {
   return (
     <div className={cn("flex flex-col gap-3", className)}>
       <h3 className="font-display text-sm font-bold text-fg-primary">
-        خبرنامه بصیر نو
+        خبرهای بصیر نو
       </h3>
       <p className="text-sm text-fg-secondary">
-        از آخرین دوره‌ها، مقالات و رویدادهای آکادمی مطلع شوید.
+        درس‌های تازه و نکته‌های ساده انگلیسی را با ایمیل بگیر.
       </p>
 
       {isSubmitSuccessful ? (

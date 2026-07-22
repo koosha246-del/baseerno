@@ -3,6 +3,7 @@ import tailwindcssAnimate from "tailwindcss-animate";
 import typographyPlugin from "@tailwindcss/typography";
 import {
   colors,
+  kidColors,
   gradients,
   radii,
   shadows,
@@ -54,6 +55,9 @@ const config: Config = {
           danger: colors.danger,
           info: colors.info,
         },
+        // Kid-facing palette — use for child-targeted surfaces.
+        // Each scale follows Tailwind's 50→600 convention.
+        kid: kidColors,
       },
       fontFamily: {
         sans: ["var(--font-vazirmatn)", "IranSans", "system-ui", "sans-serif"],
@@ -108,6 +112,14 @@ const config: Config = {
         "text-gradient": gradients.text,
         "scrim": gradients.scrim,
         "glass": gradients.glass,
+        // Kid-friendly gradients — candy / sky / meadow palettes.
+        "kid-candy": gradients.kidCandy,
+        "kid-candy-rtl": gradients.kidCandyRtl,
+        "kid-sky": gradients.kidSky,
+        "kid-sunrise": gradients.kidSunrise,
+        "kid-meadow": gradients.kidMeadow,
+        "kid-celebrate": gradients.kidCelebrate,
+        "kid-text": gradients.kidText,
       }),
       transitionDuration: {
         ...durations,

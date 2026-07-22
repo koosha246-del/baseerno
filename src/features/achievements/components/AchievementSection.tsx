@@ -15,13 +15,13 @@ export function AchievementSection() {
     <section id="achievements" className="section-padding bg-surface-muted">
       <Container width="page">
         <ScrollReveal className="mb-10 flex flex-col items-center gap-3 text-center">
-          <span className="text-sm font-bold text-accent">دستاوردهای ما</span>
+          <span className="text-sm font-bold text-accent">پیشرفت ما</span>
           <h2 className="font-display text-3xl font-extrabold leading-tight tracking-tight text-fg-primary sm:text-4xl">
-            اعدادی که به <GradientText>اعتماد</GradientText> می‌گویند
+            با هم <GradientText>انگلیسی</GradientText> یاد می‌گیریم
           </h2>
           <p className="max-w-2xl text-base leading-loose text-fg-secondary">
-            در طول سال‌ها، هزاران نفر مسیر حرفه‌ای شدن در فن بیان را با ما طی
-            کرده‌اند. آمارها گویای تعهد ما به کیفیت‌اند.
+            هزاران دانش‌آموز با درس‌های ساده بصیر نو انگلیسی را شروع کرده‌اند.
+            این عددها نشان می‌دهد که تنهایی نیستی.
           </p>
         </ScrollReveal>
 

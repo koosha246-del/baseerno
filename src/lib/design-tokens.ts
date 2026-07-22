@@ -1,13 +1,32 @@
 /**
- * Design Tokens — Baseer No (بصیر نو)
+ * Design Tokens — بصیر نو (Baseer No)
  * Single source of truth for the entire design system.
  *
- * Imported by tailwind.config.ts so every token becomes a real Tailwind utility.
- * Hardcoded values inside components are forbidden — reference these tokens or
- * the Tailwind utilities derived from them.
+ * Audience: school students learning English — calm, clear, friendly.
+ *
+ * ## Color psychology for kids + learning
+ *
+ * Two complementary palettes, applied per surface:
+ *
+ * **`brand`** — sophisticated, trust-building (parents see this)
+ *   - Navy / Blue  → calm focus, trust, concentration while studying
+ *   - Sky / Teal   → freshness, open mind, easy start
+ *   - Green        → growth, progress, "I improved today"
+ *   - Amber / Gold → joy, energy, small wins & certificates
+ *
+ * **`kid`** — playful, warm, friendly (children feel this)
+ *   - Sky Blue (#38BDF8)  → trust + imagination, "the sky is the limit"
+ *   - Coral Pink (#FB7185) → warmth + safety, "I'm loved"
+ *   - Mint Green (#34D399) → growth + freshness, "I learned something new"
+ *   - Sunny Yellow (#FBBF24) → joy + optimism, "I did it!"
+ *   - Lavender (#A78BFA) → calm + creativity, "I can imagine"
+ *   - Peach (#FDBA74) → cozy + welcoming, "this is for me"
+ *   - Soft cream (#FFF7ED) → low-stim background, not stark white
+ *
+ * Both palettes share the same 4-stop brand gradient as a chromatic
+ * anchor so the site never feels like two separate products.
  *
  * Source of visual truth: brand gradient #1E3A5F → #2563EB → #D4A017 → #F5C518
- * Psychology: Deep navy (authority/trust) → Royal blue (clarity/professionalism) → Amber (success/prestige) → Gold (achievement/excellence)
  */
 
 export const colors = {
@@ -59,6 +78,84 @@ export const colors = {
   },
 } as const;
 
+/**
+ * Kid-facing palette — warm, friendly, optimistic.
+ *
+ * Use for child-targeted surfaces: course tiles for young learners,
+ * certificate borders, achievement badges, and the kids-area hero.
+ * Keep the existing `colors.brand` (navy + gold) for trust-bearing
+ * surfaces like auth pages, payments, and admin tools.
+ *
+ * Each color carries a "why" comment for designers & developers.
+ */
+export const kidColors = {
+  /** Sky blue — trust + imagination. Use as primary kid accent. */
+  sky: {
+    50: "#F0F9FF",
+    100: "#E0F2FE",
+    200: "#BAE6FD",
+    300: "#7DD3FC",
+    400: "#38BDF8", // primary
+    500: "#0EA5E9",
+    600: "#0284C7",
+  },
+  /** Coral pink — warmth + safety. Friendly, non-aggressive. */
+  coral: {
+    50: "#FFF1F2",
+    100: "#FFE4E6",
+    200: "#FECDD3",
+    300: "#FDA4AF",
+    400: "#FB7185", // primary
+    500: "#F43F5E",
+    600: "#E11D48",
+  },
+  /** Mint green — growth + freshness. "I learned something new!" */
+  mint: {
+    50: "#ECFDF5",
+    100: "#D1FAE5",
+    200: "#A7F3D0",
+    300: "#6EE7B7",
+    400: "#34D399", // primary
+    500: "#10B981",
+    600: "#059669",
+  },
+  /** Sunny yellow — joy + optimism. "I did it!" */
+  sunny: {
+    50: "#FFFBEB",
+    100: "#FEF3C7",
+    200: "#FDE68A",
+    300: "#FCD34D",
+    400: "#FBBF24", // primary
+    500: "#F59E0B",
+    600: "#D97706",
+  },
+  /** Lavender — calm + creativity. "I can imagine." */
+  lavender: {
+    50: "#F5F3FF",
+    100: "#EDE9FE",
+    200: "#DDD6FE",
+    300: "#C4B5FD",
+    400: "#A78BFA", // primary
+    500: "#8B5CF6",
+    600: "#7C3AED",
+  },
+  /** Peach — cozy + welcoming. "This is for me." */
+  peach: {
+    50: "#FFF7ED",
+    100: "#FFEDD5",
+    200: "#FED7AA",
+    300: "#FDBA74", // primary
+    400: "#FB923C",
+    500: "#F97316",
+  },
+  /** Cream — low-stim background. Warm, not stark white. */
+  cream: {
+    DEFAULT: "#FFF7ED",
+    soft: "#FFFBF5",
+    warm: "#FEF3E8",
+  },
+} as const;
+
 export const gradients = {
   /** Signature 4-stop brand gradient (navy → blue → amber → gold). */
   brand:
@@ -81,6 +178,27 @@ export const gradients = {
   scrim: "linear-gradient(180deg, rgba(17,24,39,0) 0%, rgba(17,24,39,0.65) 100%)",
   glass:
     "linear-gradient(180deg, rgba(255,255,255,0.88) 0%, rgba(255,255,255,0.70) 100%)",
+
+  /**
+   * Kid-friendly gradient set — applied to child-facing surfaces so
+   * the chrome reads as warm + playful without abandoning brand
+   * identity. Each gradient flows sky → coral → mint → sunny to
+   * evoke a candy / storybook feel.
+   */
+  kidCandy:
+    "linear-gradient(120deg, #38BDF8 0%, #A78BFA 35%, #FB7185 65%, #FBBF24 100%)",
+  kidCandyRtl:
+    "linear-gradient(270deg, #38BDF8 0%, #A78BFA 35%, #FB7185 65%, #FBBF24 100%)",
+  kidSky:
+    "linear-gradient(180deg, #BAE6FD 0%, #E0F2FE 50%, #F0F9FF 100%)",
+  kidSunrise:
+    "linear-gradient(180deg, #FEF3C7 0%, #FED7AA 50%, #FECDD3 100%)",
+  kidMeadow:
+    "linear-gradient(135deg, #D1FAE5 0%, #BAE6FD 60%, #E0F2FE 100%)",
+  kidCelebrate:
+    "linear-gradient(120deg, #FBBF24 0%, #FB7185 50%, #A78BFA 100%)",
+  kidText:
+    "linear-gradient(120deg, #0EA5E9 0%, #F43F5E 40%, #F59E0B 70%, #FBBF24 100%)",
 } as const;
 
 /**
@@ -154,6 +272,15 @@ export const shadows = {
   glow: "0 12px 36px rgba(27, 79, 212, 0.30)",
   glowStrong: "0 20px 52px rgba(27, 79, 212, 0.40)",
   inner: "inset 0 1px 0 rgba(255,255,255,0.6), inset 0 -1px 0 rgba(17,24,39,0.04)",
+  // Kid-friendly colored glows — softer + warmer than the brand glow.
+  glowSky: "0 12px 36px rgba(56, 189, 248, 0.35)",
+  glowCoral: "0 12px 36px rgba(251, 113, 133, 0.32)",
+  glowMint: "0 12px 36px rgba(52, 211, 153, 0.30)",
+  glowSunny: "0 12px 36px rgba(251, 191, 36, 0.35)",
+  glowLavender: "0 12px 36px rgba(167, 139, 250, 0.32)",
+  // Tactile raised surface — the "squishy" feel kids expect.
+  squishy:
+    "0 2px 0 rgba(17,24,39,0.08), 0 8px 24px rgba(56, 189, 248, 0.18)",
 } as const;
 
 export const zIndex = {

@@ -1,11 +1,23 @@
 import { getCurrentUser } from "@/lib/auth/session";
-import { repository } from "@/lib/db/repository";
-import { toPersianDigits } from "@/lib/format";
-import { Badge } from "@/components/ui/badge";
+import { toPersianDigits, formatDate } from "@/lib/format";
 import { StatCard } from "@/features/dashboard/components/StatCard";
-import { GraduationCap, UserCheck, Shield } from "lucide-react";
+import { Pagination } from "@/components/shared/Pagination";
+import { StatusBadge } from "@/components/shared/StatusBadge";
+import { EmptyState } from "@/components/shared/EmptyState";
+import {
+  getCachedRoleCounts,
+  getCachedCountUsers,
+  getCachedUsersList,
+} from "@/lib/db/queries";
+import { GraduationCap, UserCheck, Shield, Users } from "lucide-react";
 
-export default async function UsersPage() {
+const PAGE_SIZE = 20;
+
+interface PageProps {
+  searchParams: Promise<{ page?: string }>;
+}
+
+export default async function UsersPage({ searchParams }: PageProps) {
   const user = await getCurrentUser();
   if (!user) return null;
 
@@ -18,8 +30,17 @@ export default async function UsersPage() {
     );
   }
 
-  const counts = await repository.countByRole();
-  const allUsers = await repository.listUsers();
+  const sp = await searchParams;
+  const currentPage = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);
+  const skip = (currentPage - 1) * PAGE_SIZE;
+
+  // All three queries fire in parallel; counts hit the cached query
+  // layer (30s TTL) so a flurry of admin clicks doesn't re-aggregate.
+  const [counts, total, users] = await Promise.all([
+    getCachedRoleCounts(),
+    getCachedCountUsers(),
+    getCachedUsersList(skip, PAGE_SIZE),
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -45,11 +66,14 @@ export default async function UsersPage() {
             </tr>
           </thead>
           <tbody>
-            {allUsers.map((u) => {
-              const roleLabel = u.role === "STUDENT" ? "دانش‌آموز" : u.role === "TEACHER" ? "معلم" : "مدیر";
-              const roleColor = u.role === "STUDENT" ? "bg-blue-500/15 text-blue-400" : u.role === "TEACHER" ? "bg-emerald-500/15 text-emerald-400" : "bg-amber-500/15 text-amber-400";
+            {users.map((u) => {
+              const roleLabel =
+                u.role === "STUDENT" ? "دانش‌آموز" : u.role === "TEACHER" ? "معلم" : "مدیر";
               return (
-                <tr key={u.id} className="border-b border-white/5 hover:bg-white/[0.03]">
+                <tr
+                  key={u.id}
+                  className="border-b border-white/5 transition-colors hover:bg-white/[0.06]"
+                >
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <div className="flex size-8 items-center justify-center rounded-full bg-accent text-xs font-bold text-white">
@@ -58,17 +82,38 @@ export default async function UsersPage() {
                       <span className="font-medium text-white">{u.name}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-3" dir="ltr">{u.email}</td>
-                  <td className="px-4 py-3">
-                    <Badge className={roleColor}>{roleLabel}</Badge>
+                  <td className="px-4 py-3" dir="ltr">
+                    {u.email}
                   </td>
-                  <td className="px-4 py-3 text-xs">{new Date(u.createdAt).toLocaleDateString("fa-IR")}</td>
+                  <td className="px-4 py-3">
+                    <StatusBadge status={u.role}>{roleLabel}</StatusBadge>
+                  </td>
+                  <td className="px-4 py-3 text-xs">{formatDate(u.createdAt)}</td>
                 </tr>
               );
             })}
+            {users.length === 0 && (
+              <tr>
+                <td colSpan={4} className="px-4 py-10">
+                  <EmptyState
+                    size="sm"
+                    icon={Users}
+                    title="کاربری نیست"
+                    description="هنوز کاربری ثبت نشده."
+                    className="border-0 bg-transparent"
+                  />
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
+
+      <Pagination
+        total={total}
+        pageSize={PAGE_SIZE}
+        currentPage={currentPage}
+      />
     </div>
   );
 }

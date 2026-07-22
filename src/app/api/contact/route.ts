@@ -3,8 +3,9 @@ import { z } from "zod";
 import { sendEmail } from "@/lib/email";
 import { contactFormEmail } from "@/lib/email-templates";
 import { siteConfig } from "@/config/site";
-import { checkRateLimit, getClientIdentifier } from "@/lib/rate-limit";
 import { isSameOriginRequest, csrfRejectedResponse } from "@/lib/csrf";
+import { withRateLimit } from "@/lib/api-middleware";
+import { RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
 
 const schema = z.object({
   name: z.string().min(3, "نام باید حداقل ۳ حرف باشد."),
@@ -13,19 +14,10 @@ const schema = z.object({
   message: z.string().min(10, "پیام باید حداقل ۱۰ کاراکتر باشد.").max(2000),
 });
 
-export async function POST(req: Request) {
+async function contactHandler(req: Request) {
   // CSRF: protect the contact form against cross-site spam.
   if (!isSameOriginRequest(req)) {
     return csrfRejectedResponse();
-  }
-
-  const clientId = getClientIdentifier(req);
-  const limit = checkRateLimit(`contact:${clientId}`, { windowMs: 60_000, max: 3 });
-  if (!limit.success) {
-    return NextResponse.json(
-      { error: `تعداد ارسال‌ها بیش از حد مجاز. ${limit.retryAfter} ثانیه دیگر تلاش کنید.` },
-      { status: 429 }
-    );
   }
 
   let body: unknown;
@@ -63,3 +55,8 @@ export async function POST(req: Request) {
     message: "پیام شما با موفقیت ارسال شد. به‌زودی پاسخ می‌دهیم.",
   });
 }
+
+/** API: max=20, burst=5 per minute. */
+export const POST = withRateLimit(contactHandler, RATE_LIMIT_PRESETS.API, {
+  keyPrefix: "contact",
+});

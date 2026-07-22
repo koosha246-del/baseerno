@@ -7,6 +7,7 @@ import { headerData } from "../constants";
 import { Logo } from "./Logo";
 import { MainNav } from "./MainNav";
 import { HeaderActions } from "./HeaderActions";
+import { ThemeToggle } from "./ThemeToggle";
 import { MobileNav } from "./MobileNav";
 
 /**
@@ -39,7 +40,8 @@ export function SiteHeader() {
           <MainNav items={headerData.nav} />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
+          <ThemeToggle />
           <HeaderActions />
           <MobileNav />
         </div>

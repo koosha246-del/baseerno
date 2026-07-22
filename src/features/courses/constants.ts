@@ -1,25 +1,36 @@
 import type { Course, CourseCategory } from "./types";
 
+/**
+ * Course categories — English-language skills only.
+ *   grammar     → قواعد دستوری
+ *   vocabulary  → لغات و دایره واژگان
+ *   reading     → خواندن و درک مطلب
+ *   listening   → شنیدن
+ *   writing     → نوشتن
+ *   ielts       → آمادگی آزمون آیلتس
+ */
 export const courseCategories: CourseCategory[] = [
   { id: "all", label: "همه دوره‌ها" },
-  { id: "speaking", label: "فن بیان" },
-  { id: "presentation", label: "ارائه و سخنرانی" },
-  { id: "communication", label: "ارتباط مؤثر" },
-  { id: "voice", label: "آواسازی و صدا" },
+  { id: "grammar", label: "گرامر" },
+  { id: "vocabulary", label: "واژگان" },
+  { id: "reading", label: "خواندن" },
+  { id: "listening", label: "شنیدن" },
+  { id: "writing", label: "نوشتن" },
+  { id: "ielts", label: "آیلتس" },
 ];
 
 /**
- * Featured course catalog for section #5.
- * Six structured courses spanning the academy's main tracks.
+ * English-only courses for Persian-speaking learners.
+ * Each course focuses on a specific language skill (no فن بیان / rhetoric).
  */
 export const courses: Course[] = [
   {
-    id: "fundamentals",
-    title: "مبانی فن بیان",
-    subtitle: "از صفر تا تسلط بر صحبت کردن در جمع",
-    category: "speaking",
-    level: "مقدماتی",
-    mentor: "دکتر سارا محمدی",
+    id: "english-zero",
+    title: "انگلیسی از صفر",
+    subtitle: "حروف الفبا، کلمات پایه و اولین جمله‌ها",
+    category: "grammar",
+    level: "مبتدی مطلق",
+    mentor: "خانم سارا محمدی",
     mentorInitial: "س",
     rating: 4.9,
     reviews: 2148,
@@ -29,15 +40,15 @@ export const courses: Course[] = [
     originalPrice: 1200000,
     bestseller: true,
     accent: "violet",
-    glyph: "🎤",
+    glyph: "📘",
   },
   {
-    id: "presentation-mastery",
-    title: "استاد ارائه‌دهنده",
-    subtitle: "ساخت و اجرای ارائه‌های تأثیرگذار",
-    category: "presentation",
-    level: "متوسط",
-    mentor: "مهندس رضا کریمی",
+    id: "grammar-a1",
+    title: "گرامر پایه A1",
+    subtitle: "زمان حال ساده، افعال to be، ضمایر",
+    category: "grammar",
+    level: "مقدماتی",
+    mentor: "آقای رضا کریمی",
     mentorInitial: "ر",
     rating: 4.8,
     reviews: 1567,
@@ -46,15 +57,15 @@ export const courses: Course[] = [
     price: 1200000,
     bestseller: true,
     accent: "pink",
-    glyph: "📊",
+    glyph: "✏️",
   },
   {
-    id: "voice-training",
-    title: "آواسازی حرفه‌ای صدا",
-    subtitle: "تکنیک‌های تنفسی و رسایی صدای جذاب",
-    category: "voice",
-    level: "متوسط",
-    mentor: "استاد نگار احمدی",
+    id: "vocabulary-daily",
+    title: "واژگان روزمره",
+    subtitle: "۱۰۰۰ لغت پرکاربرد با مثال واقعی",
+    category: "vocabulary",
+    level: "مقدماتی تا متوسط",
+    mentor: "خانم نگار احمدی",
     mentorInitial: "ن",
     rating: 4.9,
     reviews: 932,
@@ -62,15 +73,15 @@ export const courses: Course[] = [
     lessons: 48,
     price: 980000,
     accent: "orchid",
-    glyph: "🎙️",
+    glyph: "📚",
   },
   {
-    id: "effective-communication",
-    title: "ارتباط مؤثر در محیط کار",
-    subtitle: "مهارت‌های کلامی برای پیشرفت شغلی",
-    category: "communication",
-    level: "متوسط",
-    mentor: "دکتر امیر حسینی",
+    id: "listening-practice",
+    title: "تمرین شنیدن",
+    subtitle: "دیالوگ‌های واقعی از سطح A1 تا B1",
+    category: "listening",
+    level: "مقدماتی تا متوسط",
+    mentor: "آقای امیر حسینی",
     mentorInitial: "ا",
     rating: 4.7,
     reviews: 1203,
@@ -79,31 +90,15 @@ export const courses: Course[] = [
     price: 1100000,
     originalPrice: 1400000,
     accent: "blue",
-    glyph: "🤝",
+    glyph: "🎧",
   },
   {
-    id: "leadership-speaking",
-    title: "سخنوری رهبران",
-    subtitle: "هوش هیجانی و اقناع در رهبری",
-    category: "speaking",
-    level: "پیشرفته",
-    mentor: "دکتر سارا محمدی",
-    mentorInitial: "س",
-    rating: 5.0,
-    reviews: 645,
-    durationHours: 28,
-    lessons: 96,
-    price: 1650000,
-    accent: "amber",
-    glyph: "👑",
-  },
-  {
-    id: "storytelling",
-    title: "هنر داستان‌گویی",
-    subtitle: "ساختن روایت‌هایی که می‌مانند",
-    category: "presentation",
-    level: "حرفه‌ای",
-    mentor: "استاد نگار احمدی",
+    id: "reading-stories",
+    title: "داستان‌خوانی انگلیسی",
+    subtitle: "داستان‌های کوتاه سطح‌بندی‌شده برای تقویت درک مطلب",
+    category: "reading",
+    level: "مقدماتی تا متوسط",
+    mentor: "خانم نگار احمدی",
     mentorInitial: "ن",
     rating: 4.8,
     reviews: 814,
@@ -113,12 +108,45 @@ export const courses: Course[] = [
     accent: "pink",
     glyph: "📖",
   },
+  {
+    id: "ielts-prep",
+    title: "آمادگی آیلتس",
+    subtitle: "تکنیک‌های ۴ مهارت + آزمون شبیه‌سازی",
+    category: "ielts",
+    level: "پیشرفته",
+    mentor: "خانم سارا محمدی",
+    mentorInitial: "س",
+    rating: 5.0,
+    reviews: 645,
+    durationHours: 28,
+    lessons: 96,
+    price: 1650000,
+    accent: "amber",
+    glyph: "🎯",
+  },
 ];
 
+/**
+ * Card accents — kid-friendly palette driven by color psychology.
+ *
+ *   sky      → trust, open mind, "I can start"
+ *   coral    → warmth, "I'm safe here"
+ *   mint     → growth, "I learned something new"
+ *   sunny    → joy, achievement, "I did it!"
+ *   lavender → imagination, creativity
+ *
+ * The 6th slot (peach) is mapped to the existing `blue` key for
+ * backwards-compat with rows that already use it.
+ */
 export const accentClasses: Record<Course["accent"], string> = {
-  violet: "from-blue-600/25 to-blue-400/5 text-blue-600",
-  pink: "from-amber-300/25 to-amber-100/5 text-amber-600",
-  orchid: "from-sky-400/25 to-sky-200/5 text-sky-600",
-  amber: "from-amber-200/40 to-amber-100/5 text-amber-600",
-  blue: "from-blue-200/40 to-blue-100/5 text-blue-600",
+  // sky = trust, imagination
+  violet: "from-kid-sky-200/50 to-kid-sky-50/10 text-kid-sky-600",
+  // coral = warmth, friendliness
+  pink: "from-kid-coral-200/50 to-kid-coral-50/10 text-kid-coral-600",
+  // mint = growth, freshness
+  orchid: "from-kid-mint-200/50 to-kid-mint-50/10 text-kid-mint-600",
+  // sunny = joy, optimism
+  amber: "from-kid-sunny-200/50 to-kid-sunny-50/10 text-kid-sunny-600",
+  // lavender = imagination (peach fallback)
+  blue: "from-kid-lavender-200/50 to-kid-lavender-50/10 text-kid-lavender-600",
 };

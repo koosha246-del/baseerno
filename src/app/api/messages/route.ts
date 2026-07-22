@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/session";
 import { repository } from "@/lib/db/repository";
 import { isSameOriginRequest, csrfRejectedResponse } from "@/lib/csrf";
+import { notifyNewMessage } from "@/lib/notifications";
 
 const schema = z.object({
   receiverId: z.string().min(1, "گیرنده را مشخص کنید."),
@@ -43,6 +44,9 @@ export async function POST(req: Request) {
     receiverId: parsed.data.receiverId,
     body: parsed.data.body,
   });
+
+  // Fire-and-forget; never let a notify failure break the send.
+  await notifyNewMessage(parsed.data.receiverId, user.name);
 
   return NextResponse.json({ message }, { status: 201 });
 }

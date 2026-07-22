@@ -36,4 +36,15 @@ next-env.d.ts
 
 /src/generated/prisma
 
+# local tools / caches (not part of the app)
 mimo.exe
+.mimocode/
+.zcode/
+
+# project archives & extraction leftovers
+*.zip
+*.rar
+ZCodeProject/
+
+# local milestone media (not website assets)
+/mile-a/

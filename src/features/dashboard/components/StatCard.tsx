@@ -10,40 +10,65 @@ interface StatCardProps {
   accent?: "brand" | "navy" | "green" | "blue" | "amber";
 }
 
-const accentStyles = {
-  brand: "bg-accent",
-  navy: "bg-slate-700",
-  green: "bg-emerald-600",
-  blue: "bg-blue-600",
-  amber: "bg-amber-500",
+/**
+ * Accent only on the icon chip + left border — card body stays neutral
+ * so a grid of stats doesn't look like a wall of solid color blocks.
+ */
+const accentBorder: Record<NonNullable<StatCardProps["accent"]>, string> = {
+  brand: "border-s-accent",
+  navy: "border-s-slate-400",
+  green: "border-s-emerald-500",
+  blue: "border-s-blue-500",
+  amber: "border-s-amber-500",
 };
 
-export function StatCard({ label, value, icon: Icon, trend, className, accent = "brand" }: StatCardProps) {
+const accentIcon: Record<NonNullable<StatCardProps["accent"]>, string> = {
+  brand: "bg-accent/15 text-accent",
+  navy: "bg-slate-500/20 text-slate-200",
+  green: "bg-emerald-500/15 text-emerald-400",
+  blue: "bg-blue-500/15 text-blue-400",
+  amber: "bg-amber-500/15 text-amber-400",
+};
+
+export function StatCard({
+  label,
+  value,
+  icon: Icon,
+  trend,
+  className,
+  accent = "brand",
+}: StatCardProps) {
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-xl border border-white/10 p-5",
-        accentStyles[accent],
-        className
+        "relative overflow-hidden rounded-xl border border-white/10 bg-slate-800/50 p-5",
+        "border-s-4 transition-colors hover:bg-slate-800/80",
+        accentBorder[accent],
+        className,
       )}
     >
-      <div className="flex items-start justify-between">
-        <div className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-white/80">{label}</span>
-          <span className="text-2xl font-extrabold text-white">{value}</span>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 flex-col gap-1">
+          <span className="text-sm font-medium text-slate-400">{label}</span>
+          <span className="truncate text-2xl font-extrabold text-white">{value}</span>
           {trend ? (
             <span
               className={cn(
                 "mt-1 text-xs font-semibold",
-                trend.positive ? "text-green-200" : "text-red-200"
+                trend.positive ? "text-emerald-400" : "text-red-400",
               )}
             >
               {trend.positive ? "↑" : "↓"} {trend.value}
             </span>
           ) : null}
         </div>
-        <div className="flex size-10 items-center justify-center rounded-lg bg-white/20">
-          <Icon className="size-5 text-white" />
+        <div
+          className={cn(
+            "flex size-10 shrink-0 items-center justify-center rounded-lg",
+            accentIcon[accent],
+          )}
+        >
+          <Icon className="size-5" />
         </div>
       </div>
     </div>

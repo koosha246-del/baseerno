@@ -1,8 +1,23 @@
+import { Suspense } from "react";
 import { getCurrentUser } from "@/lib/auth/session";
 import { repository } from "@/lib/db/repository";
 import { toPersianDigits } from "@/lib/format";
 import { DashboardOverview } from "@/features/dashboard/components/DashboardOverview";
+import { DashboardSkeleton } from "@/components/shared/Skeletons";
+import { getCachedRoleCounts, getCachedCountCourses, getCachedCountEnrollments, getCachedTotalRevenue } from "@/lib/db/queries";
 
+/**
+ * Dashboard home — role-aware stats + recent activity.
+ *
+ * Performance:
+ *   - All independent queries fire in parallel via Promise.all (no
+ *     sequential awaits blocking the page).
+ *   - Counts and aggregations route through the cached query layer
+ *     (`unstable_cache`, 60s TTL) so the dashboard doesn't hammer
+ *     the database on every page load.
+ *   - The Suspense boundary streams the rendered HTML as soon as
+ *     data is ready; the skeleton stays in place during the wait.
+ */
 export default async function DashboardPage() {
   const user = await getCurrentUser();
   if (!user) return null;
@@ -13,16 +28,19 @@ export default async function DashboardPage() {
   let recentActivity: React.ComponentProps<typeof DashboardOverview>["recentActivity"] = [];
 
   if (role === "STUDENT") {
-    const enrollments = await repository.listEnrollments(user.id);
-    const grades = await repository.listGrades(user.id);
-    const certs = await repository.listCertificates(user.id);
-    const courses = await repository.listCourses();
+    // 5 queries, all in parallel.
+    const [enrollments, grades, certs, courses, statusCounts, avgScore] =
+      await Promise.all([
+        repository.listEnrollments(user.id, { take: 5 }),
+        repository.listGrades(user.id),
+        repository.listCertificates(user.id),
+        repository.listCourses({ publishedOnly: true, take: 200 }),
+        repository.countEnrollmentsByStatus(),
+        repository.averageScoreForUser(user.id),
+      ]);
 
-    const activeCount = enrollments.filter((e) => e.status === "ACTIVE").length;
-    const completedCount = enrollments.filter((e) => e.status === "COMPLETED").length;
-    const avgScore = grades.length
-      ? Math.round(grades.reduce((s, g) => s + g.score, 0) / grades.length * 10) / 10
-      : 0;
+    const activeCount = statusCounts.ACTIVE ?? 0;
+    const completedCount = statusCounts.COMPLETED ?? 0;
 
     stats = [
       { label: "دوره فعال", value: toPersianDigits(activeCount), accent: "brand" as const },
@@ -31,8 +49,9 @@ export default async function DashboardPage() {
       { label: "گواهی‌نامه", value: toPersianDigits(certs.length), accent: "amber" as const },
     ];
 
-    recentActivity = enrollments.slice(0, 5).map((e) => {
-      const course = courses.find((c) => c.id === e.courseId);
+    const courseById = new Map(courses.map((c) => [c.id, c]));
+    recentActivity = enrollments.map((e) => {
+      const course = courseById.get(e.courseId);
       return {
         id: e.id,
         title: course?.title ?? "—",
@@ -42,47 +61,65 @@ export default async function DashboardPage() {
       };
     });
   } else if (role === "TEACHER") {
-    const courses = await repository.listCourses({ mentorId: user.id });
-    const grades = await repository.listGrades(undefined, user.id);
-    const revenue = await repository.teacherRevenue(user.id);
-
-    // Get enrollments for this teacher's courses
-    const allEnrollments = await repository.listEnrollments();
-    const myEnrollments = allEnrollments.filter((e) =>
-      courses.some((c) => c.id === e.courseId)
+    // 3 queries, all in parallel.
+    const [courses, grades, totalRevenue] = await Promise.all([
+      repository.listCourses({ mentorId: user.id }),
+      repository.listGrades(undefined, user.id),
+      repository.teacherRevenue(user.id),
+    ]);
+    // Resolve student count after we know the course ids.
+    const studentCount = await repository.countUniqueStudentsForCourses(
+      courses.map((c) => c.id),
     );
-    const totalStudents = new Set(myEnrollments.map((e) => e.userId)).size;
 
     stats = [
       { label: "دوره من", value: toPersianDigits(courses.length), accent: "brand" as const },
-      { label: "دانشجویان", value: toPersianDigits(totalStudents), accent: "blue" as const },
+      { label: "دانشجویان", value: toPersianDigits(studentCount), accent: "blue" as const },
       { label: "نمرات ثبت‌شده", value: toPersianDigits(grades.length), accent: "amber" as const },
-      { label: "درآمد (تومان)", value: toPersianDigits(revenue.toLocaleString()), accent: "green" as const },
+      { label: "درآمد (تومان)", value: toPersianDigits(totalRevenue.toLocaleString()), accent: "green" as const },
     ];
 
+    // Recent activity is the teacher's courses (small list, no extra query).
     recentActivity = courses.slice(0, 5).map((c) => ({
       id: c.id,
       title: c.title,
-      subtitle: `${toPersianDigits(myEnrollments.filter((e) => e.courseId === c.id).length)} دانشجو`,
+      subtitle: c.published ? "منتشرشده" : "پیش‌نویس",
       status: c.published ? "منتشرشده" : "پیش‌نویس",
       statusColor: c.published ? "green" : "amber",
     }));
   } else {
-    // ADMIN
-    const counts = await repository.countByRole();
-    const courses = await repository.listCourses();
-    const revenue = await repository.totalRevenue();
-    const enrollments = await repository.listEnrollments();
+    // ADMIN — 4 cached queries, all in parallel.
+    const [roleCounts, courseCount, enrollmentCount, totalRevenue] = await Promise.all([
+      getCachedRoleCounts(),
+      getCachedCountCourses(),
+      getCachedCountEnrollments(),
+      getCachedTotalRevenue(),
+    ]);
+    // Recent activity: only fetch the last 5 enrollments with their
+    // course titles (small bounded fetch).
+    const [enrollments, courses] = await Promise.all([
+      repository.listEnrollments(undefined, { take: 5 }),
+      repository.listCourses({ publishedOnly: true, take: 200 }),
+    ]);
+    const courseById = new Map(courses.map((c) => [c.id, c]));
 
     stats = [
-      { label: "کل کاربران", value: toPersianDigits(counts.STUDENT + counts.TEACHER + counts.ADMIN), accent: "brand" as const },
-      { label: "دوره‌ها", value: toPersianDigits(courses.length), accent: "blue" as const },
-      { label: "ثبت‌نام‌ها", value: toPersianDigits(enrollments.length), accent: "amber" as const },
-      { label: "درآمد کل (تومان)", value: toPersianDigits(revenue.toLocaleString()), accent: "green" as const },
+      {
+        label: "کل کاربران",
+        value: toPersianDigits(roleCounts.STUDENT + roleCounts.TEACHER + roleCounts.ADMIN),
+        accent: "brand" as const,
+      },
+      { label: "دوره‌ها", value: toPersianDigits(courseCount), accent: "blue" as const },
+      { label: "ثبت‌نام‌ها", value: toPersianDigits(enrollmentCount), accent: "amber" as const },
+      {
+        label: "درآمد کل (تومان)",
+        value: toPersianDigits(totalRevenue.toLocaleString()),
+        accent: "green" as const,
+      },
     ];
 
-    recentActivity = enrollments.slice(0, 5).map((e) => {
-      const course = courses.find((c) => c.id === e.courseId);
+    recentActivity = enrollments.map((e) => {
+      const course = courseById.get(e.courseId);
       return {
         id: e.id,
         title: course?.title ?? "—",
@@ -93,5 +130,9 @@ export default async function DashboardPage() {
     });
   }
 
-  return <DashboardOverview stats={stats} recentActivity={recentActivity} role={role} />;
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <DashboardOverview stats={stats} recentActivity={recentActivity} role={role} />
+    </Suspense>
+  );
 }

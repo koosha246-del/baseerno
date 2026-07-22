@@ -3,10 +3,11 @@ import { z } from "zod";
 import { repository } from "@/lib/db/repository";
 import { hashPassword } from "@/lib/auth/password";
 import { setSession } from "@/lib/auth/session";
-import { checkRateLimit, getClientIdentifier } from "@/lib/rate-limit";
 import { sendEmail } from "@/lib/email";
 import { welcomeEmail } from "@/lib/email-templates";
 import { isSameOriginRequest, csrfRejectedResponse } from "@/lib/csrf";
+import { withRateLimit } from "@/lib/api-middleware";
+import { RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
 
 const schema = z.object({
   name: z.string().min(3, "نام باید حداقل ۳ حرف باشد."),
@@ -15,19 +16,10 @@ const schema = z.object({
   role: z.literal("STUDENT").default("STUDENT"),
 });
 
-export async function POST(req: Request) {
+async function registerHandler(req: Request) {
   // CSRF: register sets a session cookie, so verify origin.
   if (!isSameOriginRequest(req)) {
     return csrfRejectedResponse();
-  }
-
-  const clientId = getClientIdentifier(req);
-  const limit = checkRateLimit(`register:${clientId}`, { windowMs: 60_000, max: 3 });
-  if (!limit.success) {
-    return NextResponse.json(
-      { error: `تعداد تلاش‌ها بیش از حد مجاز. ${limit.retryAfter} ثانیه دیگر تلاش کنید.` },
-      { status: 429 }
-    );
   }
 
   let body: unknown;
@@ -60,3 +52,8 @@ export async function POST(req: Request) {
 
   return NextResponse.json({ user });
 }
+
+/** AUTH: max=5, burst=2 per minute. */
+export const POST = withRateLimit(registerHandler, RATE_LIMIT_PRESETS.AUTH, {
+  keyPrefix: "auth:register",
+});

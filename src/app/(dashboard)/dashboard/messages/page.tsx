@@ -8,7 +8,15 @@ export default async function MessagesPage() {
   if (!user) return null;
 
   const messages = await repository.listMessages(user.id);
-  const allUsers = await repository.listUsers();
+
+  // Targeted user lookup: only fetch users who appear in conversation
+  // with the current user, instead of pulling every user in the system.
+  const conversationUserIds = Array.from(
+    new Set(messages.flatMap((m) => [m.senderId, m.receiverId])),
+  ).filter((id) => id !== user.id);
+  const relevantUsers = conversationUserIds.length > 0
+    ? await repository.listUsers({ ids: conversationUserIds })
+    : [];
 
   return (
     <div className="flex flex-col gap-6">
@@ -19,7 +27,7 @@ export default async function MessagesPage() {
         </div>
         <SendMessageForm
           currentUserId={user.id}
-          allUsers={allUsers.map((u) => ({ id: u.id, name: u.name }))}
+          allUsers={relevantUsers.map((u) => ({ id: u.id, name: u.name }))}
         />
       </div>
 
@@ -29,7 +37,7 @@ export default async function MessagesPage() {
           sentAt: new Date(m.sentAt),
         }))}
         currentUserId={user.id}
-        allUsers={allUsers.map((u) => ({ id: u.id, name: u.name }))}
+        allUsers={relevantUsers.map((u) => ({ id: u.id, name: u.name }))}
       />
     </div>
   );

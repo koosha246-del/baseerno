@@ -15,6 +15,8 @@ import type { Course, CourseLevel } from "../types";
 
 interface CourseCardProps {
   course: Course;
+  /** Optional override for accent classes; defaults to the static map. */
+  accentClasses?: Record<Course["accent"], string>;
 }
 
 const levelClass: Record<CourseLevel, string> = {
@@ -30,7 +32,8 @@ const levelClass: Record<CourseLevel, string> = {
  * Cover (gradient + glyph), level + bestseller badges, title, mentor row,
  * meta (rating, duration, lessons), and price + CTA. Reveals via stagger.
  */
-export function CourseCard({ course }: CourseCardProps) {
+export function CourseCard({ course, accentClasses: accentClassesProp }: CourseCardProps) {
+  const accentMap = accentClassesProp ?? accentClasses;
   const {
     title,
     subtitle,
@@ -58,7 +61,7 @@ export function CourseCard({ course }: CourseCardProps) {
       <div
         className={cn(
           "relative flex aspect-[16/10] items-center justify-center bg-gradient-to-br",
-          accentClasses[accent]
+          accentMap[accent]
         )}
       >
         <span className="text-6xl opacity-90 transition-transform duration-slow ease-luxury group-hover:scale-110">
@@ -78,7 +81,7 @@ export function CourseCard({ course }: CourseCardProps) {
           {bestseller ? (
             <Badge variant="brand" className="shadow-glow">
               <BadgeCheck className="size-3.5" />
-              پرفروش
+              محبوب
             </Badge>
           ) : null}
         </div>
@@ -118,15 +121,15 @@ export function CourseCard({ course }: CourseCardProps) {
 
         {/* Footer: price + CTA */}
         <div className="mt-auto flex items-center justify-between gap-3 pt-3">
-          <CoursePrice amount={price} originalAmount={originalPrice} />
+          <CoursePrice amount={price} originalAmount={originalPrice ?? undefined} />
           <Button
             asChild
             variant="solid"
             size="sm"
             className="group/btn shadow-sm"
           >
-            <Link href={`/courses/${id}`} aria-label={`ثبت‌نام در دوره ${title}`}>
-              ثبت‌نام
+            <Link href={`/courses/${id}`} aria-label={`شروع درس ${title}`}>
+              شروع درس
               <ArrowLeft className="size-4 transition-transform duration-base ease-luxury group-hover/btn:-translate-x-0.5" />
             </Link>
           </Button>

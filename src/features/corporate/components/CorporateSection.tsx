@@ -21,7 +21,7 @@ export function CorporateSection() {
           eyebrow={corporateCopy.sectionLabel}
           title={
             <>
-              فن بیان را به <GradientText>دستاوردهای سازمانی</GradientText> تبدیل کنید
+              انگلیسی را با <GradientText>کلاس و دوستان</GradientText> یاد بگیرید
             </>
           }
           description={corporateCopy.description}

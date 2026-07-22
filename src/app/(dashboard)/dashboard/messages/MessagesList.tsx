@@ -1,8 +1,11 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Search, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { timeAgo } from "@/lib/time";
 
 interface Message {
   id: string;
@@ -22,10 +25,15 @@ interface Props {
   messages: Message[];
   currentUserId: string;
   allUsers: User[];
+  /** Optional callback fired when messages are marked as read, so the
+   *  parent can re-fetch the canonical state from the server. */
+  onReadChange?: (readIds: string[]) => void;
 }
 
-export function MessagesList({ messages, currentUserId, allUsers }: Props) {
+export function MessagesList({ messages, currentUserId, allUsers, onReadChange }: Props) {
+  const router = useRouter();
   const [query, setQuery] = useState("");
+  const [readIds, setReadIds] = useState<Set<string>>(new Set());
 
   const filtered = useMemo(() => {
     if (!query.trim()) return messages;
@@ -33,12 +41,49 @@ export function MessagesList({ messages, currentUserId, allUsers }: Props) {
     return messages.filter((m) => m.body.toLowerCase().includes(q));
   }, [messages, query]);
 
+  /**
+   * Mark any newly-rendered unread messages as read.
+   *
+   * The API is best-effort fire-and-forget so a transient failure
+   * doesn't block the UI. The optimistic local set (`readIds`) drives
+   * the badge/indicator immediately; the parent's `onReadChange` is
+   * notified so it can re-fetch the canonical list if it wants.
+   */
+  useEffect(() => {
+    const unreadReceived = messages.filter(
+      (m) => !m.read && m.receiverId === currentUserId && !readIds.has(m.id),
+    );
+    if (unreadReceived.length === 0) return;
+
+    const ids: string[] = [];
+    for (const m of unreadReceived) {
+      ids.push(m.id);
+      fetch(`/api/messages/${m.id}/read`, { method: "PATCH" }).catch(
+        (err) => {
+          console.error("[mark read]", m.id, err);
+        },
+      );
+    }
+    setReadIds((prev) => {
+      const next = new Set(prev);
+      for (const id of ids) next.add(id);
+      return next;
+    });
+    onReadChange?.(ids);
+    // Refresh the server component so the canonical `read` flag on the
+    // message rows catches up to the optimistic local state. Debounced
+    // to once per burst of markings.
+    const t = window.setTimeout(() => router.refresh(), 800);
+    return () => window.clearTimeout(t);
+  }, [messages, currentUserId, readIds, onReadChange, router]);
+
   if (messages.length === 0) {
     return (
-      <div className="rounded-xl border border-white/10 bg-slate-800/50 p-12 text-center">
-        <MessageSquare className="mx-auto size-12 text-slate-600" />
-        <p className="mt-4 text-slate-400">هنوز پیامی دریافت نشده.</p>
-      </div>
+      <EmptyState
+        icon={MessageSquare}
+        title="هنوز پیامی نیست"
+        description="وقتی کسی پیام بفرستد، اینجا می‌بینی."
+      />
     );
   }
 
@@ -62,6 +107,7 @@ export function MessagesList({ messages, currentUserId, allUsers }: Props) {
           {filtered.map((m) => {
             const isMine = m.senderId === currentUserId;
             const other = allUsers.find((u) => u.id === (isMine ? m.receiverId : m.senderId));
+            const isRead = m.read || readIds.has(m.id);
             return (
               <div
                 key={m.id}
@@ -81,7 +127,7 @@ export function MessagesList({ messages, currentUserId, allUsers }: Props) {
                   </span>
                 </div>
                 <p className="text-sm text-slate-300">{m.body}</p>
-                {!isMine && !m.read ? (
+                {!isMine && !isRead ? (
                   <span className="mt-1 w-fit rounded-full bg-accent px-2 py-0.5 text-[0.6rem] font-bold text-white">
                     جدید
                   </span>

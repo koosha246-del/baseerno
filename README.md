@@ -37,7 +37,7 @@ src/
 - **RTL-first** — `<html lang="fa" dir="rtl">`, logical properties, Vazirmatn font
 - **Design system** — centralized tokens → Tailwind utilities, zero hardcoded values
 - **Auth** — JWT + httpOnly cookies + CSRF + rate limiting + RBAC (STUDENT/TEACHER/ADMIN)
-- **Database** — PostgreSQL via Prisma ORM (8 models, relations, indexes)
+- **Database** — PostgreSQL via Prisma ORM (10 models, relations, indexes)
 - **Payment** — Simulated gateway with HMAC-signed callbacks (Zarinpal-ready)
 - **Email** — Resend transactional emails (welcome, reset, payment, contact)
 - **Upload** — Cloudinary (avatars, course covers, lesson videos)
@@ -48,6 +48,16 @@ src/
 - **Monitoring** — Sentry-ready with server-side capture helper
 - **CI/CD** — GitHub Actions with Postgres service for tests
 - **Container** — Multi-stage Dockerfile + docker-compose
+
+### Dashboard (Role-aware: STUDENT / TEACHER / ADMIN)
+
+- **Global Search** — TopBar fuzzy search across courses, messages (and users for ADMIN) with debounced live results
+- **Notifications** — Bell-icon dropdown with unread badge, polling, mark-as-read, triggers on enrollment / payment / grade / message / certificate
+- **Reports** — Recharts visualisations (enrollments, revenue, role distribution, top courses) backed by DB aggregations
+- **Certificates** — Auto-issued on course completion; downloadable as real PDF via `@react-pdf/renderer`
+- **Messages** — Threaded inbox with mark-as-read on view, batch "mark all read" per sender
+- **Course Player** — `/courses/[id]/learn` page with sequential lessons, video player, free preview
+- **Lesson Management** — Admin/Teacher CRUD via `/api/admin/lessons` with reorder & publish controls
 
 ## 🚀 Quick Start
 
@@ -69,9 +79,9 @@ npm install
 cp .env.example .env
 ```
 
-Fill in the required values (DATABASE_URL, AUTH_SECRET). For local dev without external services, the app uses mock email and 503 for uploads — everything else works.
+Fill in the required values. **Required:** `DATABASE_URL`, `JWT_SECRET`. **Optional** (the app falls back to mocks if absent): `RESEND_API_KEY`, `CLOUDINARY_*`, `SENTRY_DSN`, `REDIS_URL`.
 
-Generate a strong AUTH_SECRET:
+Generate a strong `JWT_SECRET`:
 
 ```bash
 openssl rand -base64 48
@@ -170,7 +180,7 @@ pm2 save && pm2 startup
 
 Before going to production:
 
-- [ ] Generate a strong `AUTH_SECRET` (≥ 32 random bytes)
+- [ ] Generate a strong `JWT_SECRET` (≥ 32 random bytes)
 - [ ] Set `NODE_ENV=production`
 - [ ] Enable HTTPS / HSTS
 - [ ] Set up database backups
@@ -179,6 +189,33 @@ Before going to production:
 - [ ] Switch payment simulation to real Zarinpal credentials
 - [ ] Review `middleware.ts` rate limits
 - [ ] Set up CSP headers (currently using Next.js defaults)
+
+## 🧭 API Endpoints (Dashboard surface)
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| `GET` | `/api/search?q=` | any | TopBar global search |
+| `GET` | `/api/notifications` | any | List current user's notifications |
+| `POST` | `/api/notifications` | admin | Manually create a notification |
+| `PATCH` | `/api/notifications/[id]/read` | owner | Mark single notification read |
+| `PATCH` | `/api/notifications/read-all` | owner | Mark all notifications read |
+| `PATCH` | `/api/messages/[id]/read` | owner | Mark message read |
+| `GET` | `/api/courses/[id]/lessons` | any | List published lessons for a course |
+| `POST` | `/api/admin/lessons` | admin/teacher | Create lesson |
+| `PATCH` | `/api/admin/lessons/[id]` | admin/teacher | Update / reorder / publish lesson |
+| `GET` | `/api/certificates/[id]/data` | owner / admin | Certificate data for PDF render |
+| `GET` | `/api/certificates/[id]/pdf` | owner / admin | Download certificate PDF |
+
+## ✅ Manual Test Checklist (Dashboard)
+
+- [ ] TopBar search returns matching courses, messages (and users for ADMIN)
+- [ ] Reports page renders 4 charts with real aggregated data
+- [ ] Bell icon shows correct unread count; dropdown lists recent notifications
+- [ ] Notifications are created on: enrollment success, payment success, grade posted, message received, certificate issued
+- [ ] "Mark all as read" clears the badge
+- [ ] Certificate page downloads a valid PDF
+- [ ] Messages get marked read when opened
+- [ ] Lesson CRUD works for ADMIN/TEACHER; STUDENT sees only published, ordered lessons
 
 ## 📊 Tech Stack
 

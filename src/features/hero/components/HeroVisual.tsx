@@ -93,7 +93,7 @@ export function HeroVisual({ className }: { className?: string }) {
           </span>
           <div className="flex flex-col leading-tight">
             <span className="text-lg font-extrabold text-fg-primary">٪۹۶</span>
-            <span className="text-[0.7rem] text-fg-secondary">پیشرفت دانشجویان</span>
+            <span className="text-[0.7rem] text-fg-secondary">پیشرفت دانش‌آموزان</span>
           </div>
         </motion.div>
       </motion.div>
@@ -114,7 +114,7 @@ export function HeroVisual({ className }: { className?: string }) {
             <Trophy className="size-5" />
           </span>
           <div className="flex flex-col leading-tight">
-            <span className="text-sm font-extrabold text-fg-primary">برترین آکادمی</span>
+            <span className="text-sm font-extrabold text-fg-primary">یادگیری شاد</span>
             <span className="text-[0.7rem] text-fg-secondary">سال ۱۴۰۳</span>
           </div>
         </motion.div>
@@ -130,7 +130,7 @@ export function HeroVisual({ className }: { className?: string }) {
         <div className="glass rounded-2xl border border-white/60 p-4 shadow-lg">
           <Quote className="size-5 text-accent" />
           <p className="mt-2 text-xs font-medium leading-relaxed text-fg-primary">
-            «کلامت، هویست. آن را زیبا بیان کن.»
+            «هر روز کمی انگلیسی — پیشرفت یعنی همین.»
           </p>
         </div>
       </motion.div>

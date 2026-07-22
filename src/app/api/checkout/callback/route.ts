@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { repository } from "@/lib/db/repository";
 import { verifyPaymentSignature } from "@/lib/payment-signature";
+import { notifyEnrollment, notifyPaymentSuccess } from "@/lib/notifications";
 
 /**
  * Payment callback — simulates payment gateway confirmation.
@@ -57,6 +58,13 @@ export async function GET(req: Request) {
     const existing = await repository.findEnrollment(payment.userId, payment.courseId);
     if (!existing) {
       await repository.createEnrollment({ userId: payment.userId, courseId: payment.courseId });
+    }
+
+    // Send notifications
+    const course = await repository.findCourseById(payment.courseId);
+    if (course) {
+      await notifyEnrollment(payment.userId, course.title);
+      await notifyPaymentSuccess(payment.userId, course.title, payment.amount);
     }
 
     return NextResponse.redirect(new URL("/dashboard/courses?enrolled=true", req.url));

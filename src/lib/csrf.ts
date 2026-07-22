@@ -18,8 +18,6 @@ import { siteConfig } from "@/config/site";
  * 2. This origin check (catches edge cases like subdomain attacks).
  */
 
-const isDev = process.env.NODE_ENV !== "production";
-
 const ALLOWED_HOSTS = new Set<string>();
 
 function allowedOrigins(): Set<string> {
@@ -43,7 +41,8 @@ function allowedOrigins(): Set<string> {
  */
 export function isSameOriginRequest(req: Request): boolean {
   // Skip origin check in local development — same-site cookie is enough.
-  if (isDev) return true;
+  // Read NODE_ENV at call-time so tests can flip the flag per case.
+  if (process.env.NODE_ENV !== "production") return true;
 
   const origin = req.headers.get("origin");
   const referer = req.headers.get("referer");

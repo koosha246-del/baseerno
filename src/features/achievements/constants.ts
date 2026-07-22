@@ -12,7 +12,7 @@ export const achievementStats: AchievementStat[] = [
     iconKey: "users",
     value: 9000,
     suffix: "+",
-    label: "دانشجویان",
+    label: "دانش‌آموز",
     tint: "violet",
   },
   {
@@ -20,7 +20,7 @@ export const achievementStats: AchievementStat[] = [
     iconKey: "graduation-cap",
     value: 40,
     suffix: "+",
-    label: "دوره",
+    label: "درس انگلیسی",
     tint: "pink",
   },
   {
@@ -28,7 +28,7 @@ export const achievementStats: AchievementStat[] = [
     iconKey: "award",
     value: 91,
     suffix: "٪",
-    label: "تکمیل دوره‌ها",
+    label: "تمام‌کردن درس",
     tint: "orchid",
   },
   {
@@ -36,12 +36,12 @@ export const achievementStats: AchievementStat[] = [
     iconKey: "briefcase",
     value: 30,
     suffix: "+",
-    label: "سازمان همکار",
+    label: "مدرسه همکار",
     tint: "amber",
   },
 ];
 
-/** Compact gradient tint map for icon chips — uses design tokens. */
+/** Tint map — blue = focus, amber = achievement (color psychology). */
 export const tintClasses: Record<AchievementStat["tint"], string> = {
   violet: "bg-accent-soft text-accent",
   pink: "bg-brand-amber/15 text-brand-amber",

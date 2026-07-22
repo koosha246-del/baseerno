@@ -59,3 +59,50 @@ export function formatCompactFa(value: number): string {
 export function formatYearFa(year: number): string {
   return toPersianDigits(year);
 }
+
+const faDateFormatter = new Intl.DateTimeFormat("fa-IR", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+});
+
+const faDateShortFormatter = new Intl.DateTimeFormat("fa-IR", {
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+const faDateTimeFormatter = new Intl.DateTimeFormat("fa-IR", {
+  year: "numeric",
+  month: "short",
+  day: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
+export type FormatDateStyle = "long" | "short" | "datetime";
+
+/**
+ * Format a date with Persian calendar + digits.
+ *
+ * - `long`     → «۱۵ آذر ۱۴۰۳»
+ * - `short`    → «۱۴۰۳/۰۹/۱۵»
+ * - `datetime` → «۱۵ آذر ۱۴۰۳، ۱۴:۳۰»
+ */
+export function formatDate(
+  date: string | Date | number,
+  style: FormatDateStyle = "short",
+): string {
+  const d = date instanceof Date ? date : new Date(date);
+  if (Number.isNaN(d.getTime())) return "—";
+
+  switch (style) {
+    case "long":
+      return faDateFormatter.format(d);
+    case "datetime":
+      return faDateTimeFormatter.format(d);
+    case "short":
+    default:
+      return faDateShortFormatter.format(d);
+  }
+}

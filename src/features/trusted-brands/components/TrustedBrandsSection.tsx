@@ -15,9 +15,9 @@ export function TrustedBrandsSection() {
     <section id="brands" className="border-y border-app-border-subtle bg-surface py-12 lg:py-16">
       <Container width="page">
         <ScrollReveal className="mb-8 flex flex-col items-center gap-2 text-center">
-          <span className="text-sm font-bold text-accent">اعتماد سازمان‌ها</span>
+          <span className="text-sm font-bold text-accent">مدارس و مراکز همکار</span>
           <h2 className="font-display text-xl font-bold text-fg-secondary sm:text-2xl">
-            بیش از ۵۰ سازمان و برند پیشرو به ما اعتماد کرده‌اند
+            مدرسه‌ها و آموزشگاه‌هایی که به ما اعتماد کرده‌اند
           </h2>
         </ScrollReveal>
       </Container>

@@ -16,13 +16,13 @@ export function CampusSection() {
   return (
     <section id="campus" className="section-padding bg-background">
       <SectionHeading
-        eyebrow="محیط آکادمی"
+        eyebrow="فضای یادگیری"
         title={
           <>
-            فضایی الهام‌بخش برای <GradientText>یادگیری</GradientText> و رشد
+            جایی آرام برای <GradientText>یاد گرفتن</GradientText>
           </>
         }
-        description="محیط حرفه‌ای بصیر نو با امکانات پیشرفته، فضاهای تعاملی و استودیوهای مجهز، بهترین بستر را برای رشد مهارت‌های شما فراهم می‌کند."
+        description="اتاق تمرین، کتاب و کمک معلم — همه برای اینکه دانش‌آموز راحت انگلیسی یاد بگیرد."
       />
 
       <Container width="wide" className="mt-12">

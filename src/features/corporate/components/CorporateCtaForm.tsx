@@ -41,13 +41,13 @@ export function CorporateCtaForm() {
       <div className="flex flex-col items-center gap-4 rounded-2xl border border-green-200 bg-green-50 p-10 text-center">
         <CheckCircle2 className="size-12 text-status-success" />
         <h3 className="font-display text-xl font-bold text-fg-primary">
-          درخواست شما ثبت شد
+          پیام شما رسید
         </h3>
         <p className="max-w-sm text-sm text-fg-secondary">
-          کارشناسان ما در اسرع وقت با شما تماس خواهند گرفت.
+          به‌زودی با شما تماس می‌گیریم.
         </p>
         <Button variant="outline" onClick={() => reset()}>
-          ثبت درخواست جدید
+          پیام جدید
         </Button>
       </div>
     );
@@ -71,7 +71,7 @@ export function CorporateCtaForm() {
           <div>
             <input
               {...register("name")}
-              placeholder="نام و نام‌خانوادگی *"
+              placeholder="نام و نام خانوادگی *"
               className={inputBase}
               aria-invalid={!!errors.name}
             />
@@ -82,7 +82,7 @@ export function CorporateCtaForm() {
           <div>
             <input
               {...register("organization")}
-              placeholder="نام سازمان *"
+              placeholder="نام مدرسه یا آموزشگاه *"
               className={inputBase}
               aria-invalid={!!errors.organization}
             />
@@ -113,7 +113,7 @@ export function CorporateCtaForm() {
           <div>
             <input
               {...register("role")}
-              placeholder="سمت سازمانی"
+              placeholder="نقش شما (معلم / والد / …)"
               className={inputBase}
             />
           </div>
@@ -124,12 +124,12 @@ export function CorporateCtaForm() {
           <select
             {...register("employeesCount")}
             className={inputBase}
-            aria-label="تعداد کارکنان سازمان"
+            aria-label="تعداد دانش‌آموزان گروه"
           >
-            <option value="1-50">۱ تا ۵۰ نفر</option>
-            <option value="51-200">۵۱ تا ۲۰۰ نفر</option>
-            <option value="201-500">۲۰۱ تا ۵۰۰ نفر</option>
-            <option value="500+">بیش از ۵۰۰ نفر</option>
+            <option value="1-50">۱ تا ۵۰ دانش‌آموز</option>
+            <option value="51-200">۵۱ تا ۲۰۰ دانش‌آموز</option>
+            <option value="201-500">۲۰۱ تا ۵۰۰ دانش‌آموز</option>
+            <option value="500+">بیش از ۵۰۰ دانش‌آموز</option>
           </select>
         </div>
 
@@ -137,7 +137,7 @@ export function CorporateCtaForm() {
         <textarea
           {...register("message")}
           rows={3}
-          placeholder="توضیحات اضافی (اختیاری)"
+          placeholder="توضیح کوتاه (اختیاری)"
           className={inputBase + " resize-none"}
           aria-invalid={!!errors.message}
         />
@@ -157,7 +157,7 @@ export function CorporateCtaForm() {
           ) : (
             <>
               <Send className="size-4" />
-              ارسال درخواست مشاوره
+              ارسال درخواست
             </>
           )}
         </Button>

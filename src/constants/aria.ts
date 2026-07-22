@@ -14,11 +14,11 @@ export const aria = {
   /** Desktop navigation region label. */
   desktopNav: "ناوبری اصلی",
   /** Course registration button (prefixed per-course). */
-  courseRegister: "ثبت‌نام در دوره",
+  courseRegister: "شروع درس",
   /** Expand FAQ item. */
   faqExpand: "باز کردن پاسخ",
   /** Submit consultation form. */
-  submitConsultation: "ارسال درخواست مشاوره",
+  submitConsultation: "ارسال درخواست",
   /** Newsletter subscription. */
-  newsletterSubscribe: "اشتراک در خبرنامه",
+  newsletterSubscribe: "عضویت در خبرها",
 } as const;

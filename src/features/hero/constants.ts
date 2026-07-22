@@ -1,39 +1,39 @@
 import type { HeroData, CarouselSlide } from "./types";
 
 /**
- * Hero feature data — Persian copy for the hero section.
- * Title uses a highlighted gradient fragment for emphasis.
+ * Hero copy — simple Persian for school students.
+ * Color psychology on slides: green = growth, blue = calm focus, teal = fresh energy.
  */
 export const heroData: HeroData = {
-  badge: "آکادمی فن بیان و ارتباط",
-  titleLead: "صحبت کردن",
-  titleHighlight: "یک مهارت است",
-  titleTail: "که می‌توان یاد گرفت",
+  badge: "یادگیری انگلیسی، آسان و شاد",
+  titleLead: "انگلیسی را",
+  titleHighlight: "ساده و قدم‌به‌قدم",
+  titleTail: "یاد بگیر",
   description:
-    "خیلی‌ها فکر می‌کنند فن بیان یک استعداد ذاتی است. در آکادمی بصیر نو به شما نشان می‌دهیم که چطور با تمرین درست و بازخورد مستمر، صدای خودت را پیدا کنی و در هر جمعی با اطمینان صحبت کنی.",
+    "اینجا برای دانش‌آموزان است. درس‌های کوتاه، تمرین‌های آسان و مسیر روشن — تا بدون استرس انگلیسی را یاد بگیری.",
   primaryCta: {
-    label: "دوره‌ها را ببین",
+    label: "درس‌ها را ببین",
     href: "#courses",
   },
   secondaryCta: {
-    label: "با ما صحبت کن",
+    label: "چطور کار می‌کند؟",
     href: "#corporate",
   },
   stats: [
-    { value: "+۹٬۰۰۰", label: "دانشجو" },
-    { value: "۴۰+", label: "دوره" },
-    { value: "۱۴۰۳", label: "تأسیس" },
+    { value: "+۹٬۰۰۰", label: "دانش‌آموز" },
+    { value: "۴۰+", label: "درس" },
+    { value: "۱۴۰۳", label: "شروع" },
   ],
   features: [
-    { icon: "Mic", title: "تمرین عملی" },
-    { icon: "Award", title: "گواهی پایان دوره" },
-    { icon: "Users", title: "بازخورد اساتید" },
+    { icon: "Mic", title: "تمرین حرف زدن" },
+    { icon: "Award", title: "گواهی پایان" },
+    { icon: "Users", title: "کمک معلم" },
   ],
 };
 
 /**
- * Background carousel slides — local images for fast, offline-first delivery.
- * Per-slide theme switching keeps the brand aligned with each slide's mood.
+ * Carousel themes follow color psychology for kids' learning:
+ * green → growth & progress · blue → calm focus · teal → fresh energy
  */
 export const carouselSlides: CarouselSlide[] = [
   {
@@ -49,7 +49,7 @@ export const carouselSlides: CarouselSlide[] = [
       scrimColor: "rgba(6, 95, 70, 0.45)",
     },
     href: "#courses",
-    label: "رشد و پیشرفت",
+    label: "رشد هر روزه (سبز = پیشرفت)",
     durationMs: 20_000,
   },
   {
@@ -64,8 +64,8 @@ export const carouselSlides: CarouselSlide[] = [
       brandGradient: "linear-gradient(90deg, #1E3A5F 0%, #1B4FD4 50%, #3B82F6 100%)",
       scrimColor: "rgba(30, 58, 95, 0.45)",
     },
-    href: "#corporate",
-    label: "آموزش جهانی",
+    href: "#courses",
+    label: "آرامش برای درس (آبی = تمرکز)",
     durationMs: 20_000,
   },
   {
@@ -81,7 +81,26 @@ export const carouselSlides: CarouselSlide[] = [
       scrimColor: "rgba(19, 78, 74, 0.45)",
     },
     href: "#courses",
-    label: "کلاسیک آکادمیک",
+    label: "شروع تازه (فیروزه‌ای = انرژی)",
+    durationMs: 20_000,
+  },
+  {
+    // Kid-friendly slide — leads the rotation so children see
+    // candy colors first. Color psychology: sky=trust, coral=warmth,
+    // mint=growth, sunny=joy. scrim is lighter so the photo still reads.
+    id: "kid-candy",
+    src: "/carousel/slide-1.jpg",
+    placeholderColor: "#38BDF8",
+    theme: {
+      accent: "#FB7185",
+      accentHover: "#F43F5E",
+      accentSoft: "#FFE4E6",
+      textGradient: "linear-gradient(120deg, #0EA5E9 0%, #F43F5E 40%, #F59E0B 70%, #FBBF24 100%)",
+      brandGradient: "linear-gradient(90deg, #38BDF8 0%, #A78BFA 35%, #FB7185 65%, #FBBF24 100%)",
+      scrimColor: "rgba(56, 189, 248, 0.25)",
+    },
+    href: "#courses",
+    label: "دنیای کودکان",
     durationMs: 20_000,
   },
 ];

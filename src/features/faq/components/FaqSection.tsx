@@ -19,13 +19,13 @@ export function FaqSection() {
     <section id="faq" className="section-padding bg-surface-muted">
       <Container width="narrow">
         <SectionHeading
-          eyebrow="سوالات متداول"
+          eyebrow="سوالات"
           title={
             <>
-              پاسخ سوالات رایج درباره <GradientText>بصیر نو</GradientText>
+              سوال داری؟ <GradientText>اینجا جوابش هست</GradientText>
             </>
           }
-          description="پاسخ بیشترین سوالاتی که دانشجویان و سازمان‌ها از ما می‌پرسند اینجاست."
+          description="پاسخ‌های کوتاه برای دانش‌آموزان و والدین."
         />
 
         <ScrollReveal className="mt-10">

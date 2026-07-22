@@ -11,6 +11,7 @@ import {
   DollarSign,
   GraduationCap,
   ClipboardList,
+  Bell,
   type LucideIcon,
 } from "lucide-react";
 import type { Role } from "@/lib/db/types";
@@ -129,6 +130,12 @@ export const sidebarItems: SidebarItem[] = [
     icon: MessageSquare,
     href: "/dashboard/messages",
     roles: ["STUDENT", "TEACHER"],
+  },
+  {
+    id: "notifications",
+    label: "اعلامیه‌ها",
+    icon: Bell,
+    href: "/dashboard/notifications",
   },
   {
     id: "settings",

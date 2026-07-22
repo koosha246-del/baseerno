@@ -4,6 +4,8 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { repository } from "@/lib/db/repository";
 import { buildCallbackUrl } from "@/lib/payment-signature";
 import { isSameOriginRequest, csrfRejectedResponse } from "@/lib/csrf";
+import { withRateLimit } from "@/lib/api-middleware";
+import { RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
 
 const schema = z.object({
   courseId: z.string().min(1),
@@ -13,7 +15,7 @@ const schema = z.object({
   paymentMethod: z.enum(["zarinpal", "saman", "wallet"]).default("zarinpal"),
 });
 
-export async function POST(req: Request) {
+async function checkoutHandler(req: Request) {
   // CSRF: enrollment creates a payment record using the logged-in session.
   if (!isSameOriginRequest(req)) {
     return csrfRejectedResponse();
@@ -92,3 +94,11 @@ export async function POST(req: Request) {
     simulated: true,
   });
 }
+
+/**
+ * SENSITIVE: max=3, burst=1 per 2 minutes.
+ * (Path is `/api/checkout` — no separate `/api/payments/checkout` in this project.)
+ */
+export const POST = withRateLimit(checkoutHandler, RATE_LIMIT_PRESETS.SENSITIVE, {
+  keyPrefix: "payments:checkout",
+});

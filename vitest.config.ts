@@ -10,8 +10,11 @@ export default defineConfig({
     },
   },
   test: {
-    environment: "node",
+    // jsdom for React component tests; unit tests that don't touch
+    // the DOM still run fine in this environment.
+    environment: "jsdom",
     globals: true,
     include: ["src/**/*.test.{ts,tsx}"],
+    setupFiles: ["./vitest.setup.ts"],
   },
 });
