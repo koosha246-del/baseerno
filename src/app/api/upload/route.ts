@@ -2,11 +2,12 @@ import { NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
 import { getCurrentUser } from "@/lib/auth/session";
 import { isSameOriginRequest, csrfRejectedResponse } from "@/lib/csrf";
+import { env } from "@/lib/env";
 
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || "",
-  api_key: process.env.CLOUDINARY_API_KEY || "",
-  api_secret: process.env.CLOUDINARY_API_SECRET || "",
+  cloud_name: env.CLOUDINARY_CLOUD_NAME || "",
+  api_key: env.CLOUDINARY_API_KEY || "",
+  api_secret: env.CLOUDINARY_API_SECRET || "",
 });
 
 export async function POST(req: Request) {
@@ -39,7 +40,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "فرمت فایل مجاز نیست." }, { status: 400 });
   }
 
-  if (!process.env.CLOUDINARY_CLOUD_NAME) {
+  if (!env.CLOUDINARY_CLOUD_NAME) {
     return NextResponse.json(
       { error: "سرویس آپلود پیکربندی نشده است." },
       { status: 503 }

@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/session";
 import { repository } from "@/lib/db/repository";
 import { isSameOriginRequest, csrfRejectedResponse } from "@/lib/csrf";
 import { notifyNewMessage } from "@/lib/notifications";
+import { CACHE_TAGS } from "@/lib/cache-tags";
 
 const schema = z.object({
   receiverId: z.string().min(1, "گیرنده را مشخص کنید."),
@@ -47,6 +49,10 @@ export async function POST(req: Request) {
 
   // Fire-and-forget; never let a notify failure break the send.
   await notifyNewMessage(parsed.data.receiverId, user.name);
+
+  revalidateTag(CACHE_TAGS.messages);
+  revalidateTag(CACHE_TAGS.notifications);
+  revalidateTag(CACHE_TAGS.user(parsed.data.receiverId));
 
   return NextResponse.json({ message }, { status: 201 });
 }

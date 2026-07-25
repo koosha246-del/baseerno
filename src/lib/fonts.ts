@@ -1,23 +1,56 @@
-import { Vazirmatn } from "next/font/google";
+import localFont from "next/font/local";
 
 /**
- * Vazirmatn — loaded via next/font/google (Vazirmatn is on Google Fonts).
+ * Vazirmatn — Persian typeface from the Vazirmatn project (rastikerdar/vazirmatn).
  *
- * This avoids shipping local woff2 files while still providing automatic
- * subsetting, font-display swap, zero layout shift, and a CSS variable
- * (--font-vazirmatn) consumed by the Tailwind `sans` / `display` families.
+ * Why local and not `next/font/google`?
+ *   The build environment cannot reach Google Fonts at build time (sandboxed
+ *   network). Loading the font from Google would fail the production build
+ *   with `Failed to download Vazirmatn from Google Fonts`. Serving the woff2
+ *   files from `public/fonts/vazirmatn/` (already committed) and going through
+ *   `next/font/local` gives us the same Next.js optimizations (preload,
+ *   `font-display: swap`, zero layout shift via `adjustFontFallback`, CSS
+ *   variable consumed by Tailwind) without any external fetch.
  *
+ * Six weights (400/500/600/700/800/900) cover the design system's use cases.
  * Fallback chain matches the brief: IranSans → system-ui → sans-serif.
- *
- * Weights limited to those used by the design system to keep payload small.
  */
-export const vazirmatn = Vazirmatn({
-  subsets: ["arabic", "latin"],
-  weight: ["400", "500", "600", "700", "800", "900"],
-  style: ["normal"],
+export const vazirmatn = localFont({
+  src: [
+    {
+      path: "../../public/fonts/vazirmatn/Vazirmatn-Regular.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/vazirmatn/Vazirmatn-Medium.woff2",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/vazirmatn/Vazirmatn-SemiBold.woff2",
+      weight: "600",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/vazirmatn/Vazirmatn-Bold.woff2",
+      weight: "700",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/vazirmatn/Vazirmatn-ExtraBold.woff2",
+      weight: "800",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/vazirmatn/Vazirmatn-Black.woff2",
+      weight: "900",
+      style: "normal",
+    },
+  ],
   display: "swap",
-  adjustFontFallback: true,
   preload: true,
   variable: "--font-vazirmatn",
+  adjustFontFallback: "Arial",
   fallback: ["IranSans", "system-ui", "-apple-system", "Segoe UI", "sans-serif"],
 });

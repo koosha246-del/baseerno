@@ -14,7 +14,7 @@ export function CourseForm({ onCreated }: Props) {
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [level, setLevel] = useState("مقدماتی");
-  const [category, setCategory] = useState("speaking");
+  const [category, setCategory] = useState("grammar");
   const [durationHours, setDurationHours] = useState("");
   const [lessons, setLessons] = useState("");
   const [glyph, setGlyph] = useState("📚");
@@ -83,7 +83,7 @@ export function CourseForm({ onCreated }: Props) {
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="مثال: مبانی فن بیان"
+            placeholder="مثال: گرامر پایه A1"
             className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-accent focus:outline-none"
           />
         </div>
@@ -137,10 +137,12 @@ export function CourseForm({ onCreated }: Props) {
             onChange={(e) => setCategory(e.target.value)}
             className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white focus:border-accent focus:outline-none"
           >
-            <option value="speaking">فن بیان</option>
-            <option value="presentation">ارائه</option>
-            <option value="voice">صدا</option>
-            <option value="communication">ارتباطات</option>
+            <option value="grammar">گرامر</option>
+            <option value="vocabulary">واژگان</option>
+            <option value="listening">شنیدن</option>
+            <option value="reading">خواندن</option>
+            <option value="writing">نوشتن</option>
+            <option value="ielts">آیلتس</option>
           </select>
         </div>
         <div>

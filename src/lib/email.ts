@@ -5,9 +5,10 @@
 
 import { Resend } from "resend";
 import { siteConfig } from "@/config/site";
+import { env } from "@/lib/env";
 
 function getClient(): Resend | null {
-  const key = process.env.RESEND_API_KEY;
+  const key = env.RESEND_API_KEY;
   if (!key) return null;
   return new Resend(key);
 }

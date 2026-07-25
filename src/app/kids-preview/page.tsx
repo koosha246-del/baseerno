@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Sparkles, Heart, Sun, BookOpen, Star } from "lucide-react";
-import { gradients } from "@/lib/design-tokens";
 
 export const metadata: Metadata = {
   title: "تم کودکانه — پیش‌نمایش",

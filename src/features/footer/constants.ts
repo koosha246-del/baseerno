@@ -6,11 +6,11 @@ export const footerLinkGroups: FooterLinkGroup[] = [
     id: "courses",
     title: "درس‌ها",
     links: [
-      { label: "انگلیسی از صفر", href: "#courses" },
-      { label: "گرامر آسان", href: "#courses" },
-      { label: "مکالمه", href: "#courses" },
-      { label: "شنیدن و تلفظ", href: "#courses" },
-      { label: "داستان‌های انگلیسی", href: "#courses" },
+      { label: "همه دوره‌ها", href: "/courses" },
+      { label: "انگلیسی از صفر", href: "/courses" },
+      { label: "گرامر آسان", href: "/courses" },
+      { label: "مکالمه", href: "/courses" },
+      { label: "آمادگی آیلتس", href: "/courses" },
     ],
   },
   {
@@ -18,9 +18,9 @@ export const footerLinkGroups: FooterLinkGroup[] = [
     title: "درباره ما",
     links: [
       { label: "معرفی بصیر نو", href: "/about" },
-      { label: "معلم‌ها", href: "/about" },
+      { label: "دوره‌ها", href: "/courses" },
       { label: "نکته‌های یادگیری", href: "#" },
-      { label: "نظر دانش‌آموزان", href: "#achievements" },
+      { label: "نظر دانش‌آموزان", href: "/about" },
       { label: "تماس با ما", href: "/contact" },
     ],
   },
@@ -28,11 +28,11 @@ export const footerLinkGroups: FooterLinkGroup[] = [
     id: "support",
     title: "کمک و پشتیبانی",
     links: [
-      { label: "سوالات", href: "#faq" },
+      { label: "سوالات", href: "/contact" },
       { label: "قوانین", href: "/terms" },
       { label: "حریم خصوصی", href: "/privacy" },
       { label: "بازگشت وجه", href: "/terms" },
-      { label: "کلاس گروهی", href: "#corporate" },
+      { label: "تماس با ما", href: "/contact" },
     ],
   },
 ];

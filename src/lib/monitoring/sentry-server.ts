@@ -30,7 +30,7 @@ async function getSentry(): Promise<SentryLike | null> {
   if (loadAttempted) return cached;
   loadAttempted = true;
 
-  const dsn = process.env.SENTRY_DSN;
+  const dsn = process.env.SENTRY_DSN; // read lazily — avoid importing env in edge edge-cases
   if (!dsn) return null;
 
   try {

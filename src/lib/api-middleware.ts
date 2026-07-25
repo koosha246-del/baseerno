@@ -14,12 +14,12 @@
  */
 
 import {
-  checkRateLimit,
   getClientIdentifier,
   tooManyRequestsResponse,
   type RateLimitConfig,
   type RateLimitResult,
 } from "@/lib/rate-limit";
+import { checkRateLimitAsync } from "@/lib/rate-limit-async";
 
 // ─── Types ─────────────────────────────────────────────────────────
 
@@ -99,8 +99,9 @@ export function rateLimitedResponse(
 /**
  * Wrap an API route handler with sliding-window (+ burst) rate limiting.
  *
- * On success, rate-limit headers are merged into the handler response.
- * On block, returns 429 with `Retry-After` and rate-limit headers.
+ * Uses Redis when `REDIS_URL` is set (multi-instance production), otherwise
+ * the in-memory limiter. On success, rate-limit headers are merged into the
+ * handler response. On block, returns 429 with `Retry-After`.
  */
 export function withRateLimit(
   handler: ApiRouteHandler,
@@ -110,7 +111,7 @@ export function withRateLimit(
   return async (req: Request, context?: unknown) => {
     const clientId = getClientIdentifier(req);
     const key = options?.keyPrefix ? `${options.keyPrefix}:${clientId}` : clientId;
-    const result = checkRateLimit(key, preset);
+    const result = await checkRateLimitAsync(key, preset);
 
     if (!result.success) {
       return rateLimitedResponse(result, preset);

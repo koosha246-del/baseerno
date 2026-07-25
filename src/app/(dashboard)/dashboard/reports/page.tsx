@@ -2,11 +2,8 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { toPersianDigits } from "@/lib/format";
 import { FileText, BarChart3, Users, DollarSign } from "lucide-react";
 import { StatCard } from "@/features/dashboard/components/StatCard";
-import { EnrollmentChart } from "@/features/reports/components/EnrollmentChart";
-import { RevenueChart } from "@/features/reports/components/RevenueChart";
-import { RoleDistribution } from "@/features/reports/components/RoleDistribution";
-import { TopCoursesChart } from "@/features/reports/components/TopCoursesChart";
 import { getAdminStatsBundle } from "@/lib/db/queries";
+import { ReportsCharts } from "@/features/reports/components/ReportsCharts";
 
 /**
  * Reports page (admin-only).
@@ -59,7 +56,7 @@ export default async function ReportsPage() {
         <p className="mt-1 text-sm text-slate-400">
           آمار و گزارش‌های کلی پلتفرم
           <span className="ms-2 text-[0.65rem] text-slate-500">
-            (cache: 60s)
+            (cache: 120s)
           </span>
         </p>
       </div>
@@ -118,27 +115,12 @@ export default async function ReportsPage() {
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="rounded-xl border border-white/10 bg-slate-800/50 p-6">
-          <h2 className="mb-4 font-bold text-white">ثبت‌نام‌ها در طول زمان</h2>
-          <EnrollmentChart data={enrollmentsByMonth} />
-        </div>
-
-        <div className="rounded-xl border border-white/10 bg-slate-800/50 p-6">
-          <h2 className="mb-4 font-bold text-white">درآمد ماهانه</h2>
-          <RevenueChart data={revenueByMonth} />
-        </div>
-
-        <div className="rounded-xl border border-white/10 bg-slate-800/50 p-6">
-          <h2 className="mb-4 font-bold text-white">توزیع کاربران</h2>
-          <RoleDistribution data={roleData} />
-        </div>
-
-        <div className="rounded-xl border border-white/10 bg-slate-800/50 p-6">
-          <h2 className="mb-4 font-bold text-white">محبوب‌ترین دوره‌ها</h2>
-          <TopCoursesChart data={topCourses} />
-        </div>
-      </div>
+      <ReportsCharts
+        enrollmentsByMonth={enrollmentsByMonth}
+        revenueByMonth={revenueByMonth}
+        roleData={roleData}
+        topCourses={topCourses}
+      />
     </div>
   );
 }

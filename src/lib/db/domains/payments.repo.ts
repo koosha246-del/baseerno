@@ -66,12 +66,19 @@ export async function findPayment(id: string) {
   return prisma.payment.findUnique({ where: { id } });
 }
 
+export async function findPaymentByAuthority(authority: string) {
+  return prisma.payment.findFirst({
+    where: { gatewayAuthority: authority },
+  });
+}
+
 export async function createPayment(input: {
   userId: string;
   courseId: string;
   amount: number;
   status: PaymentStatus;
   method: string;
+  gatewayAuthority?: string | null;
 }) {
   return prisma.payment.create({
     data: {
@@ -80,14 +87,38 @@ export async function createPayment(input: {
       amount: input.amount,
       status: input.status,
       method: input.method,
+      gatewayAuthority: input.gatewayAuthority ?? null,
     },
   });
 }
 
-export async function markPaymentPaid(id: string) {
+export async function setPaymentAuthority(id: string, authority: string) {
   return prisma.payment.update({
     where: { id },
-    data: { status: "PAID", paidAt: new Date() },
+    data: { gatewayAuthority: authority },
+  });
+}
+
+export async function markPaymentPaid(
+  id: string,
+  opts?: { gatewayRefId?: string | number | null },
+) {
+  return prisma.payment.update({
+    where: { id },
+    data: {
+      status: "PAID",
+      paidAt: new Date(),
+      ...(opts?.gatewayRefId != null
+        ? { gatewayRefId: String(opts.gatewayRefId) }
+        : {}),
+    },
+  });
+}
+
+export async function markPaymentFailed(id: string) {
+  return prisma.payment.update({
+    where: { id },
+    data: { status: "FAILED" },
   });
 }
 

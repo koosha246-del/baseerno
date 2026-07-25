@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/session";
 import { repository } from "@/lib/db/repository";
 import { isSameOriginRequest, csrfRejectedResponse } from "@/lib/csrf";
 import { notifyGradePosted } from "@/lib/notifications";
+import { CACHE_TAGS } from "@/lib/cache-tags";
 
 const schema = z.object({
   userId: z.string().min(1),
@@ -59,6 +61,12 @@ export async function POST(req: Request) {
   });
 
   await notifyGradePosted(userId, course.title, score);
+
+  revalidateTag(CACHE_TAGS.grades);
+  revalidateTag(CACHE_TAGS.enrollments);
+  revalidateTag(CACHE_TAGS.course(courseId));
+  revalidateTag(CACHE_TAGS.user(userId));
+  revalidateTag(CACHE_TAGS.reports);
 
   return NextResponse.json({ grade }, { status: 201 });
 }

@@ -2,7 +2,6 @@
  * Enrollments domain — enrollments + grades CRUD + aggregation queries.
  */
 import { prisma } from "../prisma-client";
-import type { PaymentStatus } from "@/generated/prisma/enums";
 
 /* ─── Enrollments ──────────────────────────────────────────────── */
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, type ChangeEvent, type DragEvent } from "react";
+import Image from "next/image";
 import { Upload, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -104,10 +105,18 @@ export function FileUpload({
       {label && <label className="text-xs font-medium text-slate-400">{label}</label>}
 
       {preview ? (
-        <div className="relative">
-          <img
+        <div className="relative h-32 w-32">
+          <Image
             src={preview}
             alt="پیش‌نمایش"
+            width={128}
+            height={128}
+            // Data-URL previews from `FileReader.readAsDataURL` can't be
+            // optimized by the Next.js Image Optimization API (it's not a
+            // remote URL it can fetch), so we opt out here. The image is
+            // short-lived (replaced as soon as the upload completes), so
+            // there's no LCP cost to consider.
+            unoptimized
             className="h-32 w-32 rounded-xl object-cover"
           />
           <button

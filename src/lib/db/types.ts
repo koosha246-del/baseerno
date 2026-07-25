@@ -7,7 +7,7 @@
 
 export type { Role, EnrollmentStatus, PaymentStatus } from "@/generated/prisma/enums";
 
-/** Public-safe user shape (no passwordHash). */
+/** Public-safe user shape (no passwordHash, no deletedAt). */
 export interface SafeUser {
   id: string;
   name: string;
@@ -17,6 +17,7 @@ export interface SafeUser {
   phone: string | null;
   bio: string | null;
   createdAt: string;
+  updatedAt: string;
 }
 
 

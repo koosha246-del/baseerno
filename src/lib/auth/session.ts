@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { AUTH_COOKIE, signToken, verifyToken, type AuthToken } from "./jwt";
 import { repository } from "@/lib/db/repository";
 import type { SafeUser } from "@/lib/db/types";
+import { env } from "@/lib/env";
 
 /**
  * Session helpers — read/set/clear the httpOnly auth cookie.
@@ -14,7 +15,7 @@ export async function setSession(user: Pick<SafeUser, "id" | "role" | "email">) 
   const store = await cookies();
   store.set(AUTH_COOKIE, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: env.isProduction,
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 7, // 7 days

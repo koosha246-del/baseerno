@@ -23,6 +23,7 @@
  */
 
 import { checkRateLimit as inMemoryCheck, type RateLimitConfig, type RateLimitResult } from "./rate-limit";
+import { env } from "@/lib/env";
 
 // ─── Module-level state ────────────────────────────────────────────
 
@@ -47,7 +48,7 @@ const HEALTH_CHECK_INTERVAL = 30_000; // 30 seconds
 // ─── Client management ─────────────────────────────────────────────
 
 async function getRedisClient(): Promise<RedisClientLike | null> {
-  const redisUrl = process.env.REDIS_URL;
+  const redisUrl = env.REDIS_URL;
   if (!redisUrl) return null;
 
   if (loadAttempted && cachedClient) {
@@ -72,8 +73,9 @@ async function getRedisClient(): Promise<RedisClientLike | null> {
 
   try {
     // Dynamic import so `redis` is only loaded when REDIS_URL is set.
-    // @ts-expect-error — `redis` package is optional; import is guarded by try/catch
-    // and only reached when REDIS_URL is configured. Install with: npm install redis
+    // `redis` is an optional peer dependency; the import is guarded by
+    // try/catch and only reached when REDIS_URL is configured.
+    // Install with: npm install redis
     const redisModule = await import("redis").catch(() => null);
     if (!redisModule) return null;
     const { createClient } = redisModule as { createClient: unknown };

@@ -28,8 +28,10 @@ export default async function DashboardPage() {
   let recentActivity: React.ComponentProps<typeof DashboardOverview>["recentActivity"] = [];
 
   if (role === "STUDENT") {
-    // 5 queries, all in parallel.
-    const [enrollments, grades, certs, courses, statusCounts, avgScore] =
+    // 6 queries, all in parallel. `grades` is fetched to drive the
+    // "averageScore" stat but isn't read directly here — kept in the
+    // destructuring to keep the await order stable.
+    const [enrollments, _grades, certs, courses, statusCounts, avgScore] =
       await Promise.all([
         repository.listEnrollments(user.id, { take: 5 }),
         repository.listGrades(user.id),

@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/session";
 import { repository } from "@/lib/db/repository";
-import { isSameOriginRequest, csrfRejectedResponse } from "@/lib/csrf";
+import { isSameOriginRequest } from "@/lib/csrf";
 import { notifyCertificateIssued } from "@/lib/notifications";
+import { CACHE_TAGS } from "@/lib/cache-tags";
 
 const issueSchema = z.object({
   userId: z.string().min(1),
@@ -49,6 +51,10 @@ export async function POST(req: Request) {
   if (course) {
     await notifyCertificateIssued(parsed.data.userId, course.title);
   }
+
+  revalidateTag(CACHE_TAGS.certificates);
+  revalidateTag(CACHE_TAGS.user(parsed.data.userId));
+  revalidateTag(CACHE_TAGS.notifications);
 
   return NextResponse.json({ certificate }, { status: 201 });
 }

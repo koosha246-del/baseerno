@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Play, Pause, Volume2, VolumeX, Maximize, Settings } from "lucide-react";
+import { Play, Pause, Volume2, VolumeX, Maximize } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface VideoPlayerProps {

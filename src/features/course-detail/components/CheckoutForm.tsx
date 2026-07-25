@@ -70,12 +70,20 @@ export function CheckoutForm({ course }: CheckoutFormProps) {
         if (!res.ok || result.error) {
           throw new Error(result.error ?? "خطایی در فرآیند پرداخت رخ داد.");
         }
-        return result as { simulated?: boolean; callbackUrl?: string; free?: boolean };
+        return result as {
+          simulated?: boolean;
+          callbackUrl?: string;
+          redirectUrl?: string;
+          free?: boolean;
+          gateway?: string;
+        };
       })
       .then((result) => {
-        if (result.simulated && result.callbackUrl) {
-          // Simulate gateway redirect to the signed callback URL.
-          window.location.href = result.callbackUrl;
+        // Paid flow: redirect to Zarinpal (or simulated callback URL).
+        const target = result.redirectUrl || result.callbackUrl;
+        if (target && !result.free) {
+          window.location.href = target;
+          return;
         }
         // Free enrollment: success handled by isSubmitSuccessful.
       })

@@ -38,6 +38,9 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     fetchNotifications();
+    // fetchNotifications is intentionally redefined on every render (it
+    // closes over the current `filter`), so depending on it would loop.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter]);
 
   async function markAsRead(id: string) {

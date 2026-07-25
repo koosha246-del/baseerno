@@ -7,6 +7,7 @@ import { siteConfig } from "@/config/site";
 import { isSameOriginRequest, csrfRejectedResponse } from "@/lib/csrf";
 import { withRateLimit } from "@/lib/api-middleware";
 import { RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
+import { env } from "@/lib/env";
 
 const schema = z.object({
   email: z.string().email("ایمیل معتبر نیست."),
@@ -50,7 +51,7 @@ async function forgotPasswordHandler(req: Request) {
 
   // Only expose the raw token in non-production so developers can test
   // the reset flow without a configured mail server. Never leak it in prod.
-  const isDev = process.env.NODE_ENV !== "production";
+  const isDev = !env.isProduction;
   return NextResponse.json({
     ok: true,
     message: "لینک بازیابی رمز عبور به ایمیل شما ارسال شد.",

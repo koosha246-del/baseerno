@@ -1,8 +1,8 @@
 {
-  "name": "bayan-bartar",
+  "name": "baseer-no",
   "version": "1.0.0",
   "private": true,
-  "description": "بیان برتر — آکادمی مهارت‌های بیان و ارتباط مؤثر",
+  "description": "بصیر نو — آکادمی زبان انگلیسی برای فارسی‌زبانان",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -13,7 +13,14 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:migrate:reset": "prisma migrate reset",
+    "db:studio": "prisma studio",
+    "db:seed": "prisma db seed",
+    "postinstall": "prisma generate || true"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
@@ -42,6 +49,7 @@
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.54.2",
     "recharts": "^3.9.2",
+    "redis": "^6.1.0",
     "resend": "^6.16.0",
     "tailwind-merge": "^2.6.0",
     "zod": "^3.24.1"

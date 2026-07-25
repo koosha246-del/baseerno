@@ -30,8 +30,10 @@ export function CorporateCtaForm() {
   });
 
   function onSubmit(_data: CorporateFormData) {
-    // In production: POST to API route.
-    console.log("Corporate form submitted", _data);
+    // TODO(Phase 3): POST to /api/corporate/contact when the endpoint is added.
+    // Intentionally no-op for now — the form shows the success state via
+    // `isSubmitSuccessful` and we don't want to log user PII in the browser.
+    void _data;
   }
 
   const { title, description } = corporateCopy.form;

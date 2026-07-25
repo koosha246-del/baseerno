@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { env } from "@/lib/env";
 
 /**
  * Payment signature helpers.
@@ -11,23 +12,12 @@ import { createHmac, timingSafeEqual } from "node:crypto";
  *
  * The signature proves the callback URL was produced by our own checkout
  * endpoint (which already authenticated the user) and has not been tampered
- * with. It is *not* a replacement for a real gateway's server-to-server
- * verification — that still needs to be wired up before going live with a
- * real provider.
+ * with. When Zarinpal is enabled, live verify uses the gateway's own API
+ * instead of (or in addition to) this HMAC path.
  */
 
 function getSecret(): string {
-  const secret = process.env.PAYMENT_SIGNATURE_SECRET;
-  if (!secret) {
-    if (process.env.NODE_ENV === "production") {
-      throw new Error(
-        "PAYMENT_SIGNATURE_SECRET environment variable is required in production."
-      );
-    }
-    // Stable dev-only fallback so the flow works locally without config.
-    return "dev-only-insecure-payment-secret";
-  }
-  return secret;
+  return env.paymentSignatureSecret;
 }
 
 /** Sign a payment id with the configured secret. */

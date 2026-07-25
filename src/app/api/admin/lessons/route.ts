@@ -1,7 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { getCurrentUser } from "@/lib/auth/session";
 import { repository } from "@/lib/db/repository";
 import { z } from "zod";
+import { CACHE_TAGS } from "@/lib/cache-tags";
 
 const createLessonSchema = z.object({
   courseId: z.string().min(1),
@@ -39,6 +41,10 @@ export async function POST(req: NextRequest) {
       sortOrder: parsed.data.sortOrder,
       isFree: parsed.data.isFree,
     });
+
+    revalidateTag(CACHE_TAGS.lessons);
+    revalidateTag(CACHE_TAGS.course(parsed.data.courseId));
+    revalidateTag(CACHE_TAGS.courses);
 
     return NextResponse.json(lesson, { status: 201 });
   } catch (err) {

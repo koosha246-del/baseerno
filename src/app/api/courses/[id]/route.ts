@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/session";
 import { repository } from "@/lib/db/repository";
 import { isSameOriginRequest, csrfRejectedResponse } from "@/lib/csrf";
+import { CACHE_TAGS } from "@/lib/cache-tags";
 
 const updateSchema = z.object({
   title: z.string().min(3).optional(),
@@ -69,6 +71,9 @@ export async function PATCH(
   }
 
   const updated = await repository.updateCourse(id, parsed.data);
+  revalidateTag(CACHE_TAGS.courses);
+  revalidateTag(CACHE_TAGS.course(id));
+  revalidateTag(CACHE_TAGS.reports);
   return NextResponse.json({ course: updated });
 }
 
@@ -97,5 +102,8 @@ export async function DELETE(
   }
 
   await repository.unpublishCourse(id);
+  revalidateTag(CACHE_TAGS.courses);
+  revalidateTag(CACHE_TAGS.course(id));
+  revalidateTag(CACHE_TAGS.reports);
   return NextResponse.json({ ok: true });
 }

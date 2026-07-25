@@ -1,4 +1,5 @@
 import jwt, { type JwtPayload } from "jsonwebtoken";
+import { env } from "@/lib/env";
 
 /**
  * Short-lived signed tokens that grant a one-time download of a paid book.
@@ -10,14 +11,7 @@ import jwt, { type JwtPayload } from "jsonwebtoken";
  */
 
 function getSecret(): string {
-  const secret = process.env.JWT_SECRET;
-  if (!secret) {
-    if (process.env.NODE_ENV === "production") {
-      throw new Error("JWT_SECRET environment variable is required in production.");
-    }
-    return "dev-only-insecure-secret-do-not-use-in-production";
-  }
-  return secret;
+  return env.jwtSecret;
 }
 
 const EXPIRES_IN = "30d";

@@ -30,8 +30,10 @@ export function FooterNewsletter({ className }: { className?: string }) {
   });
 
   function onSubmit(_data: NewsletterData) {
-    // In production: POST to API.
-    console.log("Newsletter", _data);
+    // TODO(Phase 3): POST to /api/newsletter/subscribe when the endpoint is added.
+    // Intentionally no-op for now — the form shows the success state via
+    // `isSubmitSuccessful` and we don't want to log user PII in the browser.
+    void _data;
   }
 
   return (

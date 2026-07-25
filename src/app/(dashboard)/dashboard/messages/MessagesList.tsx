@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { Search, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { timeAgo } from "@/lib/time";
 
 interface Message {
   id: string;

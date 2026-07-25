@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/session";
 import { repository } from "@/lib/db/repository";
 import { isSameOriginRequest, csrfRejectedResponse } from "@/lib/csrf";
 import { withRateLimit } from "@/lib/api-middleware";
 import { RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
+import { CACHE_TAGS } from "@/lib/cache-tags";
 
 const createSchema = z.object({
   title: z.string().min(3),
@@ -62,6 +64,8 @@ async function createCourseHandler(req: Request) {
     rating: 0,
     mentorId: user.id,
   });
+  revalidateTag(CACHE_TAGS.courses);
+  revalidateTag(CACHE_TAGS.reports);
   return NextResponse.json({ course }, { status: 201 });
 }
 

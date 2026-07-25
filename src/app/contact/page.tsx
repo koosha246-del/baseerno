@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Container } from "@/components/shared/Container";
-import { Badge } from "@/components/ui/badge";
 import { siteConfig } from "@/config/site";
 import { ContactForm } from "./ContactForm";
 import {

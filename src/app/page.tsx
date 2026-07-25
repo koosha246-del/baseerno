@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { SiteHeader } from "@/features/header/components/SiteHeader";
@@ -18,7 +17,6 @@ import { mapDbCourse } from "@/features/courses/courseMapper";
 import {
   BookOpen,
   GraduationCap,
-  Library,
   Sparkles,
   Users,
   Award,
@@ -69,7 +67,7 @@ export default async function HomePage() {
   return (
     <>
       <SiteHeader />
-      <main>
+      <main id="home">
         {/* ─── 1. INTRO — scroll-driven animation ───────────────── */}
         <ScrollAnimation />
 
@@ -289,7 +287,7 @@ function CoursesSection({
 
         <div className="mt-8 text-center">
           <Button asChild variant="outline" size="lg" className="group/btn">
-            <Link href="#courses">
+            <Link href="/courses">
               همه دوره‌ها
               <ArrowLeft className="size-4 transition-transform group-hover/btn:-translate-x-0.5" />
             </Link>

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/session";
 import { repository } from "@/lib/db/repository";
@@ -6,6 +7,13 @@ import { buildCallbackUrl } from "@/lib/payment-signature";
 import { isSameOriginRequest, csrfRejectedResponse } from "@/lib/csrf";
 import { withRateLimit } from "@/lib/api-middleware";
 import { RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
+import {
+  isZarinpalEnabled,
+  zarinpalRequestPayment,
+  zarinpalStartPayUrl,
+} from "@/lib/payment/zarinpal";
+import { CACHE_TAGS, enrollmentCacheTags } from "@/lib/cache-tags";
+import { notifyEnrollment } from "@/lib/notifications";
 
 const schema = z.object({
   courseId: z.string().min(1),
@@ -39,7 +47,7 @@ async function checkoutHandler(req: Request) {
     return NextResponse.json({ error: first?.message ?? "ورودی نامعتبر." }, { status: 422 });
   }
 
-  const { courseId, paymentMethod } = parsed.data;
+  const { courseId, paymentMethod, studentEmail, studentPhone } = parsed.data;
 
   const course = await repository.findCourseById(courseId);
   if (!course) {
@@ -58,6 +66,11 @@ async function checkoutHandler(req: Request) {
   // For free courses, enroll directly
   if (!course.price || course.price === 0) {
     const enrollment = await repository.createEnrollment({ userId: user.id, courseId });
+    await notifyEnrollment(user.id, course.title);
+
+    for (const tag of enrollmentCacheTags(user.id, courseId)) {
+      revalidateTag(tag);
+    }
 
     return NextResponse.json({
       enrollment,
@@ -66,7 +79,7 @@ async function checkoutHandler(req: Request) {
     });
   }
 
-  // For paid courses, create a pending payment and simulate gateway
+  // For paid courses, create a pending payment
   const methodLabel =
     paymentMethod === "zarinpal"
       ? "زرین‌پال"
@@ -82,14 +95,52 @@ async function checkoutHandler(req: Request) {
     method: methodLabel,
   });
 
+  // ── Real Zarinpal gateway ──────────────────────────────────────
+  if (isZarinpalEnabled() && paymentMethod === "zarinpal") {
+    try {
+      const { authority } = await zarinpalRequestPayment({
+        amountToman: course.price,
+        description: `ثبت‌نام دوره: ${course.title}`,
+        email: studentEmail || user.email,
+        mobile: studentPhone,
+        orderId: payment.id,
+      });
+
+      await repository.setPaymentAuthority(payment.id, authority);
+      revalidateTag(CACHE_TAGS.payments);
+
+      return NextResponse.json({
+        payment: { ...payment, gatewayAuthority: authority },
+        redirectUrl: zarinpalStartPayUrl(authority),
+        gateway: "zarinpal",
+        message: "در حال انتقال به درگاه زرین‌پال...",
+      });
+    } catch (err) {
+      console.error("[checkout] Zarinpal request failed:", err);
+      await repository.markPaymentFailed(payment.id);
+      return NextResponse.json(
+        {
+          error:
+            err instanceof Error
+              ? `خطا در اتصال به درگاه: ${err.message}`
+              : "خطا در اتصال به درگاه پرداخت.",
+        },
+        { status: 502 },
+      );
+    }
+  }
+
+  // ── Simulated gateway (dev / no merchant id) ───────────────────
   // Build a signed callback URL. The HMAC proves this URL was minted by us
   // for this specific payment — the callback will reject anything unsigned
   // or tampered with, so an attacker can't confirm an order out of band.
   const callbackUrl = buildCallbackUrl(payment.id);
+  revalidateTag(CACHE_TAGS.payments);
 
   return NextResponse.json({
     payment,
     callbackUrl,
+    redirectUrl: callbackUrl,
     message: "در حال انتقال به درگاه پرداخت (شبیه‌سازی)...",
     simulated: true,
   });

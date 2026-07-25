@@ -1,3 +1,15 @@
+// =================================================================
+// بصیر نو (Baseer No) — Prisma schema
+// =================================================================
+// Migration history: see prisma/migrations/
+// Soft delete: every model carries `deletedAt DateTime?`. The repository
+// layer (src/lib/db/prisma-client.ts) installs a `$extends` client that
+// transparently filters `deletedAt: null` on every find* call, so the
+//   vast majority of application code can stay unchanged. To fetch
+//   soft-deleted rows, use the `_raw` client (`prismaRaw`) explicitly.
+// updatedAt: Prisma auto-stamps `updatedAt` on every record change.
+// =================================================================
+
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -26,29 +38,32 @@ enum PaymentStatus {
 }
 
 model User {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
   name         String
-  email        String   @unique
+  email        String    @unique
   passwordHash String
-  role         Role     @default(STUDENT)
+  role         Role      @default(STUDENT)
   avatar       String?
   phone        String?
   bio          String?
-  createdAt    DateTime @default(now())
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
 
-  mentorCourses     Course[]        @relation("MentorCourses")
-  enrollments       Enrollment[]
-  grades            Grade[]         @relation("StudentGrades")
-  taughtGrades      Grade[]         @relation("TeacherGrades")
-  certificates      Certificate[]
-  payments          Payment[]
-  sentMessages      Message[]       @relation("SentMessages")
-  receivedMessages  Message[]       @relation("ReceivedMessages")
-  passwordResets    PasswordReset[]
-  notifications     Notification[]
+  mentorCourses    Course[]        @relation("MentorCourses")
+  enrollments      Enrollment[]
+  grades           Grade[]         @relation("StudentGrades")
+  taughtGrades     Grade[]         @relation("TeacherGrades")
+  certificates     Certificate[]
+  payments         Payment[]
+  sentMessages     Message[]       @relation("SentMessages")
+  receivedMessages Message[]       @relation("ReceivedMessages")
+  passwordResets   PasswordReset[]
+  notifications    Notification[]
 
   @@index([email])
   @@index([role])
+  @@index([deletedAt])
 }
 
 model Course {
@@ -68,17 +83,20 @@ model Course {
   accent        String
   published     Boolean  @default(true)
   createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
 
-  mentor        User         @relation("MentorCourses", fields: [mentorId], references: [id])
-  enrollments   Enrollment[]
-  grades        Grade[]
-  certificates  Certificate[]
-  payments      Payment[]
-  lessonItems   Lesson[]
+  mentor       User         @relation("MentorCourses", fields: [mentorId], references: [id])
+  enrollments  Enrollment[]
+  grades       Grade[]
+  certificates Certificate[]
+  payments     Payment[]
+  lessonItems  Lesson[]
 
   @@index([mentorId])
   @@index([published])
   @@index([category])
+  @@index([deletedAt])
 }
 
 model Enrollment {
@@ -89,6 +107,8 @@ model Enrollment {
   status      EnrollmentStatus @default(ACTIVE)
   enrolledAt  DateTime         @default(now())
   completedAt DateTime?
+  updatedAt   DateTime         @updatedAt
+  deletedAt   DateTime?
 
   user        User         @relation(fields: [userId], references: [id])
   course      Course       @relation(fields: [courseId], references: [id])
@@ -98,6 +118,7 @@ model Enrollment {
   @@unique([userId, courseId])
   @@index([userId])
   @@index([courseId])
+  @@index([deletedAt])
 }
 
 model Grade {
@@ -109,15 +130,18 @@ model Grade {
   feedback     String?
   gradedAt     DateTime @default(now())
   teacherId    String
+  updatedAt    DateTime @updatedAt
+  deletedAt    DateTime?
 
-  user         User       @relation("StudentGrades", fields: [userId], references: [id])
-  course       Course     @relation(fields: [courseId], references: [id])
-  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id])
-  teacher      User       @relation("TeacherGrades", fields: [teacherId], references: [id])
+  user       User       @relation("StudentGrades", fields: [userId], references: [id])
+  course     Course     @relation(fields: [courseId], references: [id])
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id])
+  teacher    User       @relation("TeacherGrades", fields: [teacherId], references: [id])
 
   @@index([userId])
   @@index([teacherId])
   @@index([enrollmentId])
+  @@index([deletedAt])
 }
 
 model Certificate {
@@ -127,29 +151,39 @@ model Certificate {
   enrollmentId      String   @unique
   certificateNumber String   @unique
   issueDate         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  deletedAt         DateTime?
 
-  user              User       @relation(fields: [userId], references: [id])
-  course            Course     @relation(fields: [courseId], references: [id])
-  enrollment        Enrollment @relation(fields: [enrollmentId], references: [id])
+  user       User       @relation(fields: [userId], references: [id])
+  course     Course     @relation(fields: [courseId], references: [id])
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id])
 
   @@index([userId])
+  @@index([deletedAt])
 }
 
 model Payment {
-  id        String        @id @default(cuid())
-  userId    String
-  courseId  String
-  amount    Int
-  status    PaymentStatus @default(PENDING)
-  method    String
-  paidAt    DateTime?
-  createdAt DateTime      @default(now())
+  id               String        @id @default(cuid())
+  userId           String
+  courseId         String
+  amount           Int
+  status           PaymentStatus @default(PENDING)
+  method           String
+  /// Zarinpal Authority (or other gateway reference) for callback correlation
+  gatewayAuthority String?       @unique
+  /// Gateway ref id after successful verify (e.g. Zarinpal ref_id)
+  gatewayRefId     String?
+  paidAt           DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  deletedAt        DateTime?
 
-  user      User   @relation(fields: [userId], references: [id])
-  course    Course @relation(fields: [courseId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+  course Course @relation(fields: [courseId], references: [id])
 
   @@index([userId])
   @@index([status])
+  @@index([deletedAt])
 }
 
 model Message {
@@ -159,12 +193,15 @@ model Message {
   body       String   @db.Text
   read       Boolean  @default(false)
   sentAt     DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  deletedAt  DateTime?
 
-  sender     User @relation("SentMessages", fields: [senderId], references: [id])
-  receiver   User @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  sender   User @relation("SentMessages", fields: [senderId], references: [id])
+  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id])
 
   @@index([senderId])
   @@index([receiverId])
+  @@index([deletedAt])
 }
 
 model PasswordReset {
@@ -173,11 +210,15 @@ model PasswordReset {
   token     String   @unique
   expiresAt DateTime
   used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
 
-  user      User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
   @@index([token])
   @@index([userId])
+  @@index([deletedAt])
 }
 
 model Notification {
@@ -189,27 +230,33 @@ model Notification {
   read      Boolean  @default(false)
   link      String?
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
 
-  user      User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([read])
+  @@index([deletedAt])
 }
 
 model Lesson {
-  id             String   @id @default(cuid())
-  courseId       String
-  title          String
-  type           String   @default("video")
-  videoUrl       String?
+  id              String   @id @default(cuid())
+  courseId        String
+  title           String
+  type            String   @default("video")
+  videoUrl        String?
   durationMinutes Int
-  sortOrder      Int      @default(0)
-  isFree         Boolean  @default(false)
-  published      Boolean  @default(true)
-  createdAt      DateTime @default(now())
+  sortOrder       Int      @default(0)
+  isFree          Boolean  @default(false)
+  published       Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
 
-  course         Course   @relation(fields: [courseId], references: [id])
+  course Course @relation(fields: [courseId], references: [id])
 
   @@index([courseId])
   @@index([sortOrder])
+  @@index([deletedAt])
 }

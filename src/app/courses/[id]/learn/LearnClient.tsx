@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Play, FileText, CheckCircle, Lock } from "lucide-react";
-import { Container } from "@/components/shared/Container";
+import { Play, FileText } from "lucide-react";
 import Link from "next/link";
 
 interface Lesson {

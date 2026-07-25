@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/session";
 import { repository } from "@/lib/db/repository";
 import { isSameOriginRequest, csrfRejectedResponse } from "@/lib/csrf";
+import { CACHE_TAGS } from "@/lib/cache-tags";
 
 const schema = z.object({
   name: z.string().min(3, "نام باید حداقل ۳ حرف باشد.").optional(),
@@ -38,6 +40,9 @@ export async function PATCH(req: Request) {
   if (!updated) {
     return NextResponse.json({ error: "کاربر یافت نشد." }, { status: 404 });
   }
+
+  revalidateTag(CACHE_TAGS.users);
+  revalidateTag(CACHE_TAGS.user(user.id));
 
   return NextResponse.json({ user: updated });
 }
