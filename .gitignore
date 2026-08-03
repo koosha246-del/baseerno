@@ -58,3 +58,18 @@ ZCodeProject/
 /scripts/load/result.json
 # local Redis binaries for the rate-limit drill (see scripts/verify-redis.ts)
 /scripts/redis/bin/
+
+# coverage reports
+/coverage/
+
+# database backups
+/backups/
+
+# freebuff internal
+/.freebuff/
+
+# Freebuff lockfile
+*.db
+*.db-shm
+*.db-wal
+.gitkeep
