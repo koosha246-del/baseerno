@@ -3,6 +3,7 @@ import {
   withRateLimit,
   applyRateLimitHeaders,
   rateLimitedResponse,
+  isDbUnavailableError,
 } from "../api-middleware";
 import {
   clearAllRateLimits,
@@ -54,6 +55,45 @@ describe("applyRateLimitHeaders", () => {
   });
 });
 
+describe("isDbUnavailableError", () => {
+  it("detects Prisma driver code ECONNREFUSED (code property, not message)", () => {
+    const err = new Error("Invalid `prisma.user.findUnique()` invocation:") as Error & {
+      code?: string;
+    };
+    err.code = "ECONNREFUSED";
+    expect(isDbUnavailableError(err)).toBe(true);
+  });
+
+  it("detects P1001 / P1017 codes", () => {
+    const p1001 = new Error("x") as Error & { code?: string };
+    p1001.code = "P1001";
+    expect(isDbUnavailableError(p1001)).toBe(true);
+    const p1017 = new Error("y") as Error & { code?: string };
+    p1017.code = "P1017";
+    expect(isDbUnavailableError(p1017)).toBe(true);
+  });
+
+  it("detects raw pg errors via message text", () => {
+    expect(isDbUnavailableError(new Error("connect ECONNREFUSED 127.0.0.1:5432"))).toBe(true);
+    expect(
+      isDbUnavailableError(new Error("Can't reach database server at `localhost:5432`"))
+    ).toBe(true);
+  });
+
+  it("walks the cause chain for wrapped driver errors", () => {
+    const inner = new Error("connect ECONNREFUSED") as Error & { code?: string };
+    inner.code = "ECONNREFUSED";
+    const outer = new Error("Invalid `prisma.course.findMany()` invocation:", { cause: inner });
+    expect(isDbUnavailableError(outer)).toBe(true);
+  });
+
+  it("returns false for unrelated errors", () => {
+    expect(isDbUnavailableError(new Error("boom"))).toBe(false);
+    expect(isDbUnavailableError(null)).toBe(false);
+    expect(isDbUnavailableError("ECONNREFUSED")).toBe(false);
+  });
+});
+
 describe("withRateLimit", () => {
   it("allows requests under the limit and attaches headers", async () => {
     const handler = withRateLimit(
@@ -87,7 +127,41 @@ describe("withRateLimit", () => {
     expect(sixth.headers.get("X-RateLimit-Remaining")).toBe("0");
   });
 
-  it("AUTH preset allows max+burst then blocks", async () => {
+  it("returns 503 DB_UNAVAILABLE when handler throws a DB-down error", async () => {
+    const handler = withRateLimit(
+      async () => {
+        const err = new Error("Invalid `prisma.user.findUnique()` invocation:") as Error & {
+          code?: string;
+        };
+        err.code = "ECONNREFUSED";
+        throw err;
+      },
+      { windowMs: 60_000, max: 100, burst: 0 },
+      { keyPrefix: "test:dbdown" }
+    );
+
+    const res = await handler(makeReq("5.5.5.5"));
+    expect(res.status).toBe(503);
+    const body = (await res.json()) as Record<string, unknown>;
+    expect(body.code).toBe("DB_UNAVAILABLE");
+    expect(String(body.error)).toContain("دیتابیس");
+    expect(res.headers.get("x-request-id")).toBeTruthy();
+  });
+
+  it("keeps generic 500 for non-DB errors", async () => {
+    const handler = withRateLimit(
+      async () => {
+        throw new Error("boom");
+      },
+      { windowMs: 60_000, max: 100, burst: 0 },
+      { keyPrefix: "test:generic500" }
+    );
+
+    const res = await handler(makeReq("6.6.6.6"));
+    expect(res.status).toBe(500);
+  });
+
+  it("AUTH preset enforces the burst sub-window as a hard cap", async () => {
     const handler = withRateLimit(
       async () => new Response(JSON.stringify({ ok: true }), { status: 200 }),
       RATE_LIMIT_PRESETS.AUTH,
@@ -95,13 +169,16 @@ describe("withRateLimit", () => {
     );
 
     const ip = "3.3.3.3";
+    const burst = RATE_LIMIT_PRESETS.AUTH.burst;
     const total = RATE_LIMIT_PRESETS.AUTH.max + RATE_LIMIT_PRESETS.AUTH.burst;
 
-    for (let i = 0; i < total; i++) {
+    for (let i = 0; i < burst; i++) {
       const res = await handler(makeReq(ip));
       expect(res.status).toBe(200);
     }
 
+    // The burst sub-window is a hard cap — the next request is 429
+    // even though the combined max + burst window is far from full.
     const blocked = await handler(makeReq(ip));
     expect(blocked.status).toBe(429);
     expect(blocked.headers.get("X-RateLimit-Limit")).toBe(String(total));

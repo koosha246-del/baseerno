@@ -1,0 +1,59 @@
+# Railway multi-service config — see RAILWAY_DEPLOY.md
+#
+# Three services from the same repo:
+#   web      — Next.js app (npm start)
+#   worker   — email outbox worker (long-running process)
+#   meili    — Meilisearch search engine (Docker image)
+#
+# railway.toml takes precedence over railway.json when both exist.
+#
+# NOTE: environment variables CANNOT be defined in railway.toml — set them
+# per service in the dashboard (Service → Variables) or with
+# `railway variables set <KEY> <VALUE>` after linking.
+
+[build]
+builder = "NIXPACKS"
+
+[[services]]
+name = "web"
+root = "."
+
+[services.build]
+builder = "NIXPACKS"
+# Explicit build: generate the Prisma client, then build Next.js.
+# (postinstall also runs `prisma generate || true`, this is belt & braces.)
+buildCommand = "npx prisma generate && npm run build"
+
+[services.deploy]
+startCommand = "npm start"
+healthcheckPath = "/api/health"
+healthcheckTimeout = 300
+numReplicas = 1
+
+[[services]]
+name = "worker"
+root = "."
+
+[services.build]
+builder = "NIXPACKS"
+# The worker is a plain tsx process (npm run worker:email) — building the
+# whole Next.js app for it would be wasted minutes and could fail on
+# build-time env. Just generate the Prisma client; devDeps (tsx) stay.
+buildCommand = "npx prisma generate"
+
+[services.deploy]
+startCommand = "npm run worker:email"
+numReplicas = 1
+restartPolicyType = "ON_FAILURE"
+
+[[services]]
+name = "meili"
+image = "getmeili/meilisearch:v1.13"
+
+# Image-based service: no root/build section needed (no source to compile).
+
+[services.deploy]
+numReplicas = 1
+restartPolicyType = "ON_FAILURE"
+healthcheckPath = "/health"
+healthcheckTimeout = 300

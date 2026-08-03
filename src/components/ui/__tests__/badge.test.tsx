@@ -15,7 +15,7 @@ describe("Badge", () => {
 
   it("applies the brand variant class", () => {
     const { container } = render(<Badge variant="brand">x</Badge>);
-    expect(container.firstChild).toHaveClass("bg-brand-gradient");
+    expect(container.firstChild).toHaveClass("bg-accent");
   });
 
   it("applies the success variant class", () => {

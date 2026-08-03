@@ -1,20 +1,11 @@
 import { NextResponse } from "next/server";
-import { revalidateTag } from "next/cache";
-import { z } from "zod";
+import { postGrade, postGradeSchema, buildUseCaseResponse } from "@/lib/useCases/grades/postGrade";
 import { getCurrentUser } from "@/lib/auth/session";
-import { repository } from "@/lib/db/repository";
 import { isSameOriginRequest, csrfRejectedResponse } from "@/lib/csrf";
-import { notifyGradePosted } from "@/lib/notifications";
-import { CACHE_TAGS } from "@/lib/cache-tags";
+import { withRateLimit } from "@/lib/api-middleware";
+import { RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
 
-const schema = z.object({
-  userId: z.string().min(1),
-  courseId: z.string().min(1),
-  score: z.number().min(0).max(20),
-  feedback: z.string().max(500).optional(),
-});
-
-export async function POST(req: Request) {
+async function postGradeHandler(req: Request) {
   // CSRF: grade submission mutates data on behalf of the teacher session.
   if (!isSameOriginRequest(req)) {
     return csrfRejectedResponse();
@@ -25,6 +16,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "فقط معلم می‌تواند نمره ثبت کند." }, { status: 403 });
   }
 
+  // Parse body
   let body: unknown;
   try {
     body = await req.json();
@@ -32,41 +24,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "بدنه درخواست نامعتبر است." }, { status: 400 });
   }
 
-  const parsed = schema.safeParse(body);
+  // Validate
+  const parsed = postGradeSchema.safeParse(body);
   if (!parsed.success) {
     const first = parsed.error.issues[0];
     return NextResponse.json({ error: first?.message ?? "ورودی نامعتبر." }, { status: 422 });
   }
 
-  const { userId, courseId, score, feedback } = parsed.data;
-
-  const course = await repository.findCourseById(courseId);
-  if (!course || course.mentorId !== user.id) {
-    return NextResponse.json({ error: "شما مدرس این دوره نیستید." }, { status: 403 });
-  }
-
-  const enrollments = await repository.listEnrollmentsForCourse(courseId);
-  const enrollment = enrollments.find((e) => e.userId === userId);
-  if (!enrollment) {
-    return NextResponse.json({ error: "دانشجو در این دوره ثبت‌نام نکرده." }, { status: 404 });
-  }
-
-  const grade = await repository.createGrade({
-    userId,
-    courseId,
-    enrollmentId: enrollment.id,
-    score,
-    feedback,
-    teacherId: user.id,
-  });
-
-  await notifyGradePosted(userId, course.title, score);
-
-  revalidateTag(CACHE_TAGS.grades);
-  revalidateTag(CACHE_TAGS.enrollments);
-  revalidateTag(CACHE_TAGS.course(courseId));
-  revalidateTag(CACHE_TAGS.user(userId));
-  revalidateTag(CACHE_TAGS.reports);
-
-  return NextResponse.json({ grade }, { status: 201 });
+  // Execute business logic
+  const result = await postGrade({ ...parsed.data, teacherId: user.id });
+  return buildUseCaseResponse(result);
 }
+
+/** API: max=20, burst=5 per minute. */
+export const POST = withRateLimit(postGradeHandler, RATE_LIMIT_PRESETS.API, {
+  keyPrefix: "grades:post",
+});

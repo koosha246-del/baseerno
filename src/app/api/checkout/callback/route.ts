@@ -3,12 +3,15 @@ import { revalidateTag } from "next/cache";
 import { repository } from "@/lib/db/repository";
 import { verifyPaymentSignature } from "@/lib/payment-signature";
 import { notifyEnrollment, notifyPaymentSuccess } from "@/lib/notifications";
+import { sendEmail } from "@/lib/email";
+import { paymentConfirmationEmail } from "@/lib/email-templates";
 import {
   isZarinpalEnabled,
   zarinpalVerifyPayment,
 } from "@/lib/payment/zarinpal";
 import { env } from "@/lib/env";
 import { enrollmentCacheTags } from "@/lib/cache-tags";
+import { incr } from "@/lib/metrics";
 
 /**
  * Payment callback — Zarinpal return URL + simulated gateway confirmation.
@@ -73,6 +76,7 @@ async function handleZarinpalCallback(
     // User cancelled or bank declined
     if (status && status.toUpperCase() !== "OK") {
       await repository.markPaymentFailed(payment.id);
+      incr("payment:failed");
       return NextResponse.redirect(
         new URL("/dashboard?error=payment_cancelled", req.url),
       );
@@ -85,6 +89,7 @@ async function handleZarinpalCallback(
     });
 
     await repository.markPaymentPaid(payment.id, { gatewayRefId: verified.refId });
+    incr("payment:success");
     await ensureEnrollmentAndNotify(payment.userId, payment.courseId, payment.amount);
 
     return NextResponse.redirect(new URL("/dashboard/courses?enrolled=true", req.url));
@@ -110,6 +115,7 @@ async function finalizePayment(req: Request, paymentId: string) {
     }
 
     await repository.markPaymentPaid(paymentId);
+    incr("payment:success");
     await ensureEnrollmentAndNotify(payment.userId, payment.courseId, payment.amount);
 
     return NextResponse.redirect(new URL("/dashboard/courses?enrolled=true", req.url));
@@ -133,6 +139,22 @@ async function ensureEnrollmentAndNotify(
   if (course) {
     await notifyEnrollment(userId, course.title);
     await notifyPaymentSuccess(userId, course.title, amount);
+  }
+
+  // Send the payment confirmation email **fire-and-forget** — the
+  // callback must never block the redirect on an SMTP round-trip.
+  // sendEmail itself is non-blocking-friendly, but we don't await it.
+  try {
+    const user = await repository.findUserById(userId);
+    if (course && user) {
+      const content = paymentConfirmationEmail(user.name, course.title, amount);
+      void sendEmail({ to: user.email, ...content }).catch((err) => {
+        console.error("[checkout-callback] Payment confirmation email failed:", err);
+      });
+    }
+  } catch (err) {
+    // A failed confirmation email must never break the payment flow.
+    console.error("[checkout-callback] Payment confirmation email lookup failed:", err);
   }
 
   for (const tag of enrollmentCacheTags(userId, courseId)) {

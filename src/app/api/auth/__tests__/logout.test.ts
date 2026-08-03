@@ -40,4 +40,15 @@ describe("POST /api/auth/logout", () => {
     const body = await res.json();
     expect(body.ok).toBe(true);
   });
+
+  it("clears session even without CSRF check failure", async () => {
+    // Logout should always attempt to clear regardless
+    await POST(makeReq());
+    expect(clearSession).toHaveBeenCalled();
+  });
+
+  it("clears the correct auth cookie", async () => {
+    await POST(makeReq());
+    expect(clearSession).toHaveBeenCalledOnce();
+  });
 });

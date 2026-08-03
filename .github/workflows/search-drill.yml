@@ -1,0 +1,103 @@
+name: Search drill (Meilisearch + FTS fallback)
+
+# Runs the live search verification (docs/EXECUTE-TO-LARGE.md گام ۳) on
+# every push to main + manual dispatch: provisions a real Postgres and
+# Meilisearch, seeds published courses, then proves BOTH halves of the
+# gate in one workflow:
+#   - index mode    → Meilisearch /health, settings, indexing, exact match,
+#                     and Persian typo tolerance (scripts/verify-search.ts)
+#   - fallback mode → with SEARCH_* stripped, the Postgres FTS/LIKE path
+#                     still returns hits (no dedicated engine configured)
+#
+# No production data is touched — everything runs against throwaway
+# service containers.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  search-drill:
+    name: Verify Meilisearch + FTS fallback
+    # Pinned so the pg client (pg_dump ↔ server 16) and tool versions are
+    # deterministic, not dependent on what ubuntu-latest maps to.
+    runs-on: ubuntu-24.04
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: baseerno
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      meilisearch:
+        image: getmeili/meilisearch:v1.13
+        env:
+          MEILI_MASTER_KEY: baseerno-ci-master-key
+          MEILI_NO_ANALYTICS: "true"
+          MEILI_ENV: development
+        ports:
+          - 7700:7700
+        options: >-
+          --health-cmd "curl -f http://localhost:7700/health"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/baseerno
+      # Matches the MEILI_MASTER_KEY of the service container above.
+      SEARCH_HOST: http://127.0.0.1:7700
+      SEARCH_API_KEY: baseerno-ci-master-key
+      # CI has no .env — env.ts reads JWT_SECRET (NOT AUTH_SECRET) and
+      # requires it ≥ 32 chars in production. These placeholders keep the
+      # seed/verify imports from crashing if NODE_ENV=production leaks in,
+      # mirroring load.yml's convention.
+      JWT_SECRET: ci-search-drill-secret-32-char-min-placeholder-0000
+      PAYMENT_SIGNATURE_SECRET: ci-search-drill-pay-16-chars
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Run migrations
+        run: npx prisma migrate deploy
+
+      - name: Seed published courses
+        run: npm run db:seed
+
+      - name: Verify dedicated index (exact + Persian typo tolerance)
+        run: npm run verify:search:index
+
+      - name: Verify Postgres FTS/LIKE fallback (SEARCH_* stripped)
+        run: npm run verify:search:fallback
+
+      # End-to-end sync loop: update course → search:needs-sync event →
+      # syncCourseSearch → search returns the fresh title. Proves the
+      # publish() calls added to the course mutation routes actually keep
+      # both search layers current (no waiting out the 6-hour cron).
+      - name: Verify course-update → event → index-sync loop (index)
+        run: npm run verify:search:sync:index
+
+      - name: Verify course-update → event → FTS-sync loop (fallback)
+        run: npm run verify:search:sync:fallback

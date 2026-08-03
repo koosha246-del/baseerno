@@ -16,5 +16,20 @@ export default defineConfig({
     globals: true,
     include: ["src/**/*.test.{ts,tsx}"],
     setupFiles: ["./vitest.setup.ts"],
+    // Integration tests need a real Postgres. They self-skip when
+    // DATABASE_URL is absent (local dev), and run in CI where the
+    // postgres service is provisioned (see .github/workflows/ci.yml).
+    testTimeout: 30_000,
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "json", "html"],
+      reportsDirectory: "./coverage",
+      thresholds: {
+        lines: 70,
+        functions: 75,
+        branches: 60,
+        statements: 70,
+      },
+    },
   },
 });

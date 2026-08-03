@@ -1,0 +1,63 @@
+name: Restore drill (backup/restore parity)
+
+# Monthly + manual execution of the backup/restore parity drill
+# (docs/EXECUTE-TO-LARGE.md گام ۵.۳ — "CI اختیاری: یک job ی ماهانه در
+# .github/workflows/ برای drill خودکار").
+#
+# Proves the گام ۵ acceptance end-to-end: backup → restore → counts match,
+# plus the drill's mismatch detection. Runs entirely against a throwaway
+# Postgres service — no production data is ever touched.
+
+on:
+  schedule:
+    - cron: "0 2 1 * *" # 02:00 UTC on the 1st of every month
+  workflow_dispatch:
+
+jobs:
+  restore-drill:
+    name: Backup → restore → verify parity
+    # Pinned so postgresql-client-16 availability (and pg_dump ↔ server 16
+    # version match) is deterministic, not dependent on what ubuntu-latest
+    # happens to map to.
+    runs-on: ubuntu-24.04
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: drill_scratch
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      # The drill (scripts/drill-backup-restore.sh) only uses the host,
+      # port, user and password from this URL to CREATE ITS OWN scratch
+      # source/target DBs (drill_src_*/drill_tgt_*) — it never connects
+      # to `drill_scratch` by name, and never touches a real database.
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/drill_scratch
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client tools
+        # Pin the client major version to the service (postgres:16):
+        # pg_dump refuses to dump a server NEWER than itself, so the
+        # unversioned `postgresql-client` metapackage could silently break
+        # the drill if the runner image ships an older client.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends postgresql-client-16
+
+      - name: Run the backup/restore parity drill
+        # Invoked via `bash` so CI doesn't depend on the +x bit being
+        # committed (easy to miss for files created on Windows). The drill
+        # cleans up after itself (trap on EXIT), so it is safe to re-run.
+        run: bash scripts/drill-backup-restore.sh

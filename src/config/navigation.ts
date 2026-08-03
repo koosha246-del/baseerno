@@ -18,5 +18,5 @@ export type NavItem = (typeof navigation)[number];
 /** Header CTA — short and clear for students. */
 export const headerCta = {
   label: "شروع یادگیری",
-  href: "#courses",
+  href: "/courses",
 } as const;

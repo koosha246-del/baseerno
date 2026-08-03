@@ -96,8 +96,11 @@ export async function unpublishCourse(id: string) {
   return prisma.course.update({ where: { id }, data: { published: false } });
 }
 
-export async function countCourses(opts?: { publishedOnly?: boolean; mentorId?: string }): Promise<number> {
-  return prisma.course.count({
+export async function countCourses(
+  opts?: { publishedOnly?: boolean; mentorId?: string },
+  db: typeof prisma = prisma,
+): Promise<number> {
+  return db.course.count({
     where: {
       ...(opts?.publishedOnly ? { published: true } : {}),
       ...(opts?.mentorId ? { mentorId: opts.mentorId } : {}),

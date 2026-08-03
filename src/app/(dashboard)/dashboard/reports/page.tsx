@@ -4,6 +4,8 @@ import { FileText, BarChart3, Users, DollarSign } from "lucide-react";
 import { StatCard } from "@/features/dashboard/components/StatCard";
 import { getAdminStatsBundle } from "@/lib/db/queries";
 import { ReportsCharts } from "@/features/reports/components/ReportsCharts";
+import { env } from "@/lib/env";
+import { DemoUnavailableCard } from "@/components/shared/DemoUnavailableCard";
 
 /**
  * Reports page (admin-only).
@@ -29,6 +31,11 @@ export default async function ReportsPage() {
         <p className="text-slate-400">این صفحه فقط برای مدیران قابل دسترسی است.</p>
       </div>
     );
+  }
+
+  // Demo mode (no DB): show a friendly card instead of a hanging skeleton.
+  if (env.demoMode) {
+    return <DemoUnavailableCard />;
   }
 
   const {

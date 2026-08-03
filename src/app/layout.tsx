@@ -20,6 +20,13 @@ export const viewport: Viewport = {
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // CSP nonce handling: the middleware generates a per-request nonce and
+  // forwards it as the `x-nonce` request header; Next.js auto-stamps it
+  // onto its own inline scripts (hydration/RSC payload). We deliberately
+  // do NOT call headers() here — it would force dynamic rendering and
+  // defeat ISR on course pages. GoogleAnalytics reads the nonce from the
+  // DOM instead. Inline JSON-LD (`application/ld+json`) is a data block
+  // and is not subject to script-src, so it needs no nonce.
   return (
     <html
       lang={siteConfig.lang}

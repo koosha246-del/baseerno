@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ArrowLeft, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -82,10 +83,10 @@ export function PopularCoursesClient({ courses, categories, accentClasses }: Pro
 
       <div className="mt-12 flex justify-center">
         <Button asChild variant="outline" size="lg" className="group/btn">
-          <a href="#courses">
+          <Link href="/courses">
             همه درس‌ها
             <ArrowLeft className="size-4 transition-transform duration-base ease-luxury group-hover/btn:-translate-x-1" />
-          </a>
+          </Link>
         </Button>
       </div>
     </>

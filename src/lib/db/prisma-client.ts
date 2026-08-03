@@ -10,12 +10,17 @@
  *                    repair / migrations / reports that need to see
  *                    soft-deleted rows. Never expose its results to
  *                    end users without an explicit re-filter.
+ *
+ * The soft-delete extension is exported as `extendWithSoftDelete` so the
+ * read-replica client (see ./replica.ts) applies the exact same filtering.
  */
 import { PrismaClient } from "@/generated/prisma/client";
 import { type Role } from "@/generated/prisma/enums";
 import { PrismaPg } from "@prisma/adapter-pg";
 import type { SafeUser } from "./types";
 import { env } from "@/lib/env";
+import { observe } from "@/lib/metrics";
+import { withUtcSession } from "./conn";
 
 const databaseUrl = env.DATABASE_URL;
 if (!databaseUrl) {
@@ -24,7 +29,10 @@ if (!databaseUrl) {
   );
 }
 
-const adapter = new PrismaPg({ connectionString: databaseUrl });
+// Pin the session to UTC (see ./conn.ts): Prisma serializes DateTime params
+// as naive UTC wall-clock strings, so a non-UTC session (e.g. Asia/Tehran)
+// silently shifts every instant and breaks backoff + stuck-row recovery.
+const adapter = new PrismaPg({ connectionString: withUtcSession(databaseUrl) });
 
 /** The raw (un-extended) client. Reserved for admin / repair / migration work. */
 const baseClient =
@@ -58,8 +66,8 @@ if (!env.isProduction) {
  *   - aggregate / groupBy (filters the `where` and rewrites the resulting
  *     `where` so soft-deleted rows don't surface)
  *
- * Anything that doesn't have `deletedAt` (none today) is passed through
- * untouched, so adding a new model is safe.
+ * Models without a `deletedAt` column (EmailOutbox, CourseSearch) are
+ * passed through untouched.
  */
 const SOFT_DELETE_MODELS = new Set([
   "User",
@@ -72,6 +80,8 @@ const SOFT_DELETE_MODELS = new Set([
   "PasswordReset",
   "Notification",
   "Lesson",
+  "Conversation",
+  "ChatMessage",
 ]);
 
 function withSoftDeleteFilter<T extends { deletedAt?: unknown }>(where: T | undefined): T {
@@ -82,62 +92,91 @@ function withSoftDeleteFilter<T extends { deletedAt?: unknown }>(where: T | unde
   return { ...where, deletedAt: null };
 }
 
-export const prisma: PrismaClient = prismaRaw.$extends({
-  name: "soft-delete",
-  query: {
-    $allModels: {
-      async findFirst({ model, args, query }) {
-        if (SOFT_DELETE_MODELS.has(model)) {
-          args = { ...args, where: withSoftDeleteFilter(args.where as Record<string, unknown>) };
-        }
-        return query(args);
-      },
-      async findFirstOrThrow({ model, args, query }) {
-        if (SOFT_DELETE_MODELS.has(model)) {
-          args = { ...args, where: withSoftDeleteFilter(args.where as Record<string, unknown>) };
-        }
-        return query(args);
-      },
-      async findUnique({ model, args, query }) {
-        if (SOFT_DELETE_MODELS.has(model)) {
-          // `findUnique` requires a unique selector (id/email/etc), not a
-          // generic `where`; we can't auto-merge `deletedAt: null` here.
-          // Callers that need soft-delete-aware unique lookups should use
-          // `findFirst` with a unique key instead. The result is filtered
-          // client-side below.
-          const result = await query(args);
-          if (result && (result as { deletedAt?: Date | null }).deletedAt != null) {
-            return null;
+/**
+ * Wrap a raw Prisma client with the soft-delete extension. Used for both
+ * the primary client (`prisma`) and the optional read-replica client so
+ * every read path behaves identically.
+ */
+export function extendWithSoftDelete(base: PrismaClient): PrismaClient {
+  return base.$extends({
+    name: "soft-delete",
+    query: {
+      $allModels: {
+        async findFirst({ model, args, query }) {
+          const start = performance.now();
+          if (SOFT_DELETE_MODELS.has(model)) {
+            args = { ...args, where: withSoftDeleteFilter(args.where as Record<string, unknown>) };
           }
-          return result;
-        }
-        return query(args);
-      },
-      async findUniqueOrThrow({ model, args, query }) {
-        if (SOFT_DELETE_MODELS.has(model)) {
           const result = await query(args);
-          if (result && (result as { deletedAt?: Date | null }).deletedAt != null) {
-            throw new Error(`No ${model} found`);
-          }
+          observe(`prisma:${model}.findFirst`, performance.now() - start);
           return result;
-        }
-        return query(args);
-      },
-      async findMany({ model, args, query }) {
-        if (SOFT_DELETE_MODELS.has(model)) {
-          args = { ...args, where: withSoftDeleteFilter(args.where as Record<string, unknown>) };
-        }
-        return query(args);
-      },
-      async count({ model, args, query }) {
-        if (SOFT_DELETE_MODELS.has(model)) {
-          args = { ...args, where: withSoftDeleteFilter(args.where as Record<string, unknown>) };
-        }
-        return query(args);
+        },
+        async findFirstOrThrow({ model, args, query }) {
+          const start = performance.now();
+          if (SOFT_DELETE_MODELS.has(model)) {
+            args = { ...args, where: withSoftDeleteFilter(args.where as Record<string, unknown>) };
+          }
+          const result = await query(args);
+          observe(`prisma:${model}.findFirstOrThrow`, performance.now() - start);
+          return result;
+        },
+        async findUnique({ model, args, query }) {
+          const start = performance.now();
+          if (SOFT_DELETE_MODELS.has(model)) {
+            // `findUnique` requires a unique selector (id/email/etc), not a
+            // generic `where`; we can't auto-merge `deletedAt: null` here.
+            // Callers that need soft-delete-aware unique lookups should use
+            // `findFirst` with a unique key instead. The result is filtered
+            // client-side below.
+            const result = await query(args);
+            if (result && (result as { deletedAt?: Date | null }).deletedAt != null) {
+              return null;
+            }
+            observe(`prisma:${model}.findUnique`, performance.now() - start);
+            return result;
+          }
+          const result = await query(args);
+          observe(`prisma:${model}.findUnique`, performance.now() - start);
+          return result;
+        },
+        async findUniqueOrThrow({ model, args, query }) {
+          const start = performance.now();
+          if (SOFT_DELETE_MODELS.has(model)) {
+            const result = await query(args);
+            if (result && (result as { deletedAt?: Date | null }).deletedAt != null) {
+              throw new Error(`No ${model} found`);
+            }
+            observe(`prisma:${model}.findUniqueOrThrow`, performance.now() - start);
+            return result;
+          }
+          const result = await query(args);
+          observe(`prisma:${model}.findUniqueOrThrow`, performance.now() - start);
+          return result;
+        },
+        async findMany({ model, args, query }) {
+          const start = performance.now();
+          if (SOFT_DELETE_MODELS.has(model)) {
+            args = { ...args, where: withSoftDeleteFilter(args.where as Record<string, unknown>) };
+          }
+          const result = await query(args);
+          observe(`prisma:${model}.findMany`, performance.now() - start);
+          return result;
+        },
+        async count({ model, args, query }) {
+          const start = performance.now();
+          if (SOFT_DELETE_MODELS.has(model)) {
+            args = { ...args, where: withSoftDeleteFilter(args.where as Record<string, unknown>) };
+          }
+          const result = await query(args);
+          observe(`prisma:${model}.count`, performance.now() - start);
+          return result;
+        },
       },
     },
-  },
-}) as unknown as PrismaClient;
+  }) as unknown as PrismaClient;
+}
+
+export const prisma: PrismaClient = extendWithSoftDelete(prismaRaw);
 
 /** Strip password hash for client-safe user shape. */
 export function toSafe(user: {

@@ -242,7 +242,7 @@ export function CheckoutForm({ course }: CheckoutFormProps) {
           className="mt-0.5 size-4 rounded border-app-border text-accent focus:ring-accent"
         />
         <span>
-          <a href="#faq" className="text-accent underline">قوانین و مقررات</a> را خوانده و
+          <a href="/terms" className="text-accent underline">قوانین و مقررات</a> را خوانده و
           می‌پذیرم.
         </span>
       </label>

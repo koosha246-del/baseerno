@@ -6,6 +6,7 @@
  */
 import { unstable_cache } from "next/cache";
 import { repository } from "../repository";
+import { runOnReplica } from "../replica";
 import {
   getCachedRoleCounts,
   getCachedCountCourses,
@@ -25,7 +26,7 @@ export const getCachedUsersList = unstable_cache(
 );
 
 export const getCachedCountUsers = unstable_cache(
-  async () => repository.countUsers(),
+  async () => runOnReplica((db) => repository.countUsers(undefined, db)),
   ["dashboard", "users-count"],
   { revalidate: 60, tags: ["users"] },
 );
@@ -38,14 +39,15 @@ export const getCachedPaymentsList = unstable_cache(
 );
 
 export const getCachedCountPayments = unstable_cache(
-  async (userId?: string) => repository.countPayments({ userId }),
+  async (userId?: string) =>
+    runOnReplica((db) => repository.countPayments({ userId }, db)),
   ["dashboard", "payments-count"],
   { revalidate: 30, tags: ["payments"] },
 );
 
 export const getCachedCountPaymentsForCourses = unstable_cache(
   async (courseIds: string[], status?: "PAID" | "PENDING" | "FAILED") =>
-    repository.countPaymentsForCourses(courseIds, status),
+    runOnReplica((db) => repository.countPaymentsForCourses(courseIds, status, db)),
   ["dashboard", "payments-count-for-courses"],
   { revalidate: 30, tags: ["payments"] },
 );
@@ -70,7 +72,7 @@ export async function getAdminStatsBundle() {
     getCachedRoleCounts(),
     getCachedCountCourses(),
     getCachedCountEnrollments(),
-    repository.countPayments({ status: "PAID" }),
+    runOnReplica((db) => repository.countPayments({ status: "PAID" }, db)),
     getCachedTotalRevenue(),
     getCachedEnrollmentsByMonth(),
     getCachedRevenueByMonth(),

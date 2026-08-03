@@ -5,6 +5,8 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { repository } from "@/lib/db/repository";
 import { isSameOriginRequest, csrfRejectedResponse } from "@/lib/csrf";
 import { CACHE_TAGS } from "@/lib/cache-tags";
+import { withRateLimit } from "@/lib/api-middleware";
+import { RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
 
 const schema = z.object({
   name: z.string().min(3, "نام باید حداقل ۳ حرف باشد.").optional(),
@@ -12,7 +14,7 @@ const schema = z.object({
   bio: z.string().max(500, "بیوگرافی حداکثر ۵۰۰ کاراکتر.").optional(),
 });
 
-export async function PATCH(req: Request) {
+async function updateProfileHandler(req: Request) {
   // CSRF: profile update mutates the authenticated user's record.
   if (!isSameOriginRequest(req)) {
     return csrfRejectedResponse();
@@ -46,3 +48,8 @@ export async function PATCH(req: Request) {
 
   return NextResponse.json({ user: updated });
 }
+
+/** API: max=20, burst=5 per minute. */
+export const PATCH = withRateLimit(updateProfileHandler, RATE_LIMIT_PRESETS.API, {
+  keyPrefix: "user:profile",
+});

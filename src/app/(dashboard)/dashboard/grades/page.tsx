@@ -4,11 +4,18 @@ import { toPersianDigits, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { ClipboardList } from "lucide-react";
+import { env } from "@/lib/env";
+import { DemoUnavailableCard } from "@/components/shared/DemoUnavailableCard";
 import { GradeForm } from "./GradeForm";
 
 export default async function GradesPage() {
   const user = await getCurrentUser();
   if (!user) return null;
+
+  // Demo mode (no DB): show a friendly card instead of a hanging skeleton.
+  if (env.demoMode) {
+    return <DemoUnavailableCard />;
+  }
 
   if (user.role === "STUDENT") {
     const grades = await repository.listGrades(user.id);

@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
-import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/session";
 import { repository } from "@/lib/db/repository";
 import { isSameOriginRequest, csrfRejectedResponse } from "@/lib/csrf";
 import { withRateLimit } from "@/lib/api-middleware";
 import { RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
-import { CACHE_TAGS } from "@/lib/cache-tags";
+import { invalidateCache, invalidateSearchCourseCache } from "@/lib/cache";
+import { CACHE_TAGS, publishedCoursesCacheKeys } from "@/lib/cache-tags";
+import { publish } from "@/lib/events";
 
 const createSchema = z.object({
   title: z.string().min(3),
@@ -64,8 +65,14 @@ async function createCourseHandler(req: Request) {
     rating: 0,
     mentorId: user.id,
   });
-  revalidateTag(CACHE_TAGS.courses);
-  revalidateTag(CACHE_TAGS.reports);
+  // Bust the Redis course-list keys AND the Next.js `courses` tag, plus
+  // every per-query search cache entry (new course → searchable now).
+  await invalidateCache(publishedCoursesCacheKeys(), [
+    CACHE_TAGS.courses,
+    CACHE_TAGS.reports,
+  ]);
+  await invalidateSearchCourseCache();
+  await publish({ type: "search:needs-sync", courseId: course.id });
   return NextResponse.json({ course }, { status: 201 });
 }
 

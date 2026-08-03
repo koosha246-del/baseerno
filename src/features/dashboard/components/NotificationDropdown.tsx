@@ -42,10 +42,38 @@ export function NotificationDropdown({ userId }: Props) {
     }
   }, [userId]);
 
+  // Live updates via SSE with graceful fallback to polling:
+  //  - Open an EventSource to /api/notifications/stream (same-origin cookie
+  //    auth). On every `notification`/`message-sent` event, refetch.
+  //  - If SSE fails or the browser doesn't support it, fall back to the
+  //    previous 30s polling interval.
   useEffect(() => {
     fetchNotifications();
+
+    let es: EventSource | null = null;
+    try {
+      es = new EventSource("/api/notifications/stream");
+      const onEvent = () => fetchNotifications();
+      es.addEventListener("notification", onEvent);
+      es.addEventListener("message-sent", onEvent);
+      es.addEventListener("grade-posted", onEvent);
+      es.addEventListener("enrollment", onEvent);
+      es.addEventListener("certificate-issued", onEvent);
+      es.onerror = () => {
+        // Connection dropped — fall back to polling; EventSource
+        // auto-reconnects, so subsequent errors also land here.
+        es?.close();
+        es = null;
+      };
+    } catch {
+      es = null;
+    }
+
     const interval = setInterval(fetchNotifications, 30_000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      es?.close();
+    };
   }, [fetchNotifications]);
 
   async function markAsRead(id: string) {

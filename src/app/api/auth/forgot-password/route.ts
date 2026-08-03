@@ -1,17 +1,12 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
-import { repository } from "@/lib/db/repository";
-import { sendEmail } from "@/lib/email";
-import { passwordResetEmail } from "@/lib/email-templates";
-import { siteConfig } from "@/config/site";
+import {
+  forgotPassword,
+  forgotPasswordSchema,
+  buildUseCaseResponse,
+} from "@/lib/useCases/auth/forgotPassword";
 import { isSameOriginRequest, csrfRejectedResponse } from "@/lib/csrf";
 import { withRateLimit } from "@/lib/api-middleware";
 import { RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
-import { env } from "@/lib/env";
-
-const schema = z.object({
-  email: z.string().email("ایمیل معتبر نیست."),
-});
 
 async function forgotPasswordHandler(req: Request) {
   // CSRF: prevents triggering password resets for arbitrary emails from a
@@ -20,6 +15,7 @@ async function forgotPasswordHandler(req: Request) {
     return csrfRejectedResponse();
   }
 
+  // Parse body
   let body: unknown;
   try {
     body = await req.json();
@@ -27,36 +23,15 @@ async function forgotPasswordHandler(req: Request) {
     return NextResponse.json({ error: "بدنه درخواست نامعتبر است." }, { status: 400 });
   }
 
-  const parsed = schema.safeParse(body);
+  // Validate
+  const parsed = forgotPasswordSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "ایمیل معتبر وارد کنید." }, { status: 422 });
   }
 
-  const user = await repository.findUserByEmail(parsed.data.email);
-
-  // Always return success to prevent email enumeration
-  if (!user) {
-    return NextResponse.json({
-      ok: true,
-      message: "اگر ایمیل وجود داشته باشد، لینک بازیابی ارسال شد.",
-    });
-  }
-
-  const reset = await repository.createPasswordReset(user.id);
-
-  // Send reset email
-  const resetUrl = `${siteConfig.url}/reset-password?token=${reset.token}`;
-  const emailContent = passwordResetEmail(user.name, resetUrl);
-  sendEmail({ to: user.email, ...emailContent }).catch(() => {});
-
-  // Only expose the raw token in non-production so developers can test
-  // the reset flow without a configured mail server. Never leak it in prod.
-  const isDev = !env.isProduction;
-  return NextResponse.json({
-    ok: true,
-    message: "لینک بازیابی رمز عبور به ایمیل شما ارسال شد.",
-    ...(isDev ? { _devToken: reset.token } : {}),
-  });
+  // Execute business logic
+  const result = await forgotPassword(parsed.data);
+  return buildUseCaseResponse(result);
 }
 
 /** AUTH: max=5, burst=2 per minute. */

@@ -22,21 +22,46 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
 
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 20_000);
 
-    const data = (await res.json()) as { user?: unknown } | ApiError;
-    setLoading(false);
+      let res: Response;
+      try {
+        res = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timeout);
+      }
 
-    if (!res.ok) {
-      setError((data as ApiError).error ?? "خطایی رخ داد.");
-      return;
+      // Parse defensively — a non-JSON body (e.g. a proxy error page) must
+      // never throw here, or the button would stay stuck on "در حال ورود".
+      let data: { user?: unknown } | ApiError = {};
+      try {
+        data = (await res.json()) as { user?: unknown } | ApiError;
+      } catch {
+        data = {};
+      }
+
+      if (!res.ok) {
+        setError((data as ApiError).error ?? "خطایی رخ داد. لطفاً دوباره تلاش کنید.");
+        return;
+      }
+
+      router.push("/dashboard");
+    } catch (err) {
+      setError(
+        err instanceof DOMException && err.name === "AbortError"
+          ? "اتصال به سرور زمان‌بر شد. دوباره تلاش کنید."
+          : "اتصال به سرور برقرار نشد. دوباره تلاش کنید.",
+      );
+    } finally {
+      setLoading(false);
     }
-
-    router.push("/dashboard");
   }
 
   return (

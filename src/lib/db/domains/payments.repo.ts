@@ -23,11 +23,14 @@ export async function listPayments(opts?: {
   });
 }
 
-export async function countPayments(opts?: {
-  userId?: string;
-  status?: PaymentStatus;
-}): Promise<number> {
-  return prisma.payment.count({
+export async function countPayments(
+  opts?: {
+    userId?: string;
+    status?: PaymentStatus;
+  },
+  db: typeof prisma = prisma,
+): Promise<number> {
+  return db.payment.count({
     where: {
       ...(opts?.userId ? { userId: opts.userId } : {}),
       ...(opts?.status ? { status: opts.status } : {}),
@@ -38,9 +41,10 @@ export async function countPayments(opts?: {
 export async function countPaymentsForCourses(
   courseIds: string[],
   status?: PaymentStatus,
+  db: typeof prisma = prisma,
 ): Promise<number> {
   if (courseIds.length === 0) return 0;
-  return prisma.payment.count({
+  return db.payment.count({
     where: {
       courseId: { in: courseIds },
       ...(status ? { status } : {}),
@@ -122,8 +126,8 @@ export async function markPaymentFailed(id: string) {
   });
 }
 
-export async function totalRevenue(): Promise<number> {
-  const result = await prisma.payment.aggregate({
+export async function totalRevenue(db: typeof prisma = prisma): Promise<number> {
+  const result = await db.payment.aggregate({
     where: { status: "PAID" },
     _sum: { amount: true },
   });
@@ -167,8 +171,8 @@ export async function revenueByTeacher(): Promise<
 }
 
 /** Sum paid payment amounts grouped by month (raw SQL). */
-export async function revenueByMonth() {
-  const rows = await prisma.$queryRaw<
+export async function revenueByMonth(db: typeof prisma = prisma) {
+  const rows = await db.$queryRaw<
     Array<{ month: Date; total: bigint }>
   >`
     SELECT date_trunc('month', "paidAt") AS month, SUM(amount)::bigint AS total

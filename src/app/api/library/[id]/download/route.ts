@@ -3,6 +3,8 @@ import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { findBook } from "@/lib/library";
 import { verifyDownloadToken } from "@/lib/library-token";
+import { withRateLimit } from "@/lib/api-middleware";
+import { RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
 
 /**
  * GET /api/library/[id]/download?token=...
@@ -11,7 +13,7 @@ import { verifyDownloadToken } from "@/lib/library-token";
  * public/ tree. Only files listed in the library catalog are served —
  * the book id is validated against `findBook()` before any disk access.
  */
-export async function GET(
+async function downloadHandler(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -91,3 +93,8 @@ export async function GET(
     },
   });
 }
+
+/** READ: max=60, burst=10 per minute — protect file downloads from abuse. */
+export const GET = withRateLimit(downloadHandler, RATE_LIMIT_PRESETS.READ, {
+  keyPrefix: "library:download",
+});

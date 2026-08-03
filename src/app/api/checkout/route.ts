@@ -1,27 +1,9 @@
 import { NextResponse } from "next/server";
-import { revalidateTag } from "next/cache";
-import { z } from "zod";
+import { checkout, checkoutSchema, buildUseCaseResponse } from "@/lib/useCases/enrollment/checkout";
 import { getCurrentUser } from "@/lib/auth/session";
-import { repository } from "@/lib/db/repository";
-import { buildCallbackUrl } from "@/lib/payment-signature";
 import { isSameOriginRequest, csrfRejectedResponse } from "@/lib/csrf";
 import { withRateLimit } from "@/lib/api-middleware";
 import { RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
-import {
-  isZarinpalEnabled,
-  zarinpalRequestPayment,
-  zarinpalStartPayUrl,
-} from "@/lib/payment/zarinpal";
-import { CACHE_TAGS, enrollmentCacheTags } from "@/lib/cache-tags";
-import { notifyEnrollment } from "@/lib/notifications";
-
-const schema = z.object({
-  courseId: z.string().min(1),
-  studentName: z.string().min(3),
-  studentEmail: z.string().email(),
-  studentPhone: z.string().optional(),
-  paymentMethod: z.enum(["zarinpal", "saman", "wallet"]).default("zarinpal"),
-});
 
 async function checkoutHandler(req: Request) {
   // CSRF: enrollment creates a payment record using the logged-in session.
@@ -34,6 +16,7 @@ async function checkoutHandler(req: Request) {
     return NextResponse.json({ error: "احراز هویت نشده." }, { status: 401 });
   }
 
+  // Parse body
   let body: unknown;
   try {
     body = await req.json();
@@ -41,109 +24,16 @@ async function checkoutHandler(req: Request) {
     return NextResponse.json({ error: "بدنه درخواست نامعتبر است." }, { status: 400 });
   }
 
-  const parsed = schema.safeParse(body);
+  // Validate
+  const parsed = checkoutSchema.safeParse(body);
   if (!parsed.success) {
     const first = parsed.error.issues[0];
     return NextResponse.json({ error: first?.message ?? "ورودی نامعتبر." }, { status: 422 });
   }
 
-  const { courseId, paymentMethod, studentEmail, studentPhone } = parsed.data;
-
-  const course = await repository.findCourseById(courseId);
-  if (!course) {
-    return NextResponse.json({ error: "دوره یافت نشد." }, { status: 404 });
-  }
-
-  // Check if already enrolled
-  const existingEnrollment = await repository.findEnrollment(user.id, courseId);
-  if (existingEnrollment) {
-    return NextResponse.json(
-      { error: "شما قبلاً در این دوره ثبت‌نام کرده‌اید." },
-      { status: 409 }
-    );
-  }
-
-  // For free courses, enroll directly
-  if (!course.price || course.price === 0) {
-    const enrollment = await repository.createEnrollment({ userId: user.id, courseId });
-    await notifyEnrollment(user.id, course.title);
-
-    for (const tag of enrollmentCacheTags(user.id, courseId)) {
-      revalidateTag(tag);
-    }
-
-    return NextResponse.json({
-      enrollment,
-      message: "ثبت‌نام رایگان با موفقیت انجام شد.",
-      free: true,
-    });
-  }
-
-  // For paid courses, create a pending payment
-  const methodLabel =
-    paymentMethod === "zarinpal"
-      ? "زرین‌پال"
-      : paymentMethod === "saman"
-        ? "بانک سامان"
-        : "کیف پول";
-
-  const payment = await repository.createPayment({
-    userId: user.id,
-    courseId,
-    amount: course.price,
-    status: "PENDING",
-    method: methodLabel,
-  });
-
-  // ── Real Zarinpal gateway ──────────────────────────────────────
-  if (isZarinpalEnabled() && paymentMethod === "zarinpal") {
-    try {
-      const { authority } = await zarinpalRequestPayment({
-        amountToman: course.price,
-        description: `ثبت‌نام دوره: ${course.title}`,
-        email: studentEmail || user.email,
-        mobile: studentPhone,
-        orderId: payment.id,
-      });
-
-      await repository.setPaymentAuthority(payment.id, authority);
-      revalidateTag(CACHE_TAGS.payments);
-
-      return NextResponse.json({
-        payment: { ...payment, gatewayAuthority: authority },
-        redirectUrl: zarinpalStartPayUrl(authority),
-        gateway: "zarinpal",
-        message: "در حال انتقال به درگاه زرین‌پال...",
-      });
-    } catch (err) {
-      console.error("[checkout] Zarinpal request failed:", err);
-      await repository.markPaymentFailed(payment.id);
-      return NextResponse.json(
-        {
-          error:
-            err instanceof Error
-              ? `خطا در اتصال به درگاه: ${err.message}`
-              : "خطا در اتصال به درگاه پرداخت.",
-        },
-        { status: 502 },
-      );
-    }
-  }
-
-  // ── Simulated gateway (dev / no merchant id) ───────────────────
-  // Build a signed callback URL. The HMAC proves this URL was minted by us
-  // for this specific payment — the callback will reject anything unsigned
-  // or tampered with, so an attacker can't confirm an order out of band.
-  const callbackUrl = buildCallbackUrl(payment.id);
-  revalidateTag(CACHE_TAGS.payments);
-
-  return NextResponse.json({
-    payment,
-    callbackUrl,
-    redirectUrl: callbackUrl,
-    message: "در حال انتقال به درگاه پرداخت (شبیه‌سازی)...",
-    simulated: true,
-  });
+  // Execute business logic
+  const result = await checkout({ ...parsed.data, userId: user.id, userEmail: user.email });
+  return buildUseCaseResponse(result);
 }
 
 /**

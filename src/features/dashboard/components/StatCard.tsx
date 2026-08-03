@@ -40,6 +40,7 @@ export function StatCard({
 }: StatCardProps) {
   return (
     <div
+      aria-label={`${label}: ${value}`}
       className={cn(
         "relative overflow-hidden rounded-xl border border-white/10 bg-slate-800/50 p-5",
         "border-s-4 transition-colors hover:bg-slate-800/80",

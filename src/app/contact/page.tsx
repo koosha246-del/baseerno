@@ -52,7 +52,7 @@ export default function ContactPage() {
       <Container width="page">
         {/* Hero */}
         <section className="mb-12 text-center">
-          <span className="mb-3 inline-flex items-center gap-2 rounded-pill bg-kid-mint-100 px-4 py-1.5 text-sm font-semibold text-kid-mint-700">
+          <span className="mb-3 inline-flex items-center gap-2 rounded-pill bg-kid-mint-100 px-4 py-1.5 text-sm font-semibold text-kid-mint-600">
             <MessageSquare className="size-4" />
             پشتیبانی ۲۴ ساعته
           </span>

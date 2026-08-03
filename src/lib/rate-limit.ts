@@ -121,9 +121,11 @@ function getConfig(config?: RateLimitConfig): Required<RateLimitConfig> {
  * timestamps for each identifier and remove entries older than the window.
  *
  * **Burst logic**: when `burst > 0`, the combined limit becomes
- * `max + burst` total requests per `windowMs`, but no more than `burst`
- * of those may arrive within any `burstWindowMs` sub-window.  This lets
- * legitimate traffic spikes through while still catching sustained abuse.
+ * `max + burst` total requests per `windowMs`, and **every** request
+ * counts toward a hard burst cap — no more than `burst` requests may
+ * arrive within any `burstWindowMs` sub-window. This is the same
+ * contract the Redis backend (`rate-limit-redis.ts`) implements, so
+ * development and production behave identically.
  */
 export function checkRateLimit(
   identifier: string,
@@ -163,16 +165,18 @@ export function checkRateLimit(
     return { success: false, retryAfter: Math.max(1, retryAfter) };
   }
 
-  // ── Burst sub-window check (only when exceeding the main limit) ─
-  if (cfg.burst > 0 && totalRequests >= cfg.max) {
+  // ── Burst sub-window check (hard cap — counts EVERY request) ────
+  if (cfg.burst > 0) {
     const burstCutoff = now - cfg.burstWindowMs;
-    // Count how many requests fell within the burst window, then
-    // subtract the `max` baseline — only the _extra_ requests count
-    // toward the burst limit.
+    // No more than `burst` requests may arrive within any
+    // `burstWindowMs` sub-window. We check BEFORE recording this
+    // request, so blocking when `recentTotal >= burst` guarantees the
+    // window never holds more than `burst` entries — the exact
+    // contract the Redis backend implements (burst = hard cap, not
+    // "extra beyond max").
     const recentTotal = entry.timestamps.filter((t) => t > burstCutoff).length;
-    const recentExtra = Math.max(0, recentTotal - cfg.max);
 
-    if (recentExtra >= cfg.burst) {
+    if (recentTotal >= cfg.burst) {
       // Retry after the burst window expires.
       const retryAfter = Math.ceil(cfg.burstWindowMs / 1000);
       return { success: false, retryAfter: Math.max(1, retryAfter) };
@@ -198,7 +202,13 @@ export function checkRateLimit(
  * 3. `cf-connecting-ip` (Cloudflare).
  * 4. Internal IP fallback.
  */
-export function getClientIdentifier(req: Request): string {
+export function getClientIdentifier(req: Request | undefined): string {
+  // Defensive: tests occasionally call the wrapped handler with no args
+  // (or with a stub Request missing `headers`). Treat as a single shared
+  // bucket ("anonymous") so the test still exercises the rate-limit
+  // path without throwing on `undefined`.
+  if (!req?.headers) return "anonymous";
+
   const forwarded = req.headers.get("x-forwarded-for");
   if (forwarded) {
     // Take the first IP in the chain (the actual client).

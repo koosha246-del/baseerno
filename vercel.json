@@ -3,6 +3,16 @@
   "installCommand": "npm install",
   "framework": "nextjs",
   "regions": ["fra1"],
+  "crons": [
+    {
+      "path": "/api/cron/email",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/search-sync",
+      "schedule": "0 */6 * * *"
+    }
+  ],
   "env": {
     "DATABASE_URL": "@database-url",
     "JWT_SECRET": "@jwt-secret",

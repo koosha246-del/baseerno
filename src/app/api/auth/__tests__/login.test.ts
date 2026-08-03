@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { env } from "@/lib/env";
 
 // ─── Module mocks (must come before importing the route) ───────────────
 const findUserByEmail = vi.fn();
@@ -100,5 +101,40 @@ describe("POST /api/auth/login", () => {
     expect(setSession).toHaveBeenCalledOnce();
     const body = await res.json();
     expect(body.user.email).toBe("a@b.com");
+  });
+
+  // ─── Demo mode (no DB) ────────────────────────────────────────────
+  // env.demoMode is a plain mutable field on the exported object, so we
+  // flip it around the two demo tests and restore it afterwards.
+
+  it("demo mode: logs in with the demo account when the DB is down", async () => {
+    env.demoMode = true;
+    try {
+      findUserByEmail.mockRejectedValue(new Error("ECONNREFUSED"));
+      const res = await POST(
+        makeReq({ email: "student@baseerno.ir", password: "123456" }),
+      );
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as { user?: { email?: string; role?: string } };
+      expect(body.user?.email).toBe("student@baseerno.ir");
+      expect(body.user?.role).toBe("STUDENT");
+      expect(setSession).toHaveBeenCalledOnce();
+    } finally {
+      env.demoMode = false;
+    }
+  });
+
+  it("demo mode: rejects a wrong demo password", async () => {
+    env.demoMode = true;
+    try {
+      findUserByEmail.mockRejectedValue(new Error("ECONNREFUSED"));
+      const res = await POST(
+        makeReq({ email: "student@baseerno.ir", password: "wrong" }),
+      );
+      expect(res.status).toBe(401);
+      expect(setSession).not.toHaveBeenCalled();
+    } finally {
+      env.demoMode = false;
+    }
   });
 });

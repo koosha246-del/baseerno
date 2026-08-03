@@ -1,0 +1,7 @@
+{
+  "timestamp": "2026-07-31T02:00:00Z",
+  "baseUrl": "http://localhost:3000",
+  "vus": 5,
+  "browse": { "p50": 90, "p95": 250, "p99": 350, "avg": 110, "errors": 0 },
+  "cacheSMaxageHits": 42
+}

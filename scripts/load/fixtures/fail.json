@@ -1,0 +1,10 @@
+{
+  "timestamp": "2026-07-31T01:00:00Z",
+  "baseUrl": "https://baseerno.example",
+  "vus": 50,
+  "browse": { "p50": 350, "p95": 750, "p99": 900, "avg": 420, "errors": 2.5 },
+  "search": { "p50": 200, "p95": 600, "p99": 800, "avg": 280, "errors": 6 },
+  "auth": { "p50": 300, "p95": 500, "p99": 700, "avg": 340, "errors": 12 },
+  "dashboard": { "p50": 500, "p95": 1500, "p99": 2200, "avg": 700, "errors": 3 },
+  "cacheSMaxageHits": 30
+}

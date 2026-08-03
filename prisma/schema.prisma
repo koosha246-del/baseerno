@@ -46,6 +46,10 @@ model User {
   avatar       String?
   phone        String?
   bio          String?
+  /// TOTP base32 secret — set when the user enables 2FA.
+  twoFactorSecret String?
+  /// Whether 2FA is active for this user (enforced on login).
+  twoFactorEnabled Boolean @default(false)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   deletedAt    DateTime?
@@ -60,9 +64,45 @@ model User {
   receivedMessages Message[]       @relation("ReceivedMessages")
   passwordResets   PasswordReset[]
   notifications    Notification[]
+  aiConversations  Conversation[]
 
   @@index([email])
   @@index([role])
+  @@index([deletedAt])
+}
+
+/// AI tutor — a conversation thread between a student and the assistant,
+/// optionally scoped to a course so the assistant knows the context.
+model Conversation {
+  id        String   @id @default(cuid())
+  userId    String
+  courseId  String?
+  title     String   @default("گفتگو با دستیار")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  user     User          @relation(fields: [userId], references: [id])
+  course   Course?       @relation(fields: [courseId], references: [id])
+  messages ChatMessage[]
+
+  @@index([userId, updatedAt])
+  @@index([courseId])
+  @@index([deletedAt])
+}
+
+/// A single turn inside an AI conversation.  `role` is "user" | "assistant".
+model ChatMessage {
+  id             String   @id @default(cuid())
+  conversationId String
+  role           String   // "user" | "assistant"
+  content        String   @db.Text
+  createdAt      DateTime @default(now())
+  deletedAt      DateTime?
+
+  conversation Conversation @relation(fields: [conversationId], references: [id])
+
+  @@index([conversationId, createdAt])
   @@index([deletedAt])
 }
 
@@ -92,6 +132,7 @@ model Course {
   certificates Certificate[]
   payments     Payment[]
   lessonItems  Lesson[]
+  aiConversations Conversation[]
 
   @@index([mentorId])
   @@index([published])
@@ -259,4 +300,72 @@ model Lesson {
   @@index([courseId])
   @@index([sortOrder])
   @@index([deletedAt])
+}
+
+model EmailOutbox {
+  id        String   @id @default(cuid())
+  to        String
+  subject   String
+  html      String
+  status    String   @default("pending") // pending | sent | failed
+  retries   Int      @default(0)
+  maxRetries Int     @default(3)
+  lastError String?
+  /// Next attempt timestamp for exponential backoff.
+  nextAttemptAt DateTime? @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  sentAt    DateTime? @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@index([status, createdAt])
+}
+
+/// Generated column + GIN index for full-text search across courses.
+/// The actual tsvector column and GIN index are created via a raw
+/// migration (see prisma/migrations/...add_fts_index).  Prisma does
+/// not natively support tsvector, so the `searchVector` column and
+/// its index are managed by hand as `Unsupported`.
+model CourseSearch {
+  id         String                                @id
+  title      String
+  subtitle   String
+  /// Actual PostgreSQL tsvector column — created via raw SQL.
+  searchVector Unsupported("tsvector")?
+
+  @@index([searchVector], name: "course_search_gin_idx", type: Gin)
+}
+
+/// One k6 load-test run — recorded by scripts/load/record-run.ts after
+/// each test so the Ops dashboard can chart p95 / error trends over time.
+/// `scenarios` holds the per-scenario stats from the k6 result:
+///   { browse: {p50,p95,p99,avg,errors}, search: {...}, dashboard: {...} }
+model LoadRun {
+  id              String   @id @default(cuid())
+  baseUrl         String
+  vus             Int
+  durationSeconds Int
+  pass            Boolean
+  scenarios       Json
+  cacheHits       Int      @default(0)
+  createdAt       DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+/// Security audit trail — every sensitive action is recorded here via
+/// the event bus (login, password change, cert issue, payment failure,
+/// admin moderation). Never stores passwords/tokens/secrets.
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String
+  targetType String
+  targetId   String?
+  meta       Json?
+  ip         String?
+  createdAt  DateTime @default(now())
+
+  @@index([actorId, createdAt])
+  @@index([action, createdAt])
+  @@index([targetType, targetId])
 }

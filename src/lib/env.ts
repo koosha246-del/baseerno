@@ -16,11 +16,34 @@ const envSchema = z.object({
   /** PostgreSQL connection string — required whenever the DB client is used. */
   DATABASE_URL: z.string().min(1).optional(),
 
+  /**
+   * Direct (non-pooled) PostgreSQL connection string. When set, the app
+   * connects through `DATABASE_URL` (pooled) and Prisma migrations use
+   * `DIRECT_URL` — the standard Supabase/Neon pooling pattern.
+   */
+  DIRECT_URL: z.string().optional(),
+
+  /**
+   * Read-replica connection string (optional). When set, read-only
+   * dashboard/report queries run against the replica with automatic
+   * fallback to the primary.
+   */
+  REPLICA_URL: z.string().optional(),
+
   /** JWT signing secret — min 32 chars in production. */
   JWT_SECRET: z.string().optional(),
 
+  /**
+   * Previous JWT secret — enabled during key rotation. Tokens signed
+   * with the old secret stay valid until expiry (dual-key verify).
+   */
+  JWT_SECRET_OLD: z.string().optional(),
+
   /** HMAC secret for simulated payment callbacks. */
   PAYMENT_SIGNATURE_SECRET: z.string().optional(),
+
+  /** Previous payment signature secret — accepted during rotation. */
+  PAYMENT_SIGNATURE_SECRET_OLD: z.string().optional(),
 
   /** Zarinpal merchant UUID. When set, real gateway is used for paid checkouts. */
   ZARINPAL_MERCHANT_ID: z.string().optional(),
@@ -31,7 +54,27 @@ const envSchema = z.object({
     .optional()
     .transform((v) => v === "true"),
 
+  /**
+   * Demo mode — login works against built-in demo accounts even when
+   * PostgreSQL is unreachable, so the app can be explored without a DB.
+   * Never enable in production (checked at startup).
+   */
+  DEMO_MODE: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((v) => v === "true"),
+
   RESEND_API_KEY: z.string().optional(),
+
+  /**
+   * Optional LLM API key (AI tutor). When absent the AI endpoints return
+   * a canned Persian mock response so development works offline.
+   */
+  AI_API_KEY: z.string().optional(),
+  /** Optional LLM base URL — defaults to the OpenAI-compatible endpoint. */
+  AI_BASE_URL: z.string().url().optional(),
+  /** Optional model name — defaults to "gpt-4o-mini". */
+  AI_MODEL: z.string().optional(),
 
   CLOUDINARY_CLOUD_NAME: z.string().optional(),
   CLOUDINARY_API_KEY: z.string().optional(),
@@ -42,10 +85,23 @@ const envSchema = z.object({
 
   SENTRY_DSN: z.string().optional(),
 
+  /** Dedicated search engine (Meilisearch/Typesense-compatible REST). */
+  SEARCH_HOST: z.string().url().optional(),
+  SEARCH_API_KEY: z.string().optional(),
+
+  /** Google reCAPTCHA v3 secret — when unset, captcha verification auto-passes (dev/test). */
+  RECAPTCHA_SECRET_KEY: z.string().optional(),
+
   /** Public site origin (used for payment callbacks / absolute URLs). */
   NEXT_PUBLIC_SITE_URL: z.string().url().optional(),
 
   NEXT_PUBLIC_GA_ID: z.string().optional(),
+
+  /**
+   * Load-test regression severity (%) above which admins are paged by
+   * email (in-app notifications always fire). Default 50.
+   */
+  LOAD_REGRESSION_EMAIL_THRESHOLD: z.coerce.number().min(0).max(100).optional(),
 });
 
 export type Env = z.infer<typeof envSchema> & {
@@ -57,6 +113,10 @@ export type Env = z.infer<typeof envSchema> & {
   isTest: boolean;
   /** True when a real Zarinpal merchant id is configured. */
   zarinpalEnabled: boolean;
+  /** True when a reCAPTCHA secret is configured (so verification is enforced). */
+  captchaConfigured: boolean;
+  /** True when demo mode is enabled (auth works without a database). */
+  demoMode: boolean;
 };
 
 const DEV_JWT_FALLBACK = "dev-only-insecure-secret-do-not-use-in-production";
@@ -72,18 +132,27 @@ function loadEnv(): Env {
   const parsed = envSchema.safeParse({
     NODE_ENV: process.env.NODE_ENV,
     DATABASE_URL: process.env.DATABASE_URL,
+    DIRECT_URL: process.env.DIRECT_URL,
+    REPLICA_URL: process.env.REPLICA_URL,
     JWT_SECRET: process.env.JWT_SECRET,
+    JWT_SECRET_OLD: process.env.JWT_SECRET_OLD,
     PAYMENT_SIGNATURE_SECRET: process.env.PAYMENT_SIGNATURE_SECRET,
+    PAYMENT_SIGNATURE_SECRET_OLD: process.env.PAYMENT_SIGNATURE_SECRET_OLD,
     ZARINPAL_MERCHANT_ID: process.env.ZARINPAL_MERCHANT_ID,
     ZARINPAL_SANDBOX: process.env.ZARINPAL_SANDBOX,
+    DEMO_MODE: process.env.DEMO_MODE,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
     CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
     CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
     REDIS_URL: process.env.REDIS_URL,
     SENTRY_DSN: process.env.SENTRY_DSN,
+    RECAPTCHA_SECRET_KEY: process.env.RECAPTCHA_SECRET_KEY,
+    SEARCH_HOST: process.env.SEARCH_HOST,
+    SEARCH_API_KEY: process.env.SEARCH_API_KEY,
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
     NEXT_PUBLIC_GA_ID: process.env.NEXT_PUBLIC_GA_ID,
+    LOAD_REGRESSION_EMAIL_THRESHOLD: process.env.LOAD_REGRESSION_EMAIL_THRESHOLD,
   });
 
   if (!parsed.success) {
@@ -114,6 +183,9 @@ function loadEnv(): Env {
         "PAYMENT_SIGNATURE_SECRET is required in production (min 16 characters)",
       );
     }
+    if (data.DEMO_MODE) {
+      productionErrors.push("DEMO_MODE must never be enabled in production");
+    }
 
     if (productionErrors.length > 0) {
       const msg = `Invalid production environment:\n  • ${productionErrors.join("\n  • ")}`;
@@ -134,6 +206,8 @@ function loadEnv(): Env {
     isDevelopment,
     isTest,
     zarinpalEnabled: Boolean(data.ZARINPAL_MERCHANT_ID?.trim()),
+    captchaConfigured: Boolean(data.RECAPTCHA_SECRET_KEY?.trim()),
+    demoMode: data.DEMO_MODE ?? false,
   };
 }
 

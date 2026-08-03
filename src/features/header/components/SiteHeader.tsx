@@ -22,6 +22,7 @@ export function SiteHeader() {
 
   return (
     <header
+      aria-label="سربرگ سایت"
       className={cn(
         "fixed inset-x-0 top-0 z-header transition-all duration-slow ease-luxury",
         scrolled

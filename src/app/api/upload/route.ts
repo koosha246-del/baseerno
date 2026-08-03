@@ -3,6 +3,8 @@ import { v2 as cloudinary } from "cloudinary";
 import { getCurrentUser } from "@/lib/auth/session";
 import { isSameOriginRequest, csrfRejectedResponse } from "@/lib/csrf";
 import { env } from "@/lib/env";
+import { withRateLimit } from "@/lib/api-middleware";
+import { RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
 
 cloudinary.config({
   cloud_name: env.CLOUDINARY_CLOUD_NAME || "",
@@ -10,7 +12,7 @@ cloudinary.config({
   api_secret: env.CLOUDINARY_API_SECRET || "",
 });
 
-export async function POST(req: Request) {
+async function uploadHandler(req: Request) {
   // CSRF: uploads are billed to our Cloudinary account, so lock the origin.
   if (!isSameOriginRequest(req)) {
     return csrfRejectedResponse();
@@ -69,3 +71,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "آپلود فایل با خطا مواجه شد." }, { status: 500 });
   }
 }
+
+/** API: max=10, burst=3 per minute — protect Cloudinary credit consumption. */
+export const POST = withRateLimit(uploadHandler, {
+  windowMs: 60_000,
+  max: 10,
+  burst: 3,
+  burstWindowMs: 10_000,
+}, {
+  keyPrefix: "upload",
+});

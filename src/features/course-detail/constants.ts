@@ -12,7 +12,7 @@ export const courseDetails: Record<string, CourseDetail> = {
     longDescription:
       "این درس برای دانش‌آموزی است که تازه شروع کرده. با حروف، کلمه‌های ساده و جمله‌های کوتاه جلو می‌رویم تا بدون استرس انگلیسی را شروع کنی.",
     level: "مقدماتی",
-    category: "speaking",
+    category: "grammar",
     mentor: "خانم سارا محمدی",
     mentorBio:
       "معلم انگلیسی کودکان و نوجوانان — بلد است درس را ساده و شاد توضیح بدهد.",
@@ -57,7 +57,7 @@ export const courseDetails: Record<string, CourseDetail> = {
     longDescription:
       "گرامر را سخت و پیچیده نمی‌گوییم. با مثال‌های کوتاه و تمرین کم، قواعد مهم را یاد می‌گیری.",
     level: "متوسط",
-    category: "presentation",
+    category: "grammar",
     mentor: "آقای رضا کریمی",
     mentorBio: "معلم گرامر و مکالمه — توضیحاتش کوتاه و واضح است.",
     mentorInitial: "ر",
@@ -99,7 +99,7 @@ export const courseDetails: Record<string, CourseDetail> = {
     longDescription:
       "یاد می‌گیری بهتر گوش بدهی و کلمات را درست تلفظ کنی — با تمرین‌های کوتاه و شاد.",
     level: "متوسط",
-    category: "voice",
+    category: "listening",
     mentor: "خانم نگار احمدی",
     mentorBio: "معلم تلفظ و شنیدن برای دانش‌آموزان.",
     mentorInitial: "ن",
@@ -134,7 +134,7 @@ export const courseDetails: Record<string, CourseDetail> = {
     longDescription:
       "کلمه‌هایی که هر روز لازم داری: مدرسه، خانه، دوستان و بازی. با تصویر و تکرار یاد می‌گیری.",
     level: "مقدماتی",
-    category: "communication",
+    category: "vocabulary",
     mentor: "آقای امیر حسینی",
     mentorBio: "معلم واژگان برای سطح دانش‌آموز.",
     mentorInitial: "ا",
@@ -210,7 +210,7 @@ export const courseDetails: Record<string, CourseDetail> = {
     longDescription:
       "با داستان‌های کوتاه و قشنگ، خواندن انگلیسی را تمرین می‌کنی و واژه‌های جدید یاد می‌گیری.",
     level: "متوسط",
-    category: "voice",
+    category: "reading",
     mentor: "خانم نگار احمدی",
     mentorBio: "معلم داستان و خواندن برای دانش‌آموزان.",
     mentorInitial: "ن",

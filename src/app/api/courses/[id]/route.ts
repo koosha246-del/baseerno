@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/session";
 import { repository } from "@/lib/db/repository";
 import { isSameOriginRequest, csrfRejectedResponse } from "@/lib/csrf";
-import { CACHE_TAGS } from "@/lib/cache-tags";
+import { invalidateCache, invalidateSearchCourseCache } from "@/lib/cache";
+import { CACHE_TAGS, publishedCoursesCacheKeys } from "@/lib/cache-tags";
+import { publish } from "@/lib/events";
 
 const updateSchema = z.object({
   title: z.string().min(3).optional(),
@@ -71,9 +72,14 @@ export async function PATCH(
   }
 
   const updated = await repository.updateCourse(id, parsed.data);
-  revalidateTag(CACHE_TAGS.courses);
-  revalidateTag(CACHE_TAGS.course(id));
-  revalidateTag(CACHE_TAGS.reports);
+  await invalidateCache(publishedCoursesCacheKeys(), [
+    CACHE_TAGS.courses,
+    CACHE_TAGS.course(id),
+    CACHE_TAGS.reports,
+  ]);
+  // Title/subtitle changes should be reflected in search immediately.
+  await invalidateSearchCourseCache();
+  await publish({ type: "search:needs-sync", courseId: id });
   return NextResponse.json({ course: updated });
 }
 
@@ -102,8 +108,12 @@ export async function DELETE(
   }
 
   await repository.unpublishCourse(id);
-  revalidateTag(CACHE_TAGS.courses);
-  revalidateTag(CACHE_TAGS.course(id));
-  revalidateTag(CACHE_TAGS.reports);
+  await invalidateCache(publishedCoursesCacheKeys(), [
+    CACHE_TAGS.courses,
+    CACHE_TAGS.course(id),
+    CACHE_TAGS.reports,
+  ]);
+  await invalidateSearchCourseCache();
+  await publish({ type: "search:needs-sync", courseId: id });
   return NextResponse.json({ ok: true });
 }

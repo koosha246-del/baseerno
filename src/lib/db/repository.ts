@@ -11,6 +11,8 @@ import * as payments from "./domains/payments.repo";
 import * as messages from "./domains/messages.repo";
 import * as notifications from "./domains/notifications.repo";
 import * as search from "./domains/search.repo";
+import * as ai from "./domains/ai.repo";
+import * as loadRuns from "./domains/load-runs.repo";
 
 export const repository = {
   /* Users / Password Resets */
@@ -27,6 +29,10 @@ export const repository = {
   ...notifications,
   /* Search */
   ...search,
+  /* AI Tutor */
+  ...ai,
+  /* Load-test history */
+  ...loadRuns,
 };
 
 /** Repository type — shape of the merged domain object. */

@@ -2,27 +2,43 @@ import { describe, it, expect } from "vitest";
 import { hashPassword, verifyPassword } from "../password";
 
 describe("password", () => {
-  it("hashes a plain password (not stored in plain text)", async () => {
-    const hash = await hashPassword("hunter2");
-    expect(hash).not.toBe("hunter2");
-    expect(hash.length).toBeGreaterThan(20);
+  describe("hashPassword", () => {
+    it("returns a hash string", async () => {
+      const hash = await hashPassword("my-secret-password");
+      expect(typeof hash).toBe("string");
+      // bcrypt hashes start with $2b$ or $2a$
+      expect(hash).toMatch(/^\$2[aby]\$/);
+    });
+
+    it("produces different hashes for the same password (salt)", async () => {
+      const hash1 = await hashPassword("same-password");
+      const hash2 = await hashPassword("same-password");
+      expect(hash1).not.toBe(hash2);
+    });
   });
 
-  it("verifies a correct password", async () => {
-    const hash = await hashPassword("hunter2");
-    expect(await verifyPassword("hunter2", hash)).toBe(true);
-  });
+  describe("verifyPassword", () => {
+    it("returns true for correct password", async () => {
+      const hash = await hashPassword("correct-password");
+      const result = await verifyPassword("correct-password", hash);
+      expect(result).toBe(true);
+    });
 
-  it("rejects a wrong password", async () => {
-    const hash = await hashPassword("hunter2");
-    expect(await verifyPassword("hunter3", hash)).toBe(false);
-  });
+    it("returns false for wrong password", async () => {
+      const hash = await hashPassword("real-password");
+      const result = await verifyPassword("wrong-password", hash);
+      expect(result).toBe(false);
+    });
 
-  it("produces a different hash for the same input (salt)", async () => {
-    const a = await hashPassword("same");
-    const b = await hashPassword("same");
-    expect(a).not.toBe(b);
-    expect(await verifyPassword("same", a)).toBe(true);
-    expect(await verifyPassword("same", b)).toBe(true);
+    it("returns false for empty string against a real hash", async () => {
+      const hash = await hashPassword("something");
+      const result = await verifyPassword("", hash);
+      expect(result).toBe(false);
+    });
+
+    it("returns false when hash is invalid", async () => {
+      const result = await verifyPassword("any", "not-a-valid-hash");
+      expect(result).toBe(false);
+    });
   });
 });

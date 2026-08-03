@@ -1,5 +1,9 @@
 import "@testing-library/jest-dom/vitest";
-import { beforeAll, afterAll } from "vitest";
+import { toHaveNoViolations } from "jest-axe";
+import { beforeAll, afterAll, expect } from "vitest";
+
+// Extend Vitest expect with jest-axe accessibility matchers.
+expect.extend(toHaveNoViolations);
 
 // Quiet down noisy console errors during tests (e.g. expected rejections).
 const originalError = console.error;

@@ -47,7 +47,7 @@ export default function PrivacyPage() {
     <main className="bg-background pb-20 pt-[calc(var(--header-h)+2rem)]">
       <Container width="narrow">
         <header className="mb-10 text-center">
-          <span className="mb-3 inline-flex items-center gap-2 rounded-pill bg-kid-sky-100 px-4 py-1.5 text-sm font-semibold text-kid-sky-700">
+          <span className="mb-3 inline-flex items-center gap-2 rounded-pill bg-kid-sky-100 px-4 py-1.5 text-sm font-semibold text-kid-sky-600">
             سیاست حفظ حریم خصوصی
           </span>
           <h1 className="font-display text-3xl font-extrabold tracking-tight text-fg-primary sm:text-4xl">

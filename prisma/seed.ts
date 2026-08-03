@@ -1,7 +1,8 @@
 import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { withUtcSession } from "../src/lib/db/conn";
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
+const adapter = new PrismaPg({ connectionString: withUtcSession(process.env.DATABASE_URL!) });
 const prisma = new PrismaClient({ adapter });
 
 const daysAgo = (d: number) => new Date(Date.now() - d * 86400000);
@@ -16,6 +17,7 @@ async function main() {
   await prisma.certificate.deleteMany();
   await prisma.grade.deleteMany();
   await prisma.enrollment.deleteMany();
+  await prisma.lesson.deleteMany();
   await prisma.course.deleteMany();
   await prisma.user.deleteMany();
 
@@ -181,6 +183,47 @@ async function main() {
   });
 
   console.log(`  ✅ Courses: ${c1.title}, ${c2.title}, ${c3.title}, ${c4.title}`);
+
+  // ─── Lessons (c_fundamentals — first lesson is free) ───────────
+  await prisma.lesson.createMany({
+    data: [
+      {
+        id: "l_1",
+        courseId: c1.id,
+        title: "مقدمه: چرا فن بیان؟",
+        type: "video",
+        videoUrl: "https://www.youtube.com/embed/ScMzIvxBSi4",
+        durationMinutes: 8,
+        sortOrder: 1,
+        isFree: true,
+        published: true,
+      },
+      {
+        id: "l_2",
+        courseId: c1.id,
+        title: "تکنیک‌های تنفسی",
+        type: "video",
+        videoUrl: "https://www.youtube.com/embed/ScMzIvxBSi4",
+        durationMinutes: 12,
+        sortOrder: 2,
+        isFree: false,
+        published: true,
+      },
+      {
+        id: "l_3",
+        courseId: c1.id,
+        title: "ساختار یک ارائه",
+        type: "video",
+        videoUrl: "https://www.youtube.com/embed/ScMzIvxBSi4",
+        durationMinutes: 15,
+        sortOrder: 3,
+        isFree: false,
+        published: true,
+      },
+    ],
+  });
+
+  console.log("  ✅ Lessons: 3 created (first lesson free)");
 
   // ─── Enrollments ───────────────────────────────────────────────
   const e1 = await prisma.enrollment.create({

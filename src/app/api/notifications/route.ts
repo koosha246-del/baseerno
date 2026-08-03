@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/session";
 import { repository } from "@/lib/db/repository";
+import { isSameOriginRequest, csrfRejectedResponse } from "@/lib/csrf";
+import { withRateLimit } from "@/lib/api-middleware";
+import { RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
 
-export async function GET(req: Request) {
+async function listNotificationsHandler(req: Request) {
   const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "احراز هویت نشده." }, { status: 401 });
@@ -18,7 +21,21 @@ export async function GET(req: Request) {
   return NextResponse.json({ notifications, unreadCount });
 }
 
-export async function POST(req: Request) {
+/**
+ * List notifications — wrapped in rate limiting (READ preset) so a
+ * database outage surfaces as a clean 503 (with rate-limit headers)
+ * instead of a raw 500, matching every other DB-backed API route.
+ */
+export const GET = withRateLimit(listNotificationsHandler, RATE_LIMIT_PRESETS.READ, {
+  keyPrefix: "notifications:list",
+});
+
+async function createNotificationHandler(req: Request) {
+  // CSRF: notification creation mutates on behalf of the admin session.
+  if (!isSameOriginRequest(req)) {
+    return csrfRejectedResponse();
+  }
+
   const user = await getCurrentUser();
   if (!user || user.role !== "ADMIN") {
     return NextResponse.json({ error: "دسترسی غیرمجاز." }, { status: 403 });
@@ -53,3 +70,8 @@ export async function POST(req: Request) {
 
   return NextResponse.json({ notification }, { status: 201 });
 }
+
+/** API: max=20, burst=5 per minute. */
+export const POST = withRateLimit(createNotificationHandler, RATE_LIMIT_PRESETS.API, {
+  keyPrefix: "notifications:create",
+});

@@ -27,11 +27,14 @@ export async function countEnrollmentsByStatus(): Promise<Record<string, number>
   return out;
 }
 
-export async function countEnrollments(opts?: {
-  userId?: string;
-  status?: string;
-}): Promise<number> {
-  return prisma.enrollment.count({
+export async function countEnrollments(
+  opts?: {
+    userId?: string;
+    status?: string;
+  },
+  db: typeof prisma = prisma,
+): Promise<number> {
+  return db.enrollment.count({
     where: {
       ...(opts?.userId ? { userId: opts.userId } : {}),
       ...(opts?.status
@@ -77,8 +80,8 @@ export async function createEnrollment(input: {
 }
 
 /** Count enrollments grouped by calendar month (raw SQL). */
-export async function enrollmentsByMonth() {
-  const rows = await prisma.$queryRaw<
+export async function enrollmentsByMonth(db: typeof prisma = prisma) {
+  const rows = await db.$queryRaw<
     Array<{ month: Date; count: bigint }>
   >`
     SELECT date_trunc('month', "enrolledAt") AS month, COUNT(*)::bigint AS count
@@ -140,8 +143,8 @@ export async function averageScoreForUser(userId: string): Promise<number> {
 
 /* ─── Top Courses ──────────────────────────────────────────────── */
 
-export async function topCourses(limit = 5) {
-  const courses = await prisma.course.findMany({
+export async function topCourses(limit = 5, db: typeof prisma = prisma) {
+  const courses = await db.course.findMany({
     where: { published: true },
     select: {
       id: true,

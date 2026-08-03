@@ -3,6 +3,8 @@ import { z } from "zod";
 import { repository } from "@/lib/db/repository";
 import { getCurrentUser } from "@/lib/auth/session";
 import { isSameOriginRequest, csrfRejectedResponse } from "@/lib/csrf";
+import { withRateLimit } from "@/lib/api-middleware";
+import { RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
 
 const schema = z.object({
   courseId: z.string().min(1),
@@ -25,7 +27,8 @@ export async function GET(req: Request) {
   return NextResponse.json({ lessons });
 }
 
-export async function POST(req: Request) {
+async function createLessonHandler(req: Request) {
+  // CSRF: lesson creation mutates course content on behalf of the teacher session.
   if (!isSameOriginRequest(req)) {
     return csrfRejectedResponse();
   }
@@ -72,3 +75,8 @@ export async function POST(req: Request) {
 
   return NextResponse.json({ lesson }, { status: 201 });
 }
+
+/** API: max=20, burst=5 per minute. */
+export const POST = withRateLimit(createLessonHandler, RATE_LIMIT_PRESETS.API, {
+  keyPrefix: "lessons:create",
+});

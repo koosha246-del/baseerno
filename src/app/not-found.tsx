@@ -15,7 +15,11 @@ export default function NotFound() {
       <Container width="narrow" className="py-12">
         <div className="flex flex-col items-center text-center">
           {/* ۴۰۴ in brand gradient */}
-          <span className="font-display text-[8rem] font-black leading-none bg-brand-gradient-rtl bg-clip-text text-transparent sm:text-[10rem]">
+          <span
+            role="alert"
+            aria-label="خطای ۴۰۴"
+            className="font-display text-[8rem] font-black leading-none bg-brand-gradient-rtl bg-clip-text text-transparent sm:text-[10rem]"
+          >
             ۴۰۴
           </span>
 

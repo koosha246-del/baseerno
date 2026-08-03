@@ -9,14 +9,13 @@ interface SectionHeadingProps {
   align?: "center" | "start";
   width?: "page" | "narrow";
   className?: string;
-  /** Renders the heading inside a ScrollReveal-ready stagger block. */
   id?: string;
 }
 
 /**
- * SectionHeading — reusable eyebrow + title + description block.
- * Provides the consistent section rhythm across all homepage sections.
- * Title supports gradient spans via the <GradientText> component.
+ * SectionHeading — reusable eyebrow + title + description.
+ * A thin hairline accent line appears on the right
+ * as the subtle signature element.
  */
 export function SectionHeading({
   eyebrow,
@@ -31,15 +30,23 @@ export function SectionHeading({
     <Container width={width}>
       <div
         className={cn(
-          "flex flex-col gap-4",
+          "relative flex flex-col gap-3",
           align === "center" ? "items-center text-center" : "items-start text-right",
+          // Hairline accent — subtle signature element on the right side
+          align === "start" && "pr-5",
           className
         )}
       >
+        {align === "start" && (
+          <div
+            className="absolute right-0 top-2 bottom-2 w-px"
+            style={{ background: "var(--theme-accent)" }}
+            aria-hidden
+          />
+        )}
+
         {eyebrow ? (
-          <span
-            className="inline-flex items-center gap-2 rounded-full bg-accent-soft px-4 py-1.5 text-xs font-bold text-accent"
-          >
+          <span className="inline-flex items-center gap-2 rounded-full bg-accent-soft px-3 py-1 text-xs font-semibold text-accent">
             <span className="size-1.5 rounded-full bg-accent" aria-hidden />
             {eyebrow}
           </span>
@@ -47,13 +54,13 @@ export function SectionHeading({
 
         <h2
           id={id}
-          className="font-display text-3xl font-extrabold leading-tight tracking-tight text-fg-primary sm:text-4xl lg:text-[2.75rem]"
+          className="font-display text-2xl font-extrabold leading-tight tracking-tight text-fg-primary sm:text-3xl lg:text-[2.5rem]"
         >
           {title}
         </h2>
 
         {description ? (
-          <p className="max-w-2xl animate-fade-up text-base leading-loose text-fg-secondary sm:text-lg">
+          <p className="max-w-2xl text-base leading-relaxed text-fg-secondary sm:text-lg">
             {description}
           </p>
         ) : null}

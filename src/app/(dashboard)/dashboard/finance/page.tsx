@@ -7,6 +7,8 @@ import { Pagination } from "@/components/shared/Pagination";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { getCachedCountPayments, getCachedPaymentsList, getCachedTotalRevenue } from "@/lib/db/queries";
+import { env } from "@/lib/env";
+import { DemoUnavailableCard } from "@/components/shared/DemoUnavailableCard";
 
 const PAGE_SIZE = 20;
 
@@ -17,6 +19,11 @@ interface PageProps {
 export default async function FinancePage({ searchParams }: PageProps) {
   const user = await getCurrentUser();
   if (!user) return null;
+
+  // Demo mode (no DB): show a friendly card instead of a hanging skeleton.
+  if (env.demoMode) {
+    return <DemoUnavailableCard />;
+  }
 
   const sp = await searchParams;
   const currentPage = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);

@@ -3,11 +3,18 @@ import { repository } from "@/lib/db/repository";
 import { toPersianDigits } from "@/lib/format";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { env } from "@/lib/env";
+import { DemoUnavailableCard } from "@/components/shared/DemoUnavailableCard";
 import { BookOpen } from "lucide-react";
 
 export default async function CoursesPage() {
   const user = await getCurrentUser();
   if (!user) return null;
+
+  // Demo mode (no DB): show a friendly card instead of a hanging skeleton.
+  if (env.demoMode) {
+    return <DemoUnavailableCard />;
+  }
 
   if (user.role === "STUDENT") {
     const enrollments = await repository.listEnrollments(user.id);

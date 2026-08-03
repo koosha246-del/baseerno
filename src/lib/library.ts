@@ -1,10 +1,11 @@
 /**
  * Library catalog — taught books available for paid download.
  *
- * For the demo, the "file" is the cover image itself. In production these
- * would point to real PDF / EPUB files hosted on Cloudinary or a private
- * bucket, gated behind signed download URLs.
+ * Image URLs use `cldImage()` to serve from Cloudinary when configured,
+ * falling back to local paths for development.
  */
+
+import { cldImage } from "./image";
 
 export interface Book {
   id: string;
@@ -14,7 +15,7 @@ export interface Book {
   level: string;
   description: string;
   price: number; // Tomans
-  cover: string; // public path to the cover image
+  cover: string; // Cloudinary public ID (e.g. "library/interchange-intro")
   file: string; // public path to the actual downloadable file
   pages?: number;
 }
@@ -29,7 +30,7 @@ export const libraryBooks: Book[] = [
     description:
       "کتاب پایه برای شروع یادگیری زبان انگلیسی. مناسب افرادی که هیچ پیش‌زمینه‌ای ندارند.",
     price: 250_000,
-    cover: "/library/interchange-intro.jpg",
+    cover: "library/interchange-intro",
     file: "/library/interchange-intro.jpg",
     pages: 144,
   },
@@ -42,7 +43,7 @@ export const libraryBooks: Book[] = [
     description:
       "سطح اول مجموعه Interchange. گرامر و واژگان پایه برای مکالمه روزمره.",
     price: 280_000,
-    cover: "/library/interchange-1.jpg",
+    cover: "library/interchange-1",
     file: "/library/interchange-1.jpg",
     pages: 152,
   },
@@ -55,7 +56,7 @@ export const libraryBooks: Book[] = [
     description:
       "سطح دوم مجموعه Interchange. تقویت مهارت مکالمه و listening در موقعیت‌های متنوع.",
     price: 280_000,
-    cover: "/library/interchange-2.jpg",
+    cover: "library/interchange-2",
     file: "/library/interchange-2.jpg",
     pages: 152,
   },
@@ -68,7 +69,7 @@ export const libraryBooks: Book[] = [
     description:
       "سطح سوم مجموعه Interchange. گرامر پیشرفته‌تر و مهارت‌های ارتباطی حرفه‌ای.",
     price: 280_000,
-    cover: "/library/interchange-3.jpg",
+    cover: "library/interchange-3",
     file: "/library/interchange-3.jpg",
     pages: 152,
   },
@@ -81,11 +82,16 @@ export const libraryBooks: Book[] = [
     description:
       "مجموعه کامل ۴ جلدی Connect برای یادگیری ساختارمند زبان انگلیسی.",
     price: 450_000,
-    cover: "/library/connect-series.jpg",
+    cover: "library/connect-series",
     file: "/library/connect-series.jpg",
     pages: 600,
   },
 ];
+
+/** Get a book's cover image URL (Cloudinary CDN or local fallback). */
+export function getBookCover(book: Book): string {
+  return cldImage(book.cover, { width: 400, height: 600, crop: "fit", quality: 80 });
+}
 
 export function findBook(id: string): Book | undefined {
   return libraryBooks.find((b) => b.id === id);

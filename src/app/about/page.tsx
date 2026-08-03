@@ -84,7 +84,7 @@ export default function AboutPage() {
       <Container width="page">
         {/* Hero */}
         <section className="mb-16 text-center">
-          <span className="mb-4 inline-flex items-center gap-2 rounded-pill bg-kid-sky-100 px-4 py-1.5 text-sm font-semibold text-kid-sky-700">
+          <span className="mb-4 inline-flex items-center gap-2 rounded-pill bg-kid-sky-100 px-4 py-1.5 text-sm font-semibold text-kid-sky-600">
             <GraduationCap className="size-4" />
             درباره ما
           </span>
@@ -211,7 +211,7 @@ export default function AboutPage() {
         {/* Method */}
         <section className="mb-16 rounded-3xl bg-kid-mint-50 p-8 sm:p-12">
           <div className="mx-auto max-w-3xl text-center">
-            <span className="mb-3 inline-flex items-center gap-2 rounded-pill bg-white px-4 py-1.5 text-sm font-bold text-kid-mint-700 shadow-sm">
+            <span className="mb-3 inline-flex items-center gap-2 rounded-pill bg-white px-4 py-1.5 text-sm font-bold text-kid-mint-600 shadow-sm dark:bg-surface">
               <BookOpen className="size-4" />
               روش آموزشی ما
             </span>

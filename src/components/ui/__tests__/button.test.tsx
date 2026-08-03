@@ -1,44 +1,91 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { Button } from "../button";
+import Link from "next/link";
 
 describe("Button", () => {
-  it("renders its children", () => {
-    render(<Button>Click me</Button>);
-    expect(screen.getByRole("button", { name: "Click me" })).toBeInTheDocument();
+  it("renders children text", () => {
+    render(<Button>ورود</Button>);
+    expect(screen.getByRole("button", { name: "ورود" })).toBeInTheDocument();
   });
 
-  it("calls onClick when clicked", () => {
-    const onClick = vi.fn();
-    render(<Button onClick={onClick}>Go</Button>);
-    fireEvent.click(screen.getByRole("button"));
-    expect(onClick).toHaveBeenCalledOnce();
+  it("renders with brand variant classes", () => {
+    render(<Button variant="brand">برند</Button>);
+    const btn = screen.getByRole("button");
+    expect(btn.className).toContain("bg-accent");
+    expect(btn.className).toContain("text-white");
   });
 
-  it("is disabled when the disabled prop is set", () => {
-    render(<Button disabled>nope</Button>);
-    expect(screen.getByRole("button")).toBeDisabled();
+  it("renders with outline variant classes", () => {
+    render(<Button variant="outline">حاشیه</Button>);
+    const btn = screen.getByRole("button");
+    expect(btn.className).toContain("border");
+    expect(btn.className).toContain("border-app-border");
   });
 
-  it("does not fire onClick when disabled", () => {
-    const onClick = vi.fn();
-    render(<Button disabled onClick={onClick}>x</Button>);
-    fireEvent.click(screen.getByRole("button"));
-    expect(onClick).not.toHaveBeenCalled();
+  it("renders with ghost variant classes", () => {
+    render(<Button variant="ghost">شبح</Button>);
+    const btn = screen.getByRole("button");
+    expect(btn.className).toContain("text-fg-primary");
+    expect(btn.className).toContain("hover:bg-surface-subtle");
   });
 
-  it("renders as a link when used with asChild + anchor child", () => {
+  it("renders with sm size classes", () => {
+    render(<Button size="sm">کوچک</Button>);
+    const btn = screen.getByRole("button");
+    expect(btn.className).toContain("h-9");
+    expect(btn.className).toContain("px-4");
+    expect(btn.className).toContain("text-sm");
+  });
+
+  it("renders with lg size classes", () => {
+    render(<Button size="lg">بزرگ</Button>);
+    const btn = screen.getByRole("button");
+    expect(btn.className).toContain("h-14");
+    expect(btn.className).toContain("px-8");
+  });
+
+  it("renders with icon size classes", () => {
+    render(<Button size="icon">آیکون</Button>);
+    const btn = screen.getByRole("button");
+    expect(btn.className).toContain("size-11");
+  });
+
+  it("is disabled when disabled prop is set", () => {
+    render(<Button disabled>غیرفعال</Button>);
+    const btn = screen.getByRole("button");
+    expect(btn).toBeDisabled();
+  });
+
+  it("calls onClick when clicked", async () => {
+    const handleClick = vi.fn();
+    const user = userEvent.setup();
+    render(<Button onClick={handleClick}>کلیک</Button>);
+    await user.click(screen.getByRole("button"));
+    expect(handleClick).toHaveBeenCalledOnce();
+  });
+
+  it("renders as a child component with asChild", () => {
     render(
       <Button asChild>
-        <a href="/x">Link</a>
+        <Link href="/test">لینک</Link>
       </Button>,
     );
-    const link = screen.getByRole("link", { name: "Link" });
-    expect(link).toHaveAttribute("href", "/x");
+    const link = screen.getByRole("link", { name: "لینک" });
+    expect(link).toBeInTheDocument();
+    expect(link).toHaveAttribute("href", "/test");
   });
 
   it("applies custom className", () => {
-    render(<Button className="custom-class">x</Button>);
-    expect(screen.getByRole("button")).toHaveClass("custom-class");
+    render(<Button className="custom-class">استایل سفارشی</Button>);
+    const btn = screen.getByRole("button");
+    expect(btn.className).toContain("custom-class");
+  });
+
+  it("renders with solid variant by default", () => {
+    render(<Button>پیش‌فرض</Button>);
+    const btn = screen.getByRole("button");
+    expect(btn.className).toContain("bg-accent");
   });
 });

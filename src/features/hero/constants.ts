@@ -17,7 +17,7 @@ export const heroData: HeroData = {
   },
   secondaryCta: {
     label: "چطور کار می‌کند؟",
-    href: "#corporate",
+    href: "#why",
   },
   stats: [
     { value: "+۹٬۰۰۰", label: "دانش‌آموز" },

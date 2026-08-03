@@ -80,3 +80,20 @@ export function notifyCertificateIssued(userId: string, courseName: string) {
     link: "/dashboard/certificates",
   });
 }
+
+/**
+ * Notify every admin user (capped at 10) about an ops/security event —
+ * e.g. a load-test regression. Never throws.
+ */
+export async function notifyAdmins(title: string, body: string, link?: string) {
+  try {
+    const admins = await repository.listUsers({ role: "ADMIN", take: 10 });
+    await Promise.all(
+      admins.map((admin) =>
+        safeNotify({ userId: admin.id, type: "warning", title, body, link }),
+      ),
+    );
+  } catch (err) {
+    console.error("[notify] notifyAdmins failed:", err);
+  }
+}

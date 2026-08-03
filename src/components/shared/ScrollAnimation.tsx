@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /**
  * Scroll-driven animation player.
@@ -21,6 +21,12 @@ import { useEffect, useRef } from "react";
  *     avoid blowing up memory on 3x/4x phones).
  *   - scroll listener is passive; rAF throttles the actual draw calls.
  *   - Image smoothing is enabled for clean downscales on high-DPR screens.
+ *
+ * Visual loading state:
+ *   - Until frame 0 is decoded, we show a branded aurora-gradient hero
+ *     with a "↓ اسکرول کن" hint so the user never sees a blank black
+ *     canvas. As soon as the first frame paints, the hero crossfades out
+ *     (200ms) and the canvas takes over.
  */
 const FRAME_COUNT = 300;
 const PRIORITY_BATCH = 30; // first 30 frames loaded eagerly after frame 0
@@ -68,6 +74,9 @@ export function ScrollAnimation() {
   const imagesRef = useRef<HTMLImageElement[]>([]);
   const currentFrameRef = useRef(0);
   const cancelledRef = useRef(false);
+  // Tracks whether the very first frame has decoded & been drawn.
+  // While false, we render a branded hero placeholder on top of the canvas.
+  const [firstFrameReady, setFirstFrameReady] = useState(false);
 
   // ─── Progressive preload ─────────────────────────────────────────
   //
@@ -177,6 +186,9 @@ export function ScrollAnimation() {
         if (img && img.naturalWidth > 0) {
           draw();
           lastPainted = idx;
+          if (idx === 0 && !firstFrameReady) {
+            setFirstFrameReady(true);
+          }
         }
       }
       raf = requestAnimationFrame(tick);
@@ -188,6 +200,10 @@ export function ScrollAnimation() {
       window.removeEventListener("scroll", updateFrame);
       cancelAnimationFrame(raf);
     };
+    // We intentionally exclude `firstFrameReady` from deps — we only need
+    // to set it once on the first paint, and adding it would re-run the
+    // whole effect every frame.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -200,7 +216,11 @@ export function ScrollAnimation() {
         // to traverse the animation, so each frame lingers longer and
         // the motion feels more cinematic.
         height: "1000vh",
-        background: "#000",
+        // Brand aurora gradient — visible only as a backdrop if the
+        // canvas itself ever fails to initialize; otherwise the canvas
+        // sits on top and paints frames over it.
+        background:
+          "radial-gradient(55% 55% at 18% 22%, rgba(27,79,212,0.22) 0%, rgba(27,79,212,0) 60%), radial-gradient(45% 45% at 85% 28%, rgba(245,197,24,0.20) 0%, rgba(245,197,24,0) 60%), radial-gradient(50% 50% at 60% 88%, rgba(212,160,23,0.16) 0%, rgba(212,160,23,0) 60%), linear-gradient(180deg, #131922 0%, #0b0f17 100%)",
       }}
     >
       <div
@@ -214,9 +234,115 @@ export function ScrollAnimation() {
       >
         <canvas
           ref={canvasRef}
-          style={{ display: "block", width: "100%", height: "100%" }}
+          style={{
+            display: "block",
+            width: "100%",
+            height: "100%",
+            // Canvas stays painted (black under the gradient placeholder
+            // until frame 0 lands). Opacity controlled below.
+            opacity: firstFrameReady ? 1 : 0,
+            transition: "opacity 240ms ease-out",
+          }}
         />
+
+        {/* Branded loading placeholder — visible until the first frame
+            decodes. Crossfades out as soon as the canvas paints frame 0
+            so the user never sees a jarring black flash. */}
+        <div
+          aria-hidden={firstFrameReady}
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "1.25rem",
+            padding: "1.5rem",
+            textAlign: "center",
+            color: "#fff",
+            pointerEvents: "none",
+            opacity: firstFrameReady ? 0 : 1,
+            transition: "opacity 240ms ease-out",
+          }}
+        >
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "0.6rem",
+              borderRadius: "999px",
+              background: "rgba(255,255,255,0.10)",
+              padding: "0.45rem 1rem",
+              fontSize: "0.85rem",
+              fontWeight: 600,
+              backdropFilter: "blur(8px)",
+              border: "1px solid rgba(255,255,255,0.18)",
+            }}
+          >
+            <span
+              style={{
+                display: "inline-block",
+                width: "0.5rem",
+                height: "0.5rem",
+                borderRadius: "999px",
+                background: "#f5c518",
+                boxShadow: "0 0 12px #f5c518",
+                animation: "scroll-pulse 1.4s ease-in-out infinite",
+              }}
+            />
+            بصیر نو · در حال بارگذاری
+          </div>
+          <h1
+            style={{
+              margin: 0,
+              fontSize: "clamp(1.75rem, 4.5vw, 3rem)",
+              fontWeight: 800,
+              letterSpacing: "-0.01em",
+              lineHeight: 1.2,
+              maxWidth: "32ch",
+              textShadow: "0 2px 24px rgba(0,0,0,0.35)",
+            }}
+          >
+            یادگیری زبان انگلیسی،
+            <br />
+            <span
+              style={{
+                background:
+                  "linear-gradient(120deg, #1E3A5F 0%, #1B4FD4 40%, #D4A017 70%, #F5C518 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}
+            >
+              گام به گام
+            </span>
+          </h1>
+          <p
+            style={{
+              margin: 0,
+              maxWidth: "44ch",
+              fontSize: "1rem",
+              lineHeight: 1.7,
+              color: "rgba(255,255,255,0.78)",
+            }}
+          >
+            برای دیدن انیمیشن اسکرول کنید ↓
+          </p>
+        </div>
       </div>
+
+      {/* Inline keyframes — the animation has no global stylesheet
+          dependency, so this works in Storybook too. */}
+      <style>{`
+        @keyframes scroll-pulse {
+          0%, 100% { opacity: 0.55; transform: scale(0.9); }
+          50%      { opacity: 1;    transform: scale(1.15); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          @keyframes scroll-pulse { 0%, 100% { opacity: 0.85; } 50% { opacity: 1; } }
+        }
+      `}</style>
     </div>
   );
 }

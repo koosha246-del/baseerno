@@ -9,6 +9,8 @@ import {
   getCachedCountUsers,
   getCachedUsersList,
 } from "@/lib/db/queries";
+import { env } from "@/lib/env";
+import { DemoUnavailableCard } from "@/components/shared/DemoUnavailableCard";
 import { GraduationCap, UserCheck, Shield, Users } from "lucide-react";
 
 const PAGE_SIZE = 20;
@@ -28,6 +30,11 @@ export default async function UsersPage({ searchParams }: PageProps) {
         <p className="text-slate-400">این صفحه فقط برای مدیران قابل دسترسی است.</p>
       </div>
     );
+  }
+
+  // Demo mode (no DB): show a friendly card instead of a hanging skeleton.
+  if (env.demoMode) {
+    return <DemoUnavailableCard />;
   }
 
   const sp = await searchParams;

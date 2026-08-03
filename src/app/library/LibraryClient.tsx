@@ -4,9 +4,17 @@ import { useState, useTransition } from "react";
 import Image from "next/image";
 import { ShoppingBag, Download, Loader2, CheckCircle2, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbSeparator,
+  BreadcrumbPage,
+} from "@/components/ui/breadcrumb";
 import { buyBook } from "./actions";
 import type { Book } from "@/lib/library";
-import { formatToman } from "@/lib/library";
+import { formatToman, getBookCover } from "@/lib/library";
 
 interface Props {
   books: Book[];
@@ -32,6 +40,19 @@ export function LibraryClient({ books }: Props) {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
+      {/* Breadcrumb */}
+      <Breadcrumb className="mb-6">
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/">خانه</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>کتابخانه</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+
       <header className="mb-10 flex flex-col items-start gap-3">
         <span className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent-soft px-3 py-1 text-xs font-bold text-accent">
           <BookOpen className="size-3.5" />
@@ -40,6 +61,16 @@ export function LibraryClient({ books }: Props) {
         <h1 className="font-display text-3xl font-extrabold text-fg-primary sm:text-4xl">
           کتاب‌های تدریس‌شده در آکادمی
         </h1>
+
+        {/* `aria-live` region — announces successful purchases to screen
+            readers and assistive tech. The button click visually swaps to
+            a download link, but without a live region the success is
+            silent for non-sighted users. */}
+        <span className="sr-only" role="status" aria-live="polite">
+          {Object.keys(tokens).length > 0
+            ? `${Object.keys(tokens).length} کتاب برای دانلود آماده است.`
+            : ""}
+        </span>
         <p className="max-w-2xl text-base leading-loose text-fg-secondary">
           منابع اصلی دوره‌های زبان انگلیسی. برای دانلود، پرداخت را تکمیل کنید
           تا لینک دانلود فعال شود.
@@ -47,7 +78,11 @@ export function LibraryClient({ books }: Props) {
       </header>
 
       {error && (
-        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+        >
           {error}
         </div>
       )}
@@ -63,7 +98,7 @@ export function LibraryClient({ books }: Props) {
             >
               <div className="relative aspect-[3/4] w-full overflow-hidden bg-gradient-to-br from-blue-50 to-amber-50">
                 <Image
-                  src={book.cover}
+                  src={getBookCover(book)}
                   alt={book.title}
                   fill
                   sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
@@ -77,12 +112,19 @@ export function LibraryClient({ books }: Props) {
               <div className="flex flex-1 flex-col gap-3 p-5">
                 <div>
                   <h2 className="font-display text-lg font-extrabold text-fg-primary">
-                    {book.title}
+                    <span lang="en" dir="ltr">{book.title}</span>
                   </h2>
                   {book.subtitle && (
-                    <p className="mt-0.5 text-xs text-fg-secondary">{book.subtitle}</p>
+                    <p className="mt-0.5 text-xs text-fg-secondary">
+                      <span lang="en" dir="ltr">{book.subtitle}</span>
+                    </p>
                   )}
-                  <p className="mt-1 text-xs text-fg-secondary">نویسنده: {book.author}</p>
+                  <p className="mt-1 text-xs text-fg-secondary">
+                    نویسنده:{" "}
+                    <span lang="en" dir="ltr">
+                      {book.author}
+                    </span>
+                  </p>
                 </div>
 
                 <p className="line-clamp-3 text-sm leading-loose text-fg-secondary">

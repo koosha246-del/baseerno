@@ -158,6 +158,46 @@ export function contactFormEmail({
   `;
 }
 
+export function loadRegressionAlertEmail(
+  scenario: string,
+  currentP95: number,
+  previousAvgP95: number,
+  diffPercent: number,
+): { subject: string; html: string } {
+  const fmt = (n: number) => Math.round(n).toLocaleString("fa-IR");
+  const diff = Math.round(diffPercent).toLocaleString("fa-IR");
+  return {
+    subject: `⚠️ رگرسیون عملکرد — ${scenario} p95`,
+    html: `
+      <div style="${baseStyle}">
+        ${headerHtml}
+        <h2 style="color: #0f172a; font-size: 22px;">هشدار: افت عملکرد در load test</h2>
+        <p style="color: #4b5563; line-height: 1.8; font-size: 15px;">
+          سناریوی <strong dir="ltr">${scenario}</strong> نسبت به میانگین اجراهای قبلی دچار رگرسیون شده است:
+        </p>
+        <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 16px; margin: 16px 0;">
+          <p style="margin: 4px 0; color: #991b1b; font-size: 14px;">
+            <strong>p95 فعلی:</strong> ${fmt(currentP95)} ms
+          </p>
+          <p style="margin: 4px 0; color: #991b1b; font-size: 14px;">
+            <strong>میانگین p95 قبلی:</strong> ${fmt(previousAvgP95)} ms
+          </p>
+          <p style="margin: 4px 0; color: #991b1b; font-size: 14px;">
+            <strong>تغییر:</strong> +${diff}٪
+          </p>
+        </div>
+        <div style="text-align: center; margin: 24px 0;">
+          <a href="${siteConfig.url}/dashboard/ops/archive"
+             style="display: inline-block; padding: 12px 32px; background: linear-gradient(90deg, #1E3A5F, #2563EB); color: white; text-decoration: none; border-radius: 999px; font-weight: bold;">
+            مشاهده آرشیو اجراها
+          </a>
+        </div>
+        ${footerHtml}
+      </div>
+    `,
+  };
+}
+
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")

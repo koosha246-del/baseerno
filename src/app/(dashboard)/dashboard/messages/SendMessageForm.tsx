@@ -46,6 +46,7 @@ export function SendMessageForm({ currentUserId, allUsers }: Props) {
     return (
       <button
         onClick={() => setOpen(true)}
+        aria-label="ارسال پیام جدید"
         className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-bold text-white hover:bg-accent-hover"
       >
         <Send className="size-4" />

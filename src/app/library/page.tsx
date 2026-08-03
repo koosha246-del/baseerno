@@ -6,6 +6,9 @@ export const metadata: Metadata = {
   title: "کتابخانه | آکادمی بصیر نو",
   description:
     "کتاب‌های تدریس‌شده در آکادمی بصیر نو — منابع اصلی دوره‌های زبان انگلیسی برای دانلود.",
+  alternates: {
+    canonical: "/library",
+  },
 };
 
 export default function LibraryPage() {

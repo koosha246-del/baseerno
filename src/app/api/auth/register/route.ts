@@ -1,20 +1,8 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
-import { repository } from "@/lib/db/repository";
-import { hashPassword } from "@/lib/auth/password";
-import { setSession } from "@/lib/auth/session";
-import { sendEmail } from "@/lib/email";
-import { welcomeEmail } from "@/lib/email-templates";
+import { registerUser, registerSchema, buildUseCaseResponse } from "@/lib/useCases/auth/register";
 import { isSameOriginRequest, csrfRejectedResponse } from "@/lib/csrf";
 import { withRateLimit } from "@/lib/api-middleware";
 import { RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
-
-const schema = z.object({
-  name: z.string().min(3, "نام باید حداقل ۳ حرف باشد."),
-  email: z.string().email("ایمیل معتبر نیست."),
-  password: z.string().min(6, "رمز عبور باید حداقل ۶ کاراکتر باشد."),
-  role: z.literal("STUDENT").default("STUDENT"),
-});
 
 async function registerHandler(req: Request) {
   // CSRF: register sets a session cookie, so verify origin.
@@ -22,6 +10,7 @@ async function registerHandler(req: Request) {
     return csrfRejectedResponse();
   }
 
+  // Parse body
   let body: unknown;
   try {
     body = await req.json();
@@ -29,31 +18,19 @@ async function registerHandler(req: Request) {
     return NextResponse.json({ error: "بدنه درخواست نامعتبر است." }, { status: 400 });
   }
 
-  const parsed = schema.safeParse(body);
+  // Validate
+  const parsed = registerSchema.safeParse(body);
   if (!parsed.success) {
     const first = parsed.error.issues[0];
     return NextResponse.json({ error: first?.message ?? "ورودی نامعتبر." }, { status: 422 });
   }
 
-  const { name, email, password, role } = parsed.data;
-
-  const existing = await repository.findUserByEmail(email);
-  if (existing) {
-    return NextResponse.json({ error: "این ایمیل قبلاً ثبت شده است." }, { status: 409 });
-  }
-
-  const passwordHash = await hashPassword(password);
-  const user = await repository.createUser({ name, email, passwordHash, role });
-  await setSession(user);
-
-  // Send welcome email (fire-and-forget)
-  const emailContent = welcomeEmail(name);
-  sendEmail({ to: email, ...emailContent }).catch(() => {});
-
-  return NextResponse.json({ user });
+  // Execute business logic
+  const result = await registerUser(parsed.data);
+  return buildUseCaseResponse(result);
 }
 
 /** AUTH: max=5, burst=2 per minute. */
 export const POST = withRateLimit(registerHandler, RATE_LIMIT_PRESETS.AUTH, {
   keyPrefix: "auth:register",
-});
+});

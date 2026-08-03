@@ -1,11 +1,18 @@
 import { getCurrentUser } from "@/lib/auth/session";
 import { repository } from "@/lib/db/repository";
 import { SendMessageForm } from "./SendMessageForm";
+import { env } from "@/lib/env";
+import { DemoUnavailableCard } from "@/components/shared/DemoUnavailableCard";
 import { MessagesList } from "./MessagesList";
 
 export default async function MessagesPage() {
   const user = await getCurrentUser();
   if (!user) return null;
+
+  // Demo mode (no DB): show a friendly card instead of a hanging skeleton.
+  if (env.demoMode) {
+    return <DemoUnavailableCard />;
+  }
 
   const messages = await repository.listMessages(user.id);
 

@@ -12,6 +12,8 @@ import {
   GraduationCap,
   ClipboardList,
   Bell,
+  Activity,
+  Archive,
   type LucideIcon,
 } from "lucide-react";
 import type { Role } from "@/lib/db/types";
@@ -122,6 +124,20 @@ export const sidebarItems: SidebarItem[] = [
     label: "گزارش‌ها",
     icon: FileText,
     href: "/dashboard/reports",
+    roles: ["ADMIN"],
+  },
+  {
+    id: "ops",
+    label: "عملیات",
+    icon: Activity,
+    href: "/dashboard/ops",
+    roles: ["ADMIN"],
+  },
+  {
+    id: "ops-archive",
+    label: "آرشیو Load Test",
+    icon: Archive,
+    href: "/dashboard/ops/archive",
     roles: ["ADMIN"],
   },
   {

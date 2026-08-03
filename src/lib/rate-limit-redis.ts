@@ -1,105 +1,18 @@
 /**
  * Redis-based rate limiter — for production multi-instance deployments.
  *
- * Features:
- * - **Atomic operations** using Redis `SET` + `TTL` pattern (no Lua needed).
- * - **Graceful fallback** to in-memory limiter when Redis is unavailable.
- * - **Connection health checks** with automatic reconnection.
- * - **Per-route configurability** via the same `RateLimitConfig` interface.
+ * Uses the shared Redis client from `@/lib/redis-client` so only one
+ * connection is used across the whole application.
  *
- * Usage:
- * ```ts
- * import { createRedisRateLimiter } from "@/lib/rate-limit-redis";
- * import { RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
- *
- * const limiter = createRedisRateLimiter(RATE_LIMIT_PRESETS.AUTH);
- * const result = await limiter.check("user-ip-address");
- * ```
- *
- * Environment:
- * - Set `REDIS_URL` env var to enable Redis (e.g., `redis://localhost:6379`).
- * - Falls back to in-memory if `REDIS_URL` is not set or Redis is unreachable.
- * - Requires the `redis` npm package: `npm install redis`
+ * Implements the same contract as the in-memory limiter (`rate-limit.ts`):
+ * no more than `max + burst` requests per `windowMs`, and no more than
+ * `burst` requests within any `burstWindowMs` sub-window (counting every
+ * request). Falls back to in-memory rate limiting when Redis is
+ * unavailable.
  */
 
 import { checkRateLimit as inMemoryCheck, type RateLimitConfig, type RateLimitResult } from "./rate-limit";
-import { env } from "@/lib/env";
-
-// ─── Module-level state ────────────────────────────────────────────
-
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-interface RedisClientLike {
-  set: (key: string, value: string | number, options?: Record<string, unknown>) => Promise<unknown>;
-  get: (key: string) => Promise<string | null>;
-  ttl: (key: string) => Promise<number>;
-  incr: (key: string) => Promise<number>;
-  expire: (key: string, seconds: number) => Promise<unknown>;
-  quit: () => Promise<void>;
-  on: (event: string, handler: (...args: unknown[]) => void) => void;
-  isOpen: boolean;
-  ping: () => Promise<string>;
-}
-
-let cachedClient: RedisClientLike | null = null;
-let loadAttempted = false;
-let lastHealthCheck = 0;
-const HEALTH_CHECK_INTERVAL = 30_000; // 30 seconds
-
-// ─── Client management ─────────────────────────────────────────────
-
-async function getRedisClient(): Promise<RedisClientLike | null> {
-  const redisUrl = env.REDIS_URL;
-  if (!redisUrl) return null;
-
-  if (loadAttempted && cachedClient) {
-    // Periodic health check
-    if (Date.now() - lastHealthCheck > HEALTH_CHECK_INTERVAL) {
-      lastHealthCheck = Date.now();
-      try {
-        await cachedClient.ping?.();
-      } catch {
-        // Connection lost — try to reconnect
-        cachedClient = null;
-        loadAttempted = false;
-        return getRedisClient();
-      }
-    }
-    return cachedClient;
-  }
-
-  if (loadAttempted) return null; // Already tried and failed
-
-  loadAttempted = true;
-
-  try {
-    // Dynamic import so `redis` is only loaded when REDIS_URL is set.
-    // `redis` is an optional peer dependency; the import is guarded by
-    // try/catch and only reached when REDIS_URL is configured.
-    // Install with: npm install redis
-    const redisModule = await import("redis").catch(() => null);
-    if (!redisModule) return null;
-    const { createClient } = redisModule as { createClient: unknown };
-    if (typeof createClient !== "function") return null;
-
-    const client = createClient({ url: redisUrl });
-
-    // Attach error handler to prevent unhandled rejections.
-    client.on("error", (err: Error) => {
-      console.error("[redis-rate-limiter] Connection error:", err.message);
-    });
-
-    await client.connect();
-    lastHealthCheck = Date.now();
-    cachedClient = client as unknown as RedisClientLike;
-    return cachedClient;
-  } catch (error) {
-    console.warn(
-      "[redis-rate-limiter] Failed to connect to Redis. Falling back to in-memory rate limiter.",
-      error instanceof Error ? error.message : ""
-    );
-    return null;
-  }
-}
+import { getRedisClient } from "./redis-client";
 
 // ─── Redis key helpers ─────────────────────────────────────────────
 
@@ -114,18 +27,8 @@ function buildBurstKey(identifier: string): string {
 // ─── Rate limiter factory ──────────────────────────────────────────
 
 export interface RateLimiterInstance {
-  /**
-   * Check if the given identifier is within rate limits.
-   * Uses Redis when available, falls back to in-memory.
-   */
   check: (identifier: string) => Promise<RateLimitResult>;
-  /**
-   * Reset rate limit state for a given identifier.
-   */
   reset: (identifier: string) => Promise<void>;
-  /**
-   * Gracefully shut down the Redis connection.
-   */
   shutdown: () => Promise<void>;
 }
 
@@ -147,7 +50,6 @@ export function createRedisRateLimiter(config: RateLimitConfig): RateLimiterInst
     async check(identifier: string): Promise<RateLimitResult> {
       const client = await getRedisClient();
       if (!client) {
-        // Fallback to in-memory
         return inMemoryCheck(identifier, cfg);
       }
 
@@ -156,33 +58,34 @@ export function createRedisRateLimiter(config: RateLimitConfig): RateLimiterInst
         const windowKey = buildWindowKey(identifier);
         const windowSeconds = Math.ceil(cfg.windowMs / 1000);
 
-        // Atomically increment and set TTL on first creation.
         const count = await client.incr(windowKey);
-
         if (count === 1) {
-          // First request — set expiry.
           await client.expire(windowKey, windowSeconds);
         }
 
-        // Check TTL to compute reset time.
         const ttl = await client.ttl(windowKey);
         const resetAt = now + Math.max(ttl, 1) * 1000;
 
-        if (count > cfg.max) {
+        // Combined limit — the documented contract is `max + burst`
+        // total requests per window (same as the in-memory backend).
+        const combinedLimit = cfg.max + cfg.burst;
+
+        if (count > combinedLimit) {
           const retryAfter = Math.max(1, ttl);
           return { success: false, retryAfter };
         }
 
-        // ── Burst check (Redis-backed) ─────────────────────────
+        // ── Burst check (Redis-backed, hard cap) ────────────────
+        // Every request counts: no more than `burst` requests within
+        // any `burstWindowMs` sub-window — identical to the in-memory
+        // limiter's burst semantics.
         if (cfg.burst > 0) {
           const burstKey = buildBurstKey(identifier);
           const burstSeconds = Math.ceil(cfg.burstWindowMs / 1000);
           const burstCount = await client.incr(burstKey);
-
           if (burstCount === 1) {
             await client.expire(burstKey, burstSeconds);
           }
-
           if (burstCount > cfg.burst) {
             const burstTtl = await client.ttl(burstKey);
             const retryAfter = Math.max(1, burstTtl);
@@ -192,11 +95,10 @@ export function createRedisRateLimiter(config: RateLimitConfig): RateLimiterInst
 
         return {
           success: true,
-          remaining: cfg.max - count,
+          remaining: combinedLimit - count,
           resetAt,
         };
       } catch (error) {
-        // Redis error — fall back to in-memory for this request.
         console.warn("[redis-rate-limiter] Request failed, falling back to in-memory:", error);
         return inMemoryCheck(identifier, cfg);
       }
@@ -205,14 +107,13 @@ export function createRedisRateLimiter(config: RateLimitConfig): RateLimiterInst
     async reset(identifier: string): Promise<void> {
       const client = await getRedisClient();
       if (!client) {
-        // In-memory fallback: call the in-memory reset.
         const { resetRateLimit } = await import("./rate-limit");
         resetRateLimit(identifier);
         return;
       }
 
       try {
-        await client.set(buildWindowKey(identifier), 0, { EX: 1 }); // Expire immediately
+        await client.set(buildWindowKey(identifier), 0, { EX: 1 });
         if (cfg.burst > 0) {
           await client.set(buildBurstKey(identifier), 0, { EX: 1 });
         }
@@ -222,24 +123,13 @@ export function createRedisRateLimiter(config: RateLimitConfig): RateLimiterInst
     },
 
     async shutdown(): Promise<void> {
-      const client = cachedClient;
-      if (client) {
-        try {
-          await client.quit();
-        } catch {
-          // Best-effort
-        }
-        cachedClient = null;
-        loadAttempted = false;
-      }
+      const { closeRedis } = await import("./redis-client");
+      await closeRedis();
     },
   };
 }
 
-/**
- * Default rate limiter instance (auth preset).
- * Create additional instances for different routes using `createRedisRateLimiter`.
- */
+/** Default rate limiter instance (auth preset). */
 export const defaultRateLimiter = createRedisRateLimiter({
   windowMs: 60_000,
   max: 10,

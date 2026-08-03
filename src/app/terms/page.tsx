@@ -59,7 +59,7 @@ export default function TermsPage() {
     <main className="bg-background pb-20 pt-[calc(var(--header-h)+2rem)]">
       <Container width="narrow">
         <header className="mb-10 text-center">
-          <span className="mb-3 inline-flex items-center gap-2 rounded-pill bg-kid-coral-100 px-4 py-1.5 text-sm font-semibold text-kid-coral-700">
+          <span className="mb-3 inline-flex items-center gap-2 rounded-pill bg-kid-coral-100 px-4 py-1.5 text-sm font-semibold text-kid-coral-600">
             شرایط و قوانین استفاده
           </span>
           <h1 className="font-display text-3xl font-extrabold tracking-tight text-fg-primary sm:text-4xl">

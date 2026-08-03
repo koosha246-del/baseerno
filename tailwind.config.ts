@@ -38,17 +38,35 @@ const config: Config = {
     },
     extend: {
       colors: {
-        background: colors.background,
+        // Theme-aware tokens — resolved at runtime from the CSS custom
+        // properties defined in globals.css so the light/dark class on
+        // <html> switches EVERY surface, not just the header.
+        background: "var(--background)",
         surface: {
-          DEFAULT: colors.surface,
-          muted: colors.surfaceMuted,
-          subtle: colors.surfaceSubtle,
-          elevated: colors.surfaceElevated,
+          DEFAULT: "var(--surface)",
+          muted: "var(--surface-muted)",
+          subtle: "var(--surface-subtle)",
+          elevated: "var(--surface-elevated)",
         },
         brand: colors.brand,
-        accent: colors.accent,
-        fg: colors.text,
-        "app-border": colors.border,
+        accent: {
+          DEFAULT: "var(--theme-accent)",
+          hover: "var(--theme-accent-hover)",
+          soft: "var(--theme-accent-soft)",
+          softHover: "var(--theme-accent-soft-hover)",
+        },
+        fg: {
+          primary: "var(--text-primary)",
+          secondary: "var(--text-secondary)",
+          muted: "var(--text-muted)",
+          inverse: "var(--text-inverse)",
+          brand: "var(--text-brand)",
+        },
+        "app-border": {
+          subtle: "var(--border-subtle)",
+          DEFAULT: "var(--border)",
+          strong: "var(--border-strong)",
+        },
         status: {
           success: colors.success,
           warning: colors.warning,

@@ -12,7 +12,8 @@ describe("libraryBooks", () => {
       expect(b.title).toBeTruthy();
       expect(b.author).toBeTruthy();
       expect(b.price).toBeGreaterThan(0);
-      expect(b.cover).toMatch(/^\/library\//);
+      // cover is now a Cloudinary public ID (no leading slash)
+      expect(b.cover).not.toMatch(/^\//);
     }
   });
 

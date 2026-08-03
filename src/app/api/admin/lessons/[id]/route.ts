@@ -1,9 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { revalidateTag } from "next/cache";
 import { getCurrentUser } from "@/lib/auth/session";
 import { repository } from "@/lib/db/repository";
 import { z } from "zod";
-import { CACHE_TAGS } from "@/lib/cache-tags";
+import { invalidateCache, invalidateSearchCourseCache } from "@/lib/cache";
+import { CACHE_TAGS, publishedCoursesCacheKeys } from "@/lib/cache-tags";
 
 const updateLessonSchema = z.object({
   title: z.string().min(1).max(200).optional(),
@@ -50,9 +50,13 @@ export async function PATCH(
     if (parsed.data.published !== undefined) patch.published = parsed.data.published;
 
     const updated = await repository.updateLesson(id, patch);
-    revalidateTag(CACHE_TAGS.lessons);
-    revalidateTag(CACHE_TAGS.course(existing.courseId));
-    revalidateTag(CACHE_TAGS.courses);
+    // Bust the Redis published-course keys AND the Next.js tags.
+    await invalidateCache(publishedCoursesCacheKeys(), [
+      CACHE_TAGS.lessons,
+      CACHE_TAGS.course(existing.courseId),
+      CACHE_TAGS.courses,
+    ]);
+    await invalidateSearchCourseCache();
     return NextResponse.json(updated);
   } catch (err) {
     console.error("[PATCH /api/admin/lessons/:id]", err);
@@ -73,11 +77,15 @@ export async function DELETE(
     const { id } = await params;
     const existing = await repository.findLessonById(id);
     await repository.deleteLesson(id);
-    revalidateTag(CACHE_TAGS.lessons);
-    if (existing?.courseId) {
-      revalidateTag(CACHE_TAGS.course(existing.courseId));
-    }
-    revalidateTag(CACHE_TAGS.courses);
+    // Bust the Redis published-course keys AND the Next.js tags.
+    await invalidateCache(publishedCoursesCacheKeys(), [
+      CACHE_TAGS.lessons,
+      ...(existing?.courseId
+        ? [CACHE_TAGS.course(existing.courseId)]
+        : []),
+      CACHE_TAGS.courses,
+    ]);
+    await invalidateSearchCourseCache();
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("[DELETE /api/admin/lessons/:id]", err);

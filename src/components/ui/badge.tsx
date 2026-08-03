@@ -12,7 +12,7 @@ const badgeVariants = cva(
     variants: {
       variant: {
         default: "bg-accent-soft text-accent",
-        brand: "bg-brand-gradient text-white shadow-glow",
+        brand: "bg-accent text-white shadow-sm",
         outline: "border border-app-border text-fg-secondary bg-surface",
         muted: "bg-surface-subtle text-fg-secondary",
         success: "bg-status-success/10 text-status-success",

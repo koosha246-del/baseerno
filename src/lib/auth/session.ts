@@ -3,6 +3,10 @@ import { AUTH_COOKIE, signToken, verifyToken, type AuthToken } from "./jwt";
 import { repository } from "@/lib/db/repository";
 import type { SafeUser } from "@/lib/db/types";
 import { env } from "@/lib/env";
+import {
+  findDemoAccountById,
+  demoAccountToSafeUser,
+} from "./demo-users";
 
 /**
  * Session helpers — read/set/clear the httpOnly auth cookie.
@@ -36,11 +40,35 @@ export async function getAuthToken(): Promise<AuthToken | null> {
   return verifyToken(token);
 }
 
-/** Return the current safe user, or null when not authenticated. */
+/**
+ * Return the current safe user, or null when not authenticated.
+ *
+ * In demo mode (DEMO_MODE=true) the user is resolved from the built-in
+ * demo accounts by token subject — no database round-trip — so the app
+ * keeps working when PostgreSQL is down.
+ */
 export async function getCurrentUser(): Promise<SafeUser | null> {
   const token = await getAuthToken();
   if (!token) return null;
-  return repository.findSafeUserById(token.sub);
+
+  // Demo mode: resolve demo tokens without a DB round-trip. Tokens that
+  // belong to a REAL user (e.g. Postgres was connected at some point and
+  // a real account logged in) must fall through to the database below —
+  // otherwise real users would be locked out while DEMO_MODE stays true.
+  if (env.demoMode) {
+    const demo = findDemoAccountById(token.sub);
+    if (demo) return demoAccountToSafeUser(demo);
+  }
+
+  try {
+    return await repository.findSafeUserById(token.sub);
+  } catch (err) {
+    // DB unreachable: only demo tokens can resolve; real tokens rethrow
+    // so callers can decide (layouts already catch and redirect).
+    const demo = findDemoAccountById(token.sub);
+    if (demo) return demoAccountToSafeUser(demo);
+    throw err;
+  }
 }
 
 /**

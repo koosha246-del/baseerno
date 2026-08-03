@@ -21,6 +21,12 @@ function toYouTubeEmbed(url: string): string | null {
   try {
     const u = new URL(url);
     if (u.hostname.includes("youtube.com")) {
+      // Already an embed URL (e.g. https://www.youtube.com/embed/xyz)
+      if (u.pathname.startsWith("/embed/")) {
+        u.searchParams.set("autoplay", "1");
+        u.searchParams.set("rel", "0");
+        return u.toString();
+      }
       const v = u.searchParams.get("v");
       if (v) return `https://www.youtube.com/embed/${v}?autoplay=1&rel=0`;
     }

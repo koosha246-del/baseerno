@@ -1,0 +1,49 @@
+# Redis rate-limit drill (گام ۲) — proves the two production guarantees on
+# every merge against a REAL Redis:
+#   1. The rate-limit window counter is SHARED across app instances (two
+#      separate Node processes must see ONE counter via Redis).
+#   2. Without REDIS_URL the limiter falls back to the in-memory store.
+# Runs scripts/verify-redis.ts. Any failing check turns the job red.
+#
+# NOTE: no Postgres service here on purpose — the drill's import chain
+# (verify-redis.ts → rate-limit-redis → redis-client → env) never touches
+# prisma-client; env.ts only *validates* the DATABASE_URL string, so a
+# dummy URL satisfies it.
+name: Redis drill (گام ۲)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  redis-drill:
+    runs-on: ubuntu-24.04
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      # DATABASE_URL is required by src/lib/env.ts validation (the drill
+      # never queries the DB — the value just needs to be a valid URL).
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/baseerno?sslmode=disable
+      # Redis under test — the shared-mode proof runs against this.
+      REDIS_URL: redis://127.0.0.1:6379
+      # Placeholders for src/lib/env.ts validation (CI has no .env file).
+      JWT_SECRET: ci-redis-drill-secret-32-char-min-placeholder-000
+      PAYMENT_SIGNATURE_SECRET: ci-redis-drill-pay-16-chars
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npm run verify:redis

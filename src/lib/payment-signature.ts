@@ -20,6 +20,13 @@ function getSecret(): string {
   return env.paymentSignatureSecret;
 }
 
+/** Secrets accepted for verification (current + previous during rotation). */
+function getVerifySecrets(): string[] {
+  const secrets = [getSecret()];
+  if (env.PAYMENT_SIGNATURE_SECRET_OLD) secrets.push(env.PAYMENT_SIGNATURE_SECRET_OLD);
+  return secrets;
+}
+
 /** Sign a payment id with the configured secret. */
 export function signPaymentId(paymentId: string): string {
   return createHmac("sha256", getSecret()).update(paymentId).digest("hex");
@@ -30,15 +37,18 @@ export function signPaymentId(paymentId: string): string {
  * Returns false if lengths differ (which would otherwise throw).
  */
 export function verifyPaymentSignature(paymentId: string, signature: string): boolean {
-  const expected = signPaymentId(paymentId);
-  const a = Buffer.from(expected, "hex");
-  const b = Buffer.from(signature, "hex");
-  if (a.length !== b.length || b.length === 0) return false;
-  try {
-    return timingSafeEqual(a, b);
-  } catch {
-    return false;
+  for (const secret of getVerifySecrets()) {
+    const expected = createHmac("sha256", secret).update(paymentId).digest("hex");
+    const a = Buffer.from(expected, "hex");
+    const b = Buffer.from(signature, "hex");
+    if (a.length !== b.length || b.length === 0) continue;
+    try {
+      if (timingSafeEqual(a, b)) return true;
+    } catch {
+      continue;
+    }
   }
+  return false;
 }
 
 /** Build the full authenticated callback URL for a payment. */

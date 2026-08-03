@@ -100,12 +100,52 @@ describe("POST /api/auth/register", () => {
     expect(res.status).toBe(409);
   });
 
-  it("hashes password, creates user, sets session, returns 201", async () => {
+  it("hashes password, creates user, sets session, returns 200", async () => {
     findUserByEmail.mockResolvedValue(null);
     const res = await POST(makeReq(validInput));
     expect(res.status).toBe(200);
     expect(hashPassword).toHaveBeenCalledWith("secret1");
     expect(createUser).toHaveBeenCalledOnce();
     expect(setSession).toHaveBeenCalledOnce();
+  });
+
+  it("sends welcome email after successful registration", async () => {
+    findUserByEmail.mockResolvedValue(null);
+    await POST(makeReq(validInput));
+    expect(sendEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: "ali@example.com",
+      }),
+    );
+  });
+
+  it("handles invalid email format", async () => {
+    const res = await POST(makeReq({ ...validInput, email: "not-an-email" }));
+    expect(res.status).toBe(422);
+  });
+
+  it("handles empty name", async () => {
+    const res = await POST(makeReq({ ...validInput, name: "" }));
+    expect(res.status).toBe(422);
+  });
+
+  it("returns 400 for malformed JSON", async () => {
+    const req = new Request("https://baseerno.ir/api/auth/register", {
+      method: "POST",
+      headers: { "content-type": "application/json", origin: "https://baseerno.ir" },
+      body: "{not json}",
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(400);
+  });
+
+  it("passes the original email to findUserByEmail (lowercase happens in repository)", async () => {
+    findUserByEmail.mockResolvedValue(null);
+    await POST(makeReq({ ...validInput, email: "ALI@EXAMPLE.COM" }));
+    // The register route passes email as-is to findUserByEmail.
+    // The actual .toLowerCase() normalization happens inside
+    // the repository's createUser, which is mocked here.
+    // So we verify findUserByEmail was called with the original casing.
+    expect(findUserByEmail).toHaveBeenCalledWith("ALI@EXAMPLE.COM");
   });
 });

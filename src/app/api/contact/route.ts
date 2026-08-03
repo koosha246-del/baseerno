@@ -4,7 +4,7 @@ import { sendEmail } from "@/lib/email";
 import { contactFormEmail } from "@/lib/email-templates";
 import { siteConfig } from "@/config/site";
 import { isSameOriginRequest, csrfRejectedResponse } from "@/lib/csrf";
-import { withRateLimit } from "@/lib/api-middleware";
+import { withRateLimit, handleApiError } from "@/lib/api-middleware";
 import { RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
 
 const schema = z.object({
@@ -57,6 +57,13 @@ async function contactHandler(req: Request) {
 }
 
 /** API: max=20, burst=5 per minute. */
-export const POST = withRateLimit(contactHandler, RATE_LIMIT_PRESETS.API, {
+export const POST = withRateLimit(async (req: Request) => {
+  const correlationId = crypto.randomUUID();
+  try {
+    return await contactHandler(req);
+  } catch (error) {
+    return handleApiError(error, correlationId, { req });
+  }
+}, RATE_LIMIT_PRESETS.API, {
   keyPrefix: "contact",
 });

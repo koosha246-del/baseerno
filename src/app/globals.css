@@ -1,11 +1,12 @@
+/* ============================================================
+   RTL typography refinements — @import MUST precede every other
+   rule (CSS spec), so it stays at the very top of the file.
+   ============================================================ */
+@import "../styles/rtl.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* ============================================================
-   RTL typography refinements
-   ============================================================ */
-@import "../styles/rtl.css";
 
 /* ============================================================
    Design-system CSS variables (mirror of design-tokens.ts)
@@ -13,7 +14,12 @@
    plain CSS / keyframes and stay in sync with the token system.
    ============================================================ */
 :root {
-  --font-vazirmatn: var(--font-vazirmatn), "IranSans", system-ui, sans-serif;
+  /* NOTE: `--font-vazirmatn` is defined by next/font via the
+     `vazirmatn.variable` class on <html> (see src/lib/fonts.ts).
+     The old self-referencing declaration here
+     (`--font-vazirmatn: var(--font-vazirmatn), ...`) was circular
+     and made the variable invalid at computed-value time, silently
+     killing the Vazirmatn font across the whole site. */
 
   /* Brand — authority (blue) + success (gold) */
   --brand-navy: #1e3a5f;
@@ -26,6 +32,7 @@
   --theme-accent: #1b4fd4;
   --theme-accent-hover: #153aa8;
   --theme-accent-soft: #e8edf8;
+  --theme-accent-soft-hover: #d4dce8;
   --theme-text-gradient: linear-gradient(120deg, #1E3A5F 0%, #1B4FD4 40%, #D4A017 70%, #F5C518 100%);
   --theme-brand-gradient: linear-gradient(90deg, #1E3A5F 0%, #2563EB 33%, #D4A017 66%, #F5C518 100%);
   --theme-scrim: rgba(30, 58, 95, 0.45);
@@ -36,16 +43,24 @@
   --surface: #ffffff;
   --surface-muted: #fffbf5;
   --surface-subtle: #fef3e8;
+  --surface-elevated: #ffffff;
 
   /* Light-mode text */
   --text-primary: #0f172a;
   --text-secondary: #3d4551;
   --text-muted: #5a6272;
+  --text-inverse: #ffffff;
+  --text-brand: #1b4fd4;
 
   /* Light-mode borders */
   --border-subtle: #e8e4df;
   --border: #d9d5d0;
   --border-strong: #c4bfb9;
+
+  /* Warm aurora backdrop (auth pages, hero) — mirrors gradients.aurora */
+  --aurora: radial-gradient(55% 55% at 18% 22%, rgba(27,79,212,0.22) 0%, rgba(27,79,212,0) 60%),
+    radial-gradient(45% 45% at 85% 28%, rgba(245,197,24,0.20) 0%, rgba(245,197,24,0) 60%),
+    radial-gradient(50% 50% at 60% 88%, rgba(212,160,23,0.16) 0%, rgba(212,160,23,0) 60%);
 
   /* Durations & easings */
   --dur-base: 0.3s;
@@ -64,9 +79,10 @@
    Dark-mode overrides — applied via <html class="dark">
    ============================================================ */
 .dark {
-  --theme-accent: #5b8def;
-  --theme-accent-hover: #7aa3f5;
+  --theme-accent: #3b6fe0;
+  --theme-accent-hover: #5b8def;
   --theme-accent-soft: rgba(91, 141, 239, 0.12);
+  --theme-accent-soft-hover: rgba(91, 141, 239, 0.2);
   --theme-scrim: rgba(0, 0, 0, 0.6);
 
   /* Dark surfaces */
@@ -74,11 +90,14 @@
   --surface: #131922;
   --surface-muted: #1a212d;
   --surface-subtle: #1f2837;
+  --surface-elevated: #1a212d;
 
   /* Dark text */
   --text-primary: #edeff2;
   --text-secondary: #a0a7b5;
   --text-muted: #6b7385;
+  --text-inverse: #0b0f17;
+  --text-brand: #7aa3f5;
 
   /* Dark borders */
   --border-subtle: rgba(255, 255, 255, 0.06);
@@ -94,16 +113,20 @@
     --theme-accent: #5b8def;
     --theme-accent-hover: #7aa3f5;
     --theme-accent-soft: rgba(91, 141, 239, 0.12);
+    --theme-accent-soft-hover: rgba(91, 141, 239, 0.2);
     --theme-scrim: rgba(0, 0, 0, 0.6);
 
     --background: #0b0f17;
     --surface: #131922;
     --surface-muted: #1a212d;
     --surface-subtle: #1f2837;
+    --surface-elevated: #1a212d;
 
     --text-primary: #edeff2;
     --text-secondary: #a0a7b5;
     --text-muted: #6b7385;
+    --text-inverse: #0b0f17;
+    --text-brand: #7aa3f5;
 
     --border-subtle: rgba(255, 255, 255, 0.06);
     --border: rgba(255, 255, 255, 0.10);

@@ -1,0 +1,99 @@
+name: Load gate (k6)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  load-gate:
+    name: k6 smoke + analyze gates
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: bayan_load
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/bayan_load
+      AUTH_SECRET: ci-load-secret-min-32-chars-long-placeholder
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      NEXT_PUBLIC_SITE_NAME: "بصیر نو"
+      # No K6_EMAIL/K6_PASSWORD → auth/search/dashboard scenarios skip;
+      # the smoke run gates the public browse path (see k6-script.js).
+      K6_BASE_URL: http://localhost:3000
+      LOAD_VUS: "5"
+      LOAD_DURATION: "15s"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Run migrations
+        run: npx prisma migrate deploy
+
+      - name: Install k6
+        run: |
+          curl -sL https://github.com/grafana/k6/releases/download/v0.53.0/k6-v0.53.0-linux-amd64.tar.gz -o k6.tar.gz
+          tar -xzf k6.tar.gz
+          sudo mv k6-v0.53.0-linux-amd64/k6 /usr/local/bin/k6
+          k6 version
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+
+      - name: Load gate (start server → k6 → analyze)
+        # Single step: GitHub Actions kills background processes when a
+        # step's shell exits, so the server must live inside this step.
+        run: |
+          npx next start -p 3000 > server.log 2>&1 &
+          SERVER_PID=$!
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:3000/api/health > /dev/null; then
+              echo "server ready"
+              break
+            fi
+            sleep 1
+          done
+          curl -sf http://localhost:3000/api/health && echo "health OK"
+          cat server.log
+
+          # Smoke load test (browse-only: no K6_EMAIL/K6_PASSWORD here,
+          # so auth/search/dashboard scenarios skip — see k6-script.js).
+          # `|| true` keeps going so analyze:load always prints the gate
+          # table + bottleneck suggestions even when k6 thresholds fail.
+          npm run test:load || echo "[load] k6 thresholds breached"
+
+          # Exit non-zero if any gate is violated → workflow fails.
+          npm run analyze:load
+
+          # Persist the run for the Ops trend chart (best-effort; a
+          # record failure must not fail the gate workflow).
+          npm run record:load || echo "[load] record skipped"
+
+          kill $SERVER_PID 2>/dev/null || true

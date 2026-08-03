@@ -10,6 +10,17 @@ function getSecret(): string {
   return env.jwtSecret;
 }
 
+/**
+ * Secrets accepted for verification. During key rotation the old secret
+ * is set via `JWT_SECRET_OLD` so already-issued tokens stay valid until
+ * they expire; after the rotation window you remove the old var.
+ */
+function getVerifySecrets(): string[] {
+  const secrets = [getSecret()];
+  if (env.JWT_SECRET_OLD) secrets.push(env.JWT_SECRET_OLD);
+  return secrets;
+}
+
 const EXPIRES_IN = "7d";
 
 export interface AuthToken extends JwtPayload {
@@ -23,12 +34,14 @@ export function signToken(payload: Omit<AuthToken, "iat" | "exp">): string {
 }
 
 export function verifyToken(token: string): AuthToken | null {
-  try {
-    const decoded = jwt.verify(token, getSecret()) as AuthToken;
-    return decoded;
-  } catch {
-    return null;
+  for (const secret of getVerifySecrets()) {
+    try {
+      return jwt.verify(token, secret) as AuthToken;
+    } catch {
+      // Try the next secret (old key during rotation).
+    }
   }
+  return null;
 }
 
 export const AUTH_COOKIE = "bn_session";

@@ -88,13 +88,15 @@ export function StatCounter({
     };
   }, [value, duration, animate, reduced]);
 
-  const formatted = toPersianDigits(display.toFixed(decimals));
+  // Use the Persian decimal separator (٫) instead of the ASCII dot that
+  // toFixed produces — decimals should read natively in fa-IR.
+  const formatted = toPersianDigits(display.toFixed(decimals)).replace(".", "٫");
 
   return (
     <span ref={ref} className={cn("tabular-nums", className)}>
       {prefix}
       {formatted}
-      {suffix}
+      {suffix.replace("%", "٪")}
     </span>
   );
 }

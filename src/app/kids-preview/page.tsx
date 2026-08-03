@@ -143,7 +143,7 @@ export default function KidsPreviewPage() {
           <pre className="overflow-x-auto rounded-xl bg-slate-900 p-4 font-mono text-xs leading-relaxed text-slate-100" dir="ltr">
 {`// رنگ‌ها
 <div className="bg-kid-sky-400 text-white">آسمان</div>
-<div className="bg-kid-coral-100 text-kid-coral-700">مرجانی</div>
+<div className="bg-kid-coral-100 text-kid-coral-600">مرجانی</div>
 
 // گرادیان‌ها
 <div className="bg-kid-candy">آبشار رنگ</div>

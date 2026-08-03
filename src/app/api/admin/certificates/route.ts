@@ -1,11 +1,9 @@
 import { NextResponse } from "next/server";
-import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/session";
 import { repository } from "@/lib/db/repository";
 import { isSameOriginRequest } from "@/lib/csrf";
-import { notifyCertificateIssued } from "@/lib/notifications";
-import { CACHE_TAGS } from "@/lib/cache-tags";
+import { publish } from "@/lib/events";
 
 const issueSchema = z.object({
   userId: z.string().min(1),
@@ -17,8 +15,9 @@ const issueSchema = z.object({
  * POST /api/admin/certificates
  *
  * Admin/teacher endpoint to manually issue a certificate for a
- * completed enrollment. The notification trigger fires as a side
- * effect so the student always knows their cert is ready.
+ * completed enrollment. Side effects — the student notification and
+ * cache invalidation — fire via the `certificate:issued` event so the
+ * route stays thin.
  */
 export async function POST(req: Request) {
   if (!isSameOriginRequest(req)) {
@@ -47,14 +46,14 @@ export async function POST(req: Request) {
 
   const certificate = await repository.issueCertificate(parsed.data);
 
+  // Event bus: sends the student notification AND revalidates the
+  // certificates / user / notifications cache tags (events.ts).
   const course = await repository.findCourseById(parsed.data.courseId);
-  if (course) {
-    await notifyCertificateIssued(parsed.data.userId, course.title);
-  }
-
-  revalidateTag(CACHE_TAGS.certificates);
-  revalidateTag(CACHE_TAGS.user(parsed.data.userId));
-  revalidateTag(CACHE_TAGS.notifications);
+  await publish({
+    type: "certificate:issued",
+    userId: parsed.data.userId,
+    courseName: course?.title ?? "دوره",
+  });
 
   return NextResponse.json({ certificate }, { status: 201 });
 }

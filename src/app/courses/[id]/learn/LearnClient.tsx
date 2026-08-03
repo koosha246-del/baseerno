@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Play, FileText } from "lucide-react";
 import Link from "next/link";
+import { ChatWidget } from "@/features/ai/ChatWidget";
 
 interface Lesson {
   id: string;
@@ -57,6 +58,9 @@ export function LearnClient({ course, lessons, initialLessonId }: Props) {
           ))}
         </nav>
       </aside>
+
+      {/* AI tutor — grounded in the active course & lesson */}
+      <ChatWidget courseId={course.id} lessonTitle={activeLesson?.title} />
 
       {/* Main content */}
       <main className="flex-1">

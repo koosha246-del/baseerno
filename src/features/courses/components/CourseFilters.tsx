@@ -43,6 +43,7 @@ export function CourseFilters({
             key={cat.id}
             role="tab"
             aria-selected={isActive}
+            aria-controls="courses-tabpanel"
             tabIndex={isActive ? 0 : -1}
             onClick={() => onChange(cat.id)}
             className={cn(

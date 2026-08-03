@@ -3,6 +3,9 @@ import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/session";
 import { repository } from "@/lib/db/repository";
 import { isSameOriginRequest, csrfRejectedResponse } from "@/lib/csrf";
+import { invalidateCache, invalidateSearchCourseCache } from "@/lib/cache";
+import { CACHE_TAGS, publishedCoursesCacheKeys } from "@/lib/cache-tags";
+import { publish } from "@/lib/events";
 
 const schema = z.object({
   action: z.enum(["publish", "unpublish", "delete"]),
@@ -44,16 +47,30 @@ export async function POST(
   switch (parsed.data.action) {
     case "publish":
       await repository.updateCourse(id, { published: true });
-      return NextResponse.json({ ok: true, message: "دوره منتشر شد." });
+      break;
     case "unpublish":
       await repository.updateCourse(id, { published: false });
-      return NextResponse.json({ ok: true, message: "دوره از حالت انتشار خارج شد." });
+      break;
     case "delete":
       // Soft approach: unpublish rather than hard-delete to preserve data.
       await repository.unpublishCourse(id);
-      return NextResponse.json({
-        ok: true,
-        message: "دوره غیرفعال شد (soft delete).",
-      });
+      break;
   }
+
+  // publish/unpublish changes the public list — bust Redis + tag,
+  // plus the per-query search cache (published state affects results).
+  await invalidateCache(publishedCoursesCacheKeys(), [
+    CACHE_TAGS.courses,
+    CACHE_TAGS.course(id),
+    CACHE_TAGS.reports,
+  ]);
+  await invalidateSearchCourseCache();
+  await publish({ type: "search:needs-sync", courseId: id });
+
+  const messages: Record<string, string> = {
+    publish: "دوره منتشر شد.",
+    unpublish: "دوره از حالت انتشار خارج شد.",
+    delete: "دوره غیرفعال شد (soft delete).",
+  };
+  return NextResponse.json({ ok: true, message: messages[parsed.data.action] });
 }

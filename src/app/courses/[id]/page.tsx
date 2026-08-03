@@ -30,6 +30,13 @@ export function generateStaticParams() {
   return courseDetailIds.map((id) => ({ id }));
 }
 
+/**
+ * ISR: revalidate static detail pages hourly in the background, so new
+ * courses added to `courseDetailIds`/constants are picked up without a
+ * full rebuild while unvisited pages stay cached at the edge.
+ */
+export const revalidate = 3600;
+
 export async function generateMetadata({
   params,
 }: {

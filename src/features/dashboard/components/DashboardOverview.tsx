@@ -38,14 +38,14 @@ export function DashboardOverview({ stats, recentActivity, role }: DashboardOver
     <div className="flex flex-col gap-6">
       {/* Welcome */}
       <div>
-        <h1 className="text-2xl font-extrabold text-white">
+        <h1 className="text-2xl font-extrabold text-fg-primary">
           {role === "STUDENT"
             ? "داشبورد شما"
             : role === "TEACHER"
               ? "پنل مدرسی"
               : "پنل مدیریت"}
         </h1>
-        <p className="mt-1 text-sm text-slate-400">
+        <p className="mt-1 text-sm text-fg-secondary">
           خلاصه وضعیت حساب کاربری شما
         </p>
       </div>
@@ -68,20 +68,21 @@ export function DashboardOverview({ stats, recentActivity, role }: DashboardOver
       </div>
 
       {/* Recent Activity */}
-      <div className="rounded-xl border border-white/10 bg-slate-800/50 p-5">
-        <h2 className="mb-4 text-lg font-bold text-white">فعالیت اخیر</h2>
+      <div className="rounded-xl border border-app-border-subtle bg-surface-muted p-5">
+        <h2 className="mb-4 text-lg font-bold text-fg-primary">فعالیت اخیر</h2>
         {recentActivity.length === 0 ? (
-          <p className="py-8 text-center text-sm text-slate-500">فعالیتی یافت نشد.</p>
+          <p className="py-8 text-center text-sm text-fg-secondary">فعالیتی یافت نشد.</p>
         ) : (
-          <div className="flex flex-col gap-3">
+          <div role="list" className="flex flex-col gap-3">
             {recentActivity.map((item) => (
               <div
                 key={item.id}
-                className="flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.03] px-4 py-3"
+                role="listitem"
+                className="flex items-center justify-between rounded-lg border border-app-border-subtle bg-surface px-4 py-3"
               >
                 <div className="flex flex-col">
-                  <span className="text-sm font-semibold text-white">{item.title}</span>
-                  <span className="text-xs text-slate-400">{item.subtitle}</span>
+                  <span className="text-sm font-semibold text-fg-primary">{item.title}</span>
+                  <span className="text-xs text-fg-secondary">{item.subtitle}</span>
                 </div>
                 <span
                   className={`rounded-full px-2.5 py-0.5 text-[0.65rem] font-bold ${

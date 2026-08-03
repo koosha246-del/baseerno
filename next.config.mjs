@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Standalone output — required by the Dockerfile (copies
+  // .next/standalone + server.js) and makes image tracing lean.
+  output: "standalone",
   poweredByHeader: false,
   images: {
     formats: ["image/avif", "image/webp"],
@@ -47,6 +50,15 @@ const nextConfig = {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=()",
           },
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=63072000; includeSubDomains; preload",
+          },
+          // Content-Security-Policy is intentionally NOT set here — it is
+          // generated per-request in src/middleware.ts with a fresh nonce
+          // (script-src 'nonce-<n>' 'strict-dynamic' in production, no
+          // 'unsafe-inline'). A static header here would not carry the
+          // nonce and would conflict with the dynamic one.
         ],
       },
     ];

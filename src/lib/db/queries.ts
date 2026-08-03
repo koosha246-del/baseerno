@@ -6,6 +6,7 @@
  *
  *   reports.queries.ts   — cached report aggregations (120s TTL)
  *   dashboard.queries.ts — cached dashboard lists + stats bundle
+ *   courses.queries.ts   — cached public published-course listings
  */
 export {
   getCachedRevenueByMonth,
@@ -25,3 +26,5 @@ export {
   getCachedCountPaymentsForCourses,
   getAdminStatsBundle,
 } from "./queries/dashboard.queries";
+
+export { getCachedPublishedCourses } from "./queries/courses.queries";

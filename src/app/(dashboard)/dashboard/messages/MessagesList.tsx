@@ -102,7 +102,7 @@ export function MessagesList({ messages, currentUserId, allUsers, onReadChange }
       {filtered.length === 0 ? (
         <p className="text-center text-sm text-slate-500">پیامی با این عبارت یافت نشد.</p>
       ) : (
-        <div className="flex flex-col gap-3">
+        <div aria-live="polite" aria-atomic="false" className="flex flex-col gap-3">
           {filtered.map((m) => {
             const isMine = m.senderId === currentUserId;
             const other = allUsers.find((u) => u.id === (isMine ? m.receiverId : m.senderId));

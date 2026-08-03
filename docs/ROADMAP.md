@@ -23,6 +23,72 @@
 
 ---
 
+## ✅ فازهای تکمیل‌شده (۱۴۰۵)
+
+> این فازها قبلاً پیاده‌سازی شده‌اند — جزئیات در commit history و PR descriptionها.
+
+### فاز ۰ — Quick Wins ✅
+- حذف `console.log` از CorporateCtaForm و FooterNewsletter (PII)
+- رفع ۹ ESLint warning (unused vars + missing dep)
+- جایگزینی `<img>` با `<Image>` در FileUpload
+- دانلود Vazirmatn به‌صورت local woff2 + `next/font/local`
+
+### فاز ۱ — Database Hardening ✅
+- `@updatedAt` و `deletedAt DateTime?` به همه ۱۰ models
+- `@@index([deletedAt])` برای queryهای soft-delete
+- migration اولیه `prisma/migrations/20260101000000_init/`
+- `migration_lock.toml`
+- `$extends` plugin در `prisma-client.ts` برای auto-filter `deletedAt: null`
+- `prismaRaw` برای admin/repair queries (no soft-delete filter)
+
+### فاز ۲ — Environment Validation ✅
+- `src/lib/env.ts` با zod schema (pre-existed، fail-fast در production)
+- مهاجرت ۲ API route به `env.isProduction`
+- `.env.example` کامل
+- `env.test.ts` با ۵ تست
+
+### فاز ۳ — Cache Invalidation ✅
+- `CACHE_TAGS` constants در `src/lib/cache-tags.ts` (pre-existed)
+- `revalidateTag` به ۷ endpoint mutation اضافه شد
+- مهاجرت string literal tags به `CACHE_TAGS` constants
+
+### فاز ۴ — Testing Infrastructure ✅
+- `@vitest/coverage-v8` با threshold 10% baseline
+- `jest-axe` با ۶ تست a11y در `src/components/ui/__tests__/a11y.test.tsx`
+- `test:integration` script برای ۱۲ تست repository
+- `clearAllRateLimits()` در vitest.setup.ts
+- ۳۳۶ تست passing در ۴۶ فایل
+
+### فاز ۵ — Security Hardening ✅
+- `withRateLimit` به ۱۴ API route اضافه شد
+- Preset‌های AUTH, API, READ, SENSITIVE
+- CSP, HSTS, Permissions-Policy در `next.config.mjs`
+- defensive `getClientIdentifier(Request | undefined)`
+
+### فاز ۶ — Performance Optimization ✅
+- `loading.tsx` برای ۱۲ page جدید
+- Prisma slow query log (100ms dev / 500ms prod)
+- `@next/bundle-analyzer` با `npm run analyze`
+
+### فاز ۷ — SEO Enrichment ✅
+- Canonical URL به ۷ page
+- `openGraph.type: "article"` در dynamic course page
+- `buildBaseMetadata` با OG و Twitter card
+
+### فاز ۸ — Accessibility ✅
+- `lang="en" dir="ltr"` برای English book titles در library
+- `role="alert" aria-live="assertive"` برای error messages
+- `sr-only role="status" aria-live="polite"` برای success purchase messages
+- ThemeToggle test (۳ تست) — dark mode verified
+
+### فاز ۹ — UI/UX Polish ✅
+- **Dark mode**: `next-themes` با `attribute="class"`، ThemeProvider + ThemeToggle
+- **Storybook 10.5.5**: با `@storybook/nextjs-vite` + `@storybook/addon-docs` + `@storybook/addon-a11y` + `@storybook/addon-themes`
+- **24 stories** در ۶ story file: Foundations (4), Button (7), Card (2), Badge (2), Skeleton (3), Separator (2), Accordion (2), ThemeToggle (2)
+- Theme toolbar داخل Storybook برای preview در light/dark
+
+---
+
 ## 🎯 فاز ۰ — Quick Wins (همین الان، ۲ ساعت)
 
 **هدف:** تمیزکاری کوچک + حذف warning‌ها. بدون شکستن چیزی.
@@ -352,30 +418,30 @@ export const CACHE_TAGS = {
 
 ---
 
-## 🎨 فاز ۹ — UI/UX Polish (اختیاری، ۶-۱۰ ساعت)
+## 🎨 فاز ۹ — UI/UX Polish ✅ (تکمیل‌شده)
 
-### ۹.۱ Dark mode toggle
-- الان hard-coded dark
-- `next-themes` library
-- Toggle در header
-- ۱.۵ ساعت
+### ۹.۱ Dark mode toggle ✅
+- `next-themes` با `attribute="class"` (smooth transition، disable در حین تغییر)
+- `ThemeProvider` در `src/providers/Providers.tsx` (defaultTheme="system" + enableSystem)
+- `ThemeToggle` در header با sun/moon icon + rotate animation
+- CSS variable override در `.dark` (نیازی به `dark:` Tailwind variants نیست)
+- ThemeToggle test با ۳ تست passing
 
-### ۹.۲ Storybook (اختیاری ولی قوی)
-- `npx storybook@latest init`
-- هر component یه story
-- ۴-۶ ساعت
+### ۹.۲ Storybook ✅
+- Storybook 10.5.5 با `@storybook/nextjs-vite` (سریع‌تر از webpack)
+- addons: docs, a11y, themes (theme toolbar داخل Storybook)
+- ۲۴ story در ۶ فایل: Foundations (4), Button (7), Card (2), Badge (2), Skeleton (3), Separator (2), Accordion (2), ThemeToggle (2)
+- هر story فارسی + RTL با token system
+- `npm run storybook` برای dev، `npm run build-storybook` برای static build
 
-### ۹.۳ Design tokens export
+### ۹.۳ Design tokens export ⏳ (deferred)
 - Style Dictionary → JSON برای Figma
-- ۱.۵ ساعت
+- بعداً، اولویت پایین
 
-### ۹.۴ Form UX
+### ۹.۴ Form UX ⏳ (deferred)
 - Loading state در همه submit buttons
 - Optimistic updates در like/favorite
 - Better error messages (نه generic)
-- ۲ ساعت
-
-**زمان کل فاز ۹: ۶-۱۰ ساعت**
 
 ---
 

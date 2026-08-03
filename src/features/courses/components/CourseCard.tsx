@@ -20,10 +20,13 @@ interface CourseCardProps {
 }
 
 const levelClass: Record<CourseLevel, string> = {
-  مقدماتی: "bg-green-50 text-green-700",
-  متوسط: "bg-blue-50 text-blue-700",
-  پیشرفته: "bg-orange-50 text-orange-700",
-  حرفه‌ای: "bg-amber-50 text-amber-700",
+  مقدماتی:
+    "bg-green-50 text-green-700 dark:bg-green-500/15 dark:text-green-300",
+  متوسط: "bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300",
+  پیشرفته:
+    "bg-orange-50 text-orange-700 dark:bg-orange-500/15 dark:text-orange-300",
+  حرفه‌ای:
+    "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
 };
 
 /**

@@ -1,0 +1,28 @@
+# =================================================================
+# Dedicated email-worker image.
+#
+# The main Dockerfile's runner stage only ships `.next/standalone`,
+# which does NOT include tsx or the worker source — so the worker needs
+# its own image that keeps the full node_modules + src/ tree.
+# =================================================================
+
+FROM node:20-alpine AS base
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+
+# Install full deps (including dev deps — tsx is a devDependency).
+COPY package.json package-lock.json ./
+COPY prisma ./prisma/
+RUN npm ci
+
+# Generate Prisma client
+RUN npx prisma generate
+
+# Copy the whole source tree (worker + lib).
+COPY . .
+
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# The worker runs the outbox poller as a long-lived process.
+CMD ["npx", "tsx", "worker/email-worker.ts"]

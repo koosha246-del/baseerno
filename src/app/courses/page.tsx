@@ -6,7 +6,6 @@ import { SectionHeading } from "@/components/shared/SectionHeading";
 import { GradientText } from "@/components/shared/GradientText";
 import { PopularCoursesClient } from "@/features/courses/components/PopularCoursesClient";
 import { courseCategories, accentClasses } from "@/features/courses/constants";
-import { repository } from "@/lib/db/repository";
 import { mapDbCourse } from "@/features/courses/courseMapper";
 import {
   BookOpen,
@@ -20,26 +19,33 @@ export const metadata: Metadata = {
     "کاملترین catalog دوره‌های زبان انگلیسی بصیر نو — گرامر، واژگان، مکالمه، شنیدن، خواندن، نوشتن و آیلتس.",
 };
 
-export const dynamic = "force-dynamic";
+/**
+ * ISR: revalidate at most every 5 minutes. Course rows come from the
+ * Redis data cache (`getOrSet`, key `courses:published`, TTL 300s,
+ * tagged `courses`) with an `unstable_cache` fallback, and are busted
+ * immediately on mutations via `invalidateCache`.
+ */
+export const revalidate = 300;
 
 export default async function CoursesPage() {
-  let dbCourses: Awaited<ReturnType<typeof repository.listCourses>> = [];
+  // The query module is imported dynamically INSIDE the try/catch so a
+  // module-eval throw (e.g. missing DATABASE_URL in prisma-client.ts)
+  // can't blank this page — same resilience as the homepage.
+  let courseList: ReturnType<typeof mapDbCourse>[] = [];
   try {
-    dbCourses = await repository.listCourses({
-      publishedOnly: true,
-      includeMentor: true,
-    });
+    const { getCachedPublishedCourses } = await import("@/lib/db/queries");
+    const dbCourses = await getCachedPublishedCourses();
+    courseList = dbCourses.map(mapDbCourse);
   } catch {
     // DB not reachable — show empty state gracefully.
   }
-  const courseList = dbCourses.map(mapDbCourse);
 
   return (
     <main className="bg-background pb-20 pt-[calc(var(--header-h)+2rem)]">
       <Container width="page">
         {/* Hero */}
         <section className="mb-12 text-center">
-          <span className="mb-4 inline-flex items-center gap-2 rounded-pill bg-kid-sky-100 px-4 py-1.5 text-sm font-bold text-kid-sky-700">
+          <span className="mb-4 inline-flex items-center gap-2 rounded-pill bg-kid-sky-100 px-4 py-1.5 text-sm font-bold text-kid-sky-600">
             <GraduationCap className="size-4" />
             همه دوره‌ها
           </span>
@@ -80,7 +86,7 @@ export default async function CoursesPage() {
         {/* CTA */}
         <section className="mt-16 rounded-3xl bg-kid-sky-50 p-8 text-center sm:p-12">
           <ScrollReveal>
-            <span className="mb-3 inline-flex items-center gap-2 rounded-pill bg-white px-4 py-1.5 text-sm font-bold text-kid-sky-700 shadow-sm">
+            <span className="mb-3 inline-flex items-center gap-2 rounded-pill bg-white px-4 py-1.5 text-sm font-bold text-kid-sky-600 shadow-sm dark:bg-surface">
               <Sparkles className="size-4" />
               اولین درس رایگان
             </span>

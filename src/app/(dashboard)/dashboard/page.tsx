@@ -5,6 +5,7 @@ import { toPersianDigits } from "@/lib/format";
 import { DashboardOverview } from "@/features/dashboard/components/DashboardOverview";
 import { DashboardSkeleton } from "@/components/shared/Skeletons";
 import { getCachedRoleCounts, getCachedCountCourses, getCachedCountEnrollments, getCachedTotalRevenue } from "@/lib/db/queries";
+import { env } from "@/lib/env";
 
 /**
  * Dashboard home — role-aware stats + recent activity.
@@ -26,6 +27,46 @@ export default async function DashboardPage() {
 
   let stats: React.ComponentProps<typeof DashboardOverview>["stats"] = [];
   let recentActivity: React.ComponentProps<typeof DashboardOverview>["recentActivity"] = [];
+
+  // Demo mode (no DB): don't let a failing query crash the page — show
+  // sample stats so the dashboard is still explorable.
+  if (env.demoMode) {
+    stats =
+      role === "STUDENT"
+        ? [
+            { label: "دوره فعال", value: "۲", accent: "brand" as const },
+            { label: "دوره تکمیل‌شده", value: "۱", accent: "green" as const },
+            { label: "میانگین نمرات", value: "۱۷", accent: "blue" as const },
+            { label: "گواهی‌نامه", value: "۱", accent: "amber" as const },
+          ]
+        : role === "TEACHER"
+          ? [
+              { label: "دوره من", value: "۴", accent: "brand" as const },
+              { label: "دانشجویان", value: "۱۲۰", accent: "blue" as const },
+              { label: "نمرات ثبت‌شده", value: "۸۶", accent: "amber" as const },
+              { label: "درآمد (تومان)", value: "۴۸٬۰۰۰٬۰۰۰", accent: "green" as const },
+            ]
+          : [
+              { label: "کل کاربران", value: "۱۸۶", accent: "brand" as const },
+              { label: "دوره‌ها", value: "۹", accent: "blue" as const },
+              { label: "ثبت‌نام‌ها", value: "۳۱۲", accent: "amber" as const },
+              { label: "درآمد کل (تومان)", value: "۹۶٬۰۰۰٬۰۰۰", accent: "green" as const },
+            ];
+    recentActivity = [
+      {
+        id: "demo-1",
+        title: "دوره گرامر پایه A1",
+        subtitle: "نمونه‌ی حالت دمو — دیتابیس وصل نشده است",
+        status: "دمو",
+        statusColor: "blue" as const,
+      },
+    ];
+    return (
+      <Suspense fallback={<DashboardSkeleton />}>
+        <DashboardOverview stats={stats} recentActivity={recentActivity} role={role} />
+      </Suspense>
+    );
+  }
 
   if (role === "STUDENT") {
     // 6 queries, all in parallel. `grades` is fetched to drive the

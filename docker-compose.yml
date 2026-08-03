@@ -19,6 +19,8 @@ services:
       CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
       CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
       SENTRY_DSN: ${SENTRY_DSN:-}
+      SEARCH_HOST: ${SEARCH_HOST:-http://meilisearch:7700}
+      SEARCH_API_KEY: ${SEARCH_API_KEY:-baseerno-dev-master-key}
     depends_on:
       db:
         condition: service_healthy
@@ -28,6 +30,41 @@ services:
       timeout: 3s
       retries: 3
       start_period: 10s
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    container_name: bayan-worker
+    restart: unless-stopped
+    command: npm run worker:email
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      REDIS_URL: ${REDIS_URL:-}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.13
+    container_name: bayan-meili
+    restart: unless-stopped
+    environment:
+      MEILI_MASTER_KEY: ${SEARCH_API_KEY:-baseerno-dev-master-key}
+      MEILI_NO_ANALYTICS: "true"
+      MEILI_ENV: development
+    ports:
+      - "7700:7700"
+    volumes:
+      - meili_data:/meili_data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7700/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
 
   db:
     image: postgres:16-alpine
@@ -49,4 +86,6 @@ services:
 
 volumes:
   postgres_data:
+    driver: local
+  meili_data:
     driver: local

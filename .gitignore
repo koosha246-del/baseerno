@@ -48,3 +48,13 @@ ZCodeProject/
 
 # local milestone media (not website assets)
 /mile-a/
+
+# storybook
+/storybook-static/
+
+
+# k6 binary + run artifacts for load tests (see scripts/load)
+/scripts/load/bin/
+/scripts/load/result.json
+# local Redis binaries for the rate-limit drill (see scripts/verify-redis.ts)
+/scripts/redis/bin/

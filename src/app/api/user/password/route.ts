@@ -4,13 +4,15 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { repository } from "@/lib/db/repository";
 import { verifyPassword, hashPassword } from "@/lib/auth/password";
 import { isSameOriginRequest, csrfRejectedResponse } from "@/lib/csrf";
+import { withRateLimit } from "@/lib/api-middleware";
+import { RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
 
 const schema = z.object({
   currentPassword: z.string().min(1, "رمز عبور فعلی را وارد کنید."),
   newPassword: z.string().min(6, "رمز عبور جدید باید حداقل ۶ کاراکتر باشد."),
 });
 
-export async function PATCH(req: Request) {
+async function changePasswordHandler(req: Request) {
   // CSRF: password change mutates the authenticated user's credentials.
   if (!isSameOriginRequest(req)) {
     return csrfRejectedResponse();
@@ -49,3 +51,8 @@ export async function PATCH(req: Request) {
 
   return NextResponse.json({ ok: true });
 }
+
+/** SENSITIVE: max=5, burst=2 per minute — critical for password security. */
+export const PATCH = withRateLimit(changePasswordHandler, RATE_LIMIT_PRESETS.AUTH, {
+  keyPrefix: "auth:change-password",
+});

@@ -1,8 +1,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { SiteHeader } from "@/features/header/components/SiteHeader";
-import { ScrollAnimation } from "@/components/shared/ScrollAnimation";
 import { SiteFooter } from "@/features/footer/components/SiteFooter";
+import { HeroContent } from "@/features/hero/components/HeroContent";
+import { HeroShowcase } from "@/features/hero/components/HeroShowcase";
+import { CapabilitiesSection } from "@/features/capabilities/CapabilitiesSection";
 import { Container } from "@/components/shared/Container";
 import { Button } from "@/components/ui/button";
 import { ScrollReveal } from "@/components/shared/ScrollReveal";
@@ -10,9 +12,9 @@ import { SectionHeading } from "@/components/shared/SectionHeading";
 import { GradientText } from "@/components/shared/GradientText";
 import { PopularCoursesClient } from "@/features/courses/components/PopularCoursesClient";
 import { courseCategories, accentClasses } from "@/features/courses/constants";
-import { libraryBooks, formatToman } from "@/lib/library";
+import { libraryBooks, formatToman, getBookCover } from "@/lib/library";
 import { siteConfig } from "@/config/site";
-import { repository } from "@/lib/db/repository";
+import { HOMEPAGE_COURSES_TAKE } from "@/lib/cache-tags";
 import { mapDbCourse } from "@/features/courses/courseMapper";
 import {
   BookOpen,
@@ -33,10 +35,9 @@ import {
  *   ┌─────────────────────────────────────┐
  *   │  SiteHeader (sticky)                 │
  *   ├─────────────────────────────────────┤
- *   │  ScrollAnimation (1000vh intro)      │
- *   │  → user scrolls through 300 frames  │
- *   ├─────────────────────────────────────┤
- *   │  Welcome / About بصیر نو            │ ← content begins
+ *   │  Hero — product window (showcase)    │
+ *   │  Capabilities — real feature grid    │
+ *   │  Welcome / About بصیر نو            │
  *   │  Books (Interchange 1–5)             │
  *   │  Courses (English skills)            │
  *   │  Why بصیر نو (4 reasons)             │
@@ -46,46 +47,72 @@ import {
  *
  * Each content section uses `ScrollReveal` so it animates in as the
  * user scrolls past — feels like "one by one" without being intrusive.
+ *
+ * ISR: the page revalidates at most every 5 minutes. The course list is
+ * served from the Redis data cache (`getOrSet`, key `courses:published:8`,
+ * TTL 300s, tagged `courses`) with an `unstable_cache` fallback, and is
+ * invalidated immediately on mutations via `invalidateCache`, so requests
+ * rarely hit the DB for the static shell.
  */
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export default async function HomePage() {
-  // Pull live courses from the database; fall back to the static
-  // English-only catalog if the DB is unreachable in this environment.
-  let dbCourses: Awaited<ReturnType<typeof repository.listCourses>> = [];
+  // Pull published courses from the data cache; fall back to an empty
+  // list if the DB is unreachable. The section itself is ALWAYS rendered
+  // (with an empty state) so the #courses header anchor keeps a scroll target.
+  //
+  // NOTE: the query module is imported DYNAMICALLY inside the try/catch.
+  // prisma-client.ts throws at module-evaluation time when DATABASE_URL is
+  // missing ("... at eval"), and a static import would propagate that throw
+  // before this page could handle it — blank/white screen on every request.
+  // A dynamic import turns that module-load failure into a rejected promise
+  // that we catch here, so the homepage always renders.
+  let courseList: ReturnType<typeof mapDbCourse>[] = [];
   try {
-    dbCourses = await repository.listCourses({
-      publishedOnly: true,
-      includeMentor: true,
-      take: 8,
-    });
+    const { getCachedPublishedCourses } = await import("@/lib/db/queries");
+    const dbCourses = await getCachedPublishedCourses(HOMEPAGE_COURSES_TAKE);
+    courseList = dbCourses.map(mapDbCourse);
   } catch {
-    // DB not reachable — catalog section will hide itself.
+    // DB not reachable — grid shows the empty state.
   }
-  const courseList = dbCourses.map(mapDbCourse);
 
   return (
     <>
       <SiteHeader />
       <main id="home">
-        {/* ─── 1. INTRO — scroll-driven animation ───────────────── */}
-        <ScrollAnimation />
+        {/* ─── 1. HERO — the product, above the fold ─────────────── */}
+        <section
+          className="relative overflow-hidden bg-background pt-[calc(var(--header-h)+2rem)] pb-16 lg:pt-[calc(var(--header-h)+3.5rem)] lg:pb-24"
+        >
+          {/* Aurora backdrop */}
+          <div aria-hidden className="pointer-events-none absolute inset-0 bg-aurora opacity-70" />
+          <Container width="page" className="relative">
+            <div className="grid items-center gap-14 lg:grid-cols-[1.05fr_0.95fr]">
+              <HeroContent />
+              <HeroShowcase />
+            </div>
+          </Container>
+        </section>
 
-        {/* ─── 2. WELCOME — what is بصیر نو? ────────────────────── */}
+        {/* ─── 2. CAPABILITIES — what the platform actually does ── */}
+        <CapabilitiesSection />
+
+        {/* ─── 3. WELCOME — what is بصیر نو? ────────────────────── */}
         <WelcomeSection />
 
-        {/* ─── 3. BOOKS — Interchange & Connect catalog ──────────── */}
+        {/* ─── 4. BOOKS — Interchange & Connect catalog ──────────── */}
         <BooksSection />
 
-        {/* ─── 4. COURSES — English skills, DB-driven ────────────── */}
-        {courseList.length > 0 && (
-          <CoursesSection courses={courseList} />
-        )}
+        {/* ─── 5. COURSES — English skills, DB-driven ────────────── */}
+        {/* Always rendered (even with an empty DB) so the #courses anchor
+            in the header nav always has a scroll target. The client grid
+            shows an empty state when there are no published courses. */}
+        <CoursesSection courses={courseList} />
 
-        {/* ─── 5. WHY US — 4 reasons بصیر نو is different ────────── */}
+        {/* ─── 6. WHY US — 4 reasons بصیر نو is different ────────── */}
         <WhyUsSection />
 
-        {/* ─── 6. CTA — start your first lesson ──────────────────── */}
+        {/* ─── 7. CTA — start your first lesson ──────────────────── */}
         <CtaSection />
       </main>
       <SiteFooter />
@@ -94,7 +121,7 @@ export default async function HomePage() {
 }
 
 /* ──────────────────────────────────────────────────────────────────── */
-/*  2. WELCOME                                                          */
+/*  3. WELCOME                                                          */
 /* ──────────────────────────────────────────────────────────────────── */
 
 function WelcomeSection() {
@@ -106,7 +133,7 @@ function WelcomeSection() {
       <Container width="page">
         <ScrollReveal>
           <div className="mx-auto max-w-3xl text-center">
-            <span className="mb-4 inline-flex items-center gap-2 rounded-pill bg-kid-sky-100 px-4 py-1.5 text-sm font-bold text-kid-sky-700">
+            <span className="mb-4 inline-flex items-center gap-2 rounded-pill bg-kid-sky-100 px-4 py-1.5 text-sm font-bold text-kid-sky-600 dark:bg-kid-sky-500/15 dark:text-kid-sky-300">
               <Sparkles className="size-4" />
               خوش اومدی به {siteConfig.name}
             </span>
@@ -145,9 +172,9 @@ function Stat({
   tone: "sky" | "coral" | "mint";
 }) {
   const palette = {
-    sky: "bg-kid-sky-50 text-kid-sky-600",
-    coral: "bg-kid-coral-50 text-kid-coral-600",
-    mint: "bg-kid-mint-50 text-kid-mint-600",
+    sky: "bg-kid-sky-50 text-kid-sky-600 dark:bg-kid-sky-500/15 dark:text-kid-sky-300",
+    coral: "bg-kid-coral-50 text-kid-coral-600 dark:bg-kid-coral-500/15 dark:text-kid-coral-300",
+    mint: "bg-kid-mint-50 text-kid-mint-600 dark:bg-kid-mint-500/15 dark:text-kid-mint-300",
   };
   return (
     <div className="flex flex-col items-center gap-2 rounded-2xl border border-app-border-subtle bg-surface p-5 text-center">
@@ -163,7 +190,7 @@ function Stat({
 }
 
 /* ──────────────────────────────────────────────────────────────────── */
-/*  3. BOOKS                                                            */
+/*  4. BOOKS                                                            */
 /* ──────────────────────────────────────────────────────────────────── */
 
 function BooksSection() {
@@ -189,15 +216,15 @@ function BooksSection() {
           {libraryBooks.slice(0, 5).map((book, i) => (
             <ScrollReveal key={book.id} delay={i * 0.05}>
               <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-app-border-subtle bg-surface shadow-sm transition-all hover:-translate-y-1 hover:shadow-md">
-                <div className="relative aspect-[3/4] overflow-hidden bg-gradient-to-br from-kid-sky-100 to-kid-mint-100">
+                <div className="relative aspect-[3/4] overflow-hidden bg-gradient-to-br from-kid-sky-100 to-kid-mint-100 dark:from-kid-sky-500/20 dark:to-kid-mint-500/20">
                   <Image
-                    src={book.cover}
+                    src={getBookCover(book)}
                     alt={book.title}
                     fill
                     sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                     className="object-cover transition-transform duration-500 group-hover:scale-105"
                   />
-                  <span className="absolute right-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[0.65rem] font-bold text-fg-primary shadow">
+                  <span className="absolute right-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[0.65rem] font-bold text-fg-primary shadow dark:bg-surface dark:text-fg-primary">
                     {book.level}
                   </span>
                 </div>
@@ -249,7 +276,7 @@ function BooksSection() {
 }
 
 /* ──────────────────────────────────────────────────────────────────── */
-/*  4. COURSES                                                          */
+/*  5. COURSES                                                          */
 /* ──────────────────────────────────────────────────────────────────── */
 
 function CoursesSection({
@@ -284,22 +311,13 @@ function CoursesSection({
             />
           </div>
         </ScrollReveal>
-
-        <div className="mt-8 text-center">
-          <Button asChild variant="outline" size="lg" className="group/btn">
-            <Link href="/courses">
-              همه دوره‌ها
-              <ArrowLeft className="size-4 transition-transform group-hover/btn:-translate-x-0.5" />
-            </Link>
-          </Button>
-        </div>
       </Container>
     </section>
   );
 }
 
 /* ──────────────────────────────────────────────────────────────────── */
-/*  5. WHY US                                                           */
+/*  6. WHY US                                                           */
 /* ──────────────────────────────────────────────────────────────────── */
 
 function WhyUsSection() {
@@ -330,10 +348,10 @@ function WhyUsSection() {
     },
   ];
   const palette = {
-    sky: "bg-kid-sky-50 text-kid-sky-600",
-    coral: "bg-kid-coral-50 text-kid-coral-600",
-    mint: "bg-kid-mint-50 text-kid-mint-600",
-    sunny: "bg-kid-sunny-50 text-kid-sunny-600",
+    sky: "bg-kid-sky-50 text-kid-sky-600 dark:bg-kid-sky-500/15 dark:text-kid-sky-300",
+    coral: "bg-kid-coral-50 text-kid-coral-600 dark:bg-kid-coral-500/15 dark:text-kid-coral-300",
+    mint: "bg-kid-mint-50 text-kid-mint-600 dark:bg-kid-mint-500/15 dark:text-kid-mint-300",
+    sunny: "bg-kid-sunny-50 text-kid-sunny-600 dark:bg-kid-sunny-500/15 dark:text-kid-sunny-300",
   };
 
   return (
@@ -382,16 +400,16 @@ function WhyUsSection() {
 }
 
 /* ──────────────────────────────────────────────────────────────────── */
-/*  6. CTA                                                              */
+/*  7. CTA                                                              */
 /* ──────────────────────────────────────────────────────────────────── */
 
 function CtaSection() {
   return (
-    <section className="bg-kid-sky-50 py-20 lg:py-28">
+    <section className="bg-kid-sky-50 py-20 lg:py-28 dark:bg-kid-sky-500/10">
       <Container width="narrow">
         <ScrollReveal>
           <div className="text-center">
-            <span className="mb-3 inline-flex items-center gap-2 rounded-pill bg-white px-4 py-1.5 text-sm font-bold text-kid-sky-700 shadow-sm">
+            <span className="mb-3 inline-flex items-center gap-2 rounded-pill bg-white px-4 py-1.5 text-sm font-bold text-kid-sky-600 shadow-sm dark:bg-surface dark:text-kid-sky-300">
               <Sparkles className="size-4" />
               اولین درس رایگان
             </span>

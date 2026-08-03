@@ -5,6 +5,8 @@ import { groupBy } from "@/lib/utils";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Video, FileCheck, BookOpen, Shield } from "lucide-react";
+import { env } from "@/lib/env";
+import { DemoUnavailableCard } from "@/components/shared/DemoUnavailableCard";
 import { CourseForm } from "./CourseForm";
 import { LessonForm } from "./LessonForm";
 
@@ -50,6 +52,11 @@ export default async function ContentPage() {
         </p>
       </div>
     );
+  }
+
+  // Demo mode (no DB): show a friendly card instead of a hanging skeleton.
+  if (env.demoMode) {
+    return <DemoUnavailableCard />;
   }
 
   // ADMIN sees the full catalog; TEACHER sees only their own.

@@ -57,13 +57,23 @@ export async function listUsers(opts?: {
   return users.map(toSafe);
 }
 
-export async function countUsers(opts?: { role?: Role }): Promise<number> {
-  return prisma.user.count({ where: opts?.role ? { role: opts.role } : undefined });
+export async function countUsers(
+  opts?: { role?: Role },
+  db: typeof prisma = prisma,
+): Promise<number> {
+  return db.user.count({ where: opts?.role ? { role: opts.role } : undefined });
 }
 
 export async function updateUser(
   id: string,
-  patch: Partial<{ name: string; phone: string; bio: string; avatar: string }>,
+  patch: Partial<{
+    name: string;
+    phone: string;
+    bio: string;
+    avatar: string;
+    twoFactorSecret: string | null;
+    twoFactorEnabled: boolean;
+  }>,
 ): Promise<SafeUser | null> {
   try {
     const user = await prisma.user.update({ where: { id }, data: patch });
@@ -73,8 +83,8 @@ export async function updateUser(
   }
 }
 
-export async function countByRole(): Promise<Record<Role, number>> {
-  const groups = await prisma.user.groupBy({ by: ["role"], _count: true });
+export async function countByRole(db: typeof prisma = prisma): Promise<Record<Role, number>> {
+  const groups = await db.user.groupBy({ by: ["role"], _count: true });
   const counts: Record<string, number> = { STUDENT: 0, TEACHER: 0, ADMIN: 0 };
   for (const g of groups) counts[g.role] = g._count;
   return counts as Record<Role, number>;

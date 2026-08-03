@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { useActiveSection } from "@/hooks/useActiveSection";
+import { useFocusVisible } from "@/hooks/useFocusVisible";
 import type { HeaderNavItem } from "../types";
 
 interface MainNavProps {
@@ -15,6 +16,7 @@ interface MainNavProps {
 export function MainNav({ items }: MainNavProps) {
   const ids = items.map((i) => i.id);
   const active = useActiveSection(ids);
+  const isKeyboard = useFocusVisible();
 
   return (
     <nav aria-label="ناوبری اصلی">
@@ -30,7 +32,8 @@ export function MainNav({ items }: MainNavProps) {
                   "relative inline-flex items-center rounded-pill px-4 py-2 text-sm font-semibold transition-colors duration-base ease-luxury",
                   isActive
                     ? "text-accent"
-                    : "text-fg-secondary hover:text-fg-primary"
+                    : "text-fg-secondary hover:text-fg-primary",
+                  isKeyboard && "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
                 )}
               >
                 {item.label}

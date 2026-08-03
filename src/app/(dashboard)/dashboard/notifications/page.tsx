@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Bell, CheckCheck, Inbox } from "lucide-react";
 import { timeAgo } from "@/lib/time";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { DemoUnavailableCard } from "@/components/shared/DemoUnavailableCard";
 import { toPersianDigits } from "@/lib/format";
 
 interface Notification {
@@ -19,6 +20,7 @@ interface Notification {
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dbUnavailable, setDbUnavailable] = useState(false);
   const [filter, setFilter] = useState<"all" | "unread">("all");
 
   async function fetchNotifications() {
@@ -28,6 +30,14 @@ export default function NotificationsPage() {
       if (filter === "unread") params.set("unread", "true");
       const res = await fetch(`/api/notifications?${params}`);
       const data = await res.json();
+      // DB down (demo mode): the API answers 503 DB_UNAVAILABLE — surface
+      // that honestly instead of rendering a misleading "no notifications".
+      if (res.status === 503 || data?.code === "DB_UNAVAILABLE") {
+        setDbUnavailable(true);
+        setNotifications([]);
+        return;
+      }
+      setDbUnavailable(false);
       setNotifications(data.notifications ?? []);
     } catch {
       // silent
@@ -63,9 +73,11 @@ export default function NotificationsPage() {
         <div>
           <h1 className="text-2xl font-extrabold text-white">اعلامیه‌ها</h1>
           <p className="mt-1 text-sm text-slate-400">
-            {unreadCount > 0
-              ? `${toPersianDigits(unreadCount)} اعلامیه خوانده‌نشده`
-              : "همه اعلامیه‌ها خوانده شده"}
+            {dbUnavailable
+              ? "اعلامیه‌ها موقتاً نمایش داده نمی‌شوند"
+              : unreadCount > 0
+                ? `${toPersianDigits(unreadCount)} اعلامیه خوانده‌نشده`
+                : "همه اعلامیه‌ها خوانده شده"}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -108,6 +120,8 @@ export default function NotificationsPage() {
             <div key={i} className="h-20 animate-pulse rounded-xl bg-slate-800/50" />
           ))}
         </div>
+      ) : dbUnavailable ? (
+        <DemoUnavailableCard />
       ) : notifications.length === 0 ? (
         <EmptyState
           icon={filter === "unread" ? Bell : Inbox}

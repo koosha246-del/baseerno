@@ -1,32 +1,60 @@
 import { describe, it, expect } from "vitest";
-import { render } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { Container } from "../Container";
 
 describe("Container", () => {
-  it("renders a div by default with the page max-width", () => {
-    const { container } = render(<Container>child</Container>);
-    const el = container.firstChild as HTMLElement;
-    expect(el.tagName).toBe("DIV");
-    expect(el).toHaveClass("max-w-page");
+  it("renders children", () => {
+    render(<Container>محتوای تست</Container>);
+    expect(screen.getByText("محتوای تست")).toBeInTheDocument();
   });
 
-  it("applies narrow width when specified", () => {
-    const { container } = render(<Container width="narrow">x</Container>);
-    expect(container.firstChild).toHaveClass("max-w-narrow");
+  it("renders as div by default", () => {
+    render(<Container>تست</Container>);
+    const container = screen.getByText("تست");
+    expect(container.tagName).toBe("DIV");
   });
 
-  it("applies wide width when specified", () => {
-    const { container } = render(<Container width="wide">x</Container>);
-    expect(container.firstChild).toHaveClass("max-w-wide");
+  it("renders as a different element when 'as' prop is set", () => {
+    render(<Container as="section">تست</Container>);
+    const container = screen.getByText("تست");
+    expect(container.tagName).toBe("SECTION");
   });
 
-  it("renders a custom element when `as` is set", () => {
-    const { container } = render(<Container as="section">x</Container>);
-    expect(container.firstChild?.nodeName).toBe("SECTION");
+  it("applies page width class by default", () => {
+    render(<Container>تست</Container>);
+    const container = screen.getByText("تست");
+    expect(container.className).toContain("max-w-page");
+  });
+
+  it("applies narrow width class", () => {
+    render(<Container width="narrow">تست</Container>);
+    const container = screen.getByText("تست");
+    expect(container.className).toContain("max-w-narrow");
+  });
+
+  it("applies wide width class", () => {
+    render(<Container width="wide">تست</Container>);
+    const container = screen.getByText("تست");
+    expect(container.className).toContain("max-w-wide");
   });
 
   it("merges custom className", () => {
-    const { container } = render(<Container className="my-section">x</Container>);
-    expect(container.firstChild).toHaveClass("my-section");
+    render(<Container className="my-extra-class">تست</Container>);
+    const container = screen.getByText("تست");
+    expect(container.className).toContain("my-extra-class");
+    expect(container.className).toContain("max-w-page");
+  });
+
+  it("includes responsive padding classes", () => {
+    render(<Container>تست</Container>);
+    const container = screen.getByText("تست");
+    expect(container.className).toContain("px-5");
+    expect(container.className).toContain("w-full");
+    expect(container.className).toContain("mx-auto");
+  });
+
+  it("spreads additional props", () => {
+    render(<Container data-testid="container-test">تست</Container>);
+    expect(screen.getByTestId("container-test")).toBeInTheDocument();
   });
 });

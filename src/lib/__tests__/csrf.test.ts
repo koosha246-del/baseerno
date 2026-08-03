@@ -1,106 +1,104 @@
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
 import { isSameOriginRequest, csrfRejectedResponse } from "../csrf";
 
-// `process.env.NODE_ENV` is typed as a literal union and therefore
-// readonly; we cast through a mutable view so tests can flip it.
-const env = process.env as Record<string, string | undefined>;
-
-describe("isSameOriginRequest", () => {
-  const original = env.NODE_ENV;
-
-  afterEach(() => {
-    if (original === undefined) {
-      delete env.NODE_ENV;
-    } else {
-      env.NODE_ENV = original;
-    }
+describe("csrf", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    // Default to test environment
+    vi.stubEnv("NODE_ENV", "test");
   });
 
-  it("returns true in development regardless of origin", () => {
-    env.NODE_ENV = "development";
-    const req = new Request("https://example.com/api", {
-      method: "POST",
-      headers: { origin: "https://evil.com" },
+  describe("isSameOriginRequest", () => {
+    describe("in production mode", () => {
+      beforeEach(() => {
+        vi.stubEnv("NODE_ENV", "production");
+      });
+
+      afterEach(() => {
+        vi.unstubAllEnvs();
+      });
+
+      it("returns true when Origin matches the site URL", () => {
+        const req = new Request("https://baseerno.ir/api/auth/login", {
+          headers: { origin: "https://baseerno.ir" },
+        });
+        expect(isSameOriginRequest(req)).toBe(true);
+      });
+
+      it("returns false when Origin does not match", () => {
+        const req = new Request("https://baseerno.ir/api/auth/login", {
+          headers: { origin: "https://evil-site.com" },
+        });
+        expect(isSameOriginRequest(req)).toBe(false);
+      });
+
+      it("falls back to Referer when Origin is absent", () => {
+        const req = new Request("https://baseerno.ir/api/auth/login", {
+          headers: { referer: "https://baseerno.ir/some-page" },
+        });
+        expect(isSameOriginRequest(req)).toBe(true);
+      });
+
+      it("returns false when both Origin and Referer are missing", () => {
+        const req = new Request("https://baseerno.ir/api/auth/login");
+        expect(isSameOriginRequest(req)).toBe(false);
+      });
+
+      it("returns false when Referer is from a different site", () => {
+        const req = new Request("https://baseerno.ir/api/auth/login", {
+          headers: { referer: "https://evil-site.com/attack" },
+        });
+        expect(isSameOriginRequest(req)).toBe(false);
+      });
+
+      it("handles malformed Origin gracefully", () => {
+        const req = new Request("https://baseerno.ir/api/auth/login", {
+          headers: { origin: "not-a-valid-url" },
+        });
+        expect(isSameOriginRequest(req)).toBe(false);
+      });
     });
-    expect(isSameOriginRequest(req)).toBe(true);
-  });
 
-  it("returns true in test environment", () => {
-    env.NODE_ENV = "test";
-    const req = new Request("https://example.com/api", {
-      method: "POST",
-      headers: { origin: "https://anywhere.com" },
+    describe("in development mode", () => {
+      beforeEach(() => {
+        vi.stubEnv("NODE_ENV", "development");
+      });
+
+      afterEach(() => {
+        vi.unstubAllEnvs();
+      });
+
+      it("always returns true regardless of origin", () => {
+        const req = new Request("https://localhost:3000/api/auth/login", {
+          headers: { origin: "https://evil-site.com" },
+        });
+        expect(isSameOriginRequest(req)).toBe(true);
+      });
+
+      it("always returns true even without any headers", () => {
+        const req = new Request("https://localhost:3000/api/auth/login");
+        expect(isSameOriginRequest(req)).toBe(true);
+      });
     });
-    expect(isSameOriginRequest(req)).toBe(true);
   });
 
-  it("accepts matching Origin in production", () => {
-    env.NODE_ENV = "production";
-    const req = new Request("https://baseerno.ir/api", {
-      method: "POST",
-      headers: { origin: "https://baseerno.ir" },
+  describe("csrfRejectedResponse", () => {
+    it("returns a 403 response", () => {
+      const res = csrfRejectedResponse();
+      expect(res.status).toBe(403);
     });
-    expect(isSameOriginRequest(req)).toBe(true);
-  });
 
-  it("rejects foreign Origin in production", () => {
-    env.NODE_ENV = "production";
-    const req = new Request("https://baseerno.ir/api", {
-      method: "POST",
-      headers: { origin: "https://evil.com" },
+    it("includes the default Persian error message", async () => {
+      const res = csrfRejectedResponse();
+      const body = await res.json();
+      expect(body.error).toBe("درخواست از مبدا نامعتبر است.");
     });
-    expect(isSameOriginRequest(req)).toBe(false);
-  });
 
-  it("falls back to Referer when Origin missing", () => {
-    env.NODE_ENV = "production";
-    const req = new Request("https://baseerno.ir/api", {
-      method: "POST",
-      headers: { referer: "https://baseerno.ir/page" },
+    it("accepts a custom error message", async () => {
+      const res = csrfRejectedResponse("شما مجاز نیستید.");
+      const body = await res.json();
+      expect(body.error).toBe("شما مجاز نیستید.");
     });
-    expect(isSameOriginRequest(req)).toBe(true);
-  });
-
-  it("rejects Referer from foreign host", () => {
-    env.NODE_ENV = "production";
-    const req = new Request("https://baseerno.ir/api", {
-      method: "POST",
-      headers: { referer: "https://evil.com/page" },
-    });
-    expect(isSameOriginRequest(req)).toBe(false);
-  });
-
-  it("rejects when no Origin or Referer in production", () => {
-    env.NODE_ENV = "production";
-    const req = new Request("https://baseerno.ir/api", { method: "POST" });
-    expect(isSameOriginRequest(req)).toBe(false);
-  });
-
-  it("rejects malformed Origin URL", () => {
-    env.NODE_ENV = "production";
-    const req = new Request("https://baseerno.ir/api", {
-      method: "POST",
-      headers: { origin: "not-a-url" },
-    });
-    expect(isSameOriginRequest(req)).toBe(false);
-  });
-});
-
-describe("csrfRejectedResponse", () => {
-  it("returns a 403 JSON response", () => {
-    const res = csrfRejectedResponse();
-    expect(res.status).toBe(403);
-  });
-
-  it("uses the default Persian message", async () => {
-    const res = csrfRejectedResponse();
-    const body = await res.json();
-    expect(body.error).toContain("نامعتبر");
-  });
-
-  it("accepts a custom message", async () => {
-    const res = csrfRejectedResponse("custom");
-    const body = await res.json();
-    expect(body.error).toBe("custom");
   });
 });

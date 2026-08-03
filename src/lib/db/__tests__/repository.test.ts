@@ -1,7 +1,22 @@
-import { describe, it, expect } from "vitest";
-import { repository } from "../repository";
+/**
+ * Integration tests for the repository layer against a REAL PostgreSQL.
+ *
+ * These self-skip when DATABASE_URL is absent (local dev), and run in CI
+ * where the postgres service is provisioned (see .github/workflows/ci.yml).
+ * The repository module is imported dynamically so the prisma-client
+ * module-eval throw (missing DATABASE_URL) can't kill the test file.
+ */
+import { describe, it, expect, beforeAll } from "vitest";
 
-describe("repository", () => {
+const hasDb = Boolean(process.env.DATABASE_URL);
+
+describe.skipIf(!hasDb)("repository (integration, real Postgres)", () => {
+  let repository: typeof import("../repository").repository;
+
+  beforeAll(async () => {
+    ({ repository } = await import("../repository"));
+  });
+
   describe("users", () => {
     it("finds user by email", async () => {
       const user = await repository.findUserByEmail("student@baseerno.ir");

@@ -1,0 +1,49 @@
+# Email queue drill (گام ۶) — proves the outbox contract (locking, backoff,
+# retry ceiling, stuck-row recovery) against a REAL Postgres on every merge.
+# Runs scripts/verify-email-queue.ts, which injects a stub sender — no Resend
+# key needed. Any failing check turns the job red.
+name: Email queue drill (گام ۶)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  email-queue-drill:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: baseerno
+          # Deliberately a NON-UTC timezone: a naive-timestamp regression
+          # (Prisma writes UTC wall-clock, server reinterprets locally) breaks
+          # backoff + stuck-row recovery — the drill must catch it. The app's
+          # connections pin the session to UTC via src/lib/db/conn.ts, so the
+          # drill still passes when that wiring is intact.
+          TZ: Asia/Tehran
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/baseerno?sslmode=disable
+      # Placeholders for src/lib/env.ts validation (CI has no .env file).
+      JWT_SECRET: ci-email-drill-secret-32-char-min-placeholder-0000
+      PAYMENT_SIGNATURE_SECRET: ci-email-drill-pay-16-chars
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npx prisma migrate deploy
+      - run: npm run verify:email-queue
