@@ -8,11 +8,12 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Install dependencies with a clean cache layer
-COPY package.json package-lock.json ./
+# (prisma.config.ts is required by Prisma 7 CLI commands)
+COPY package.json package-lock.json prisma.config.ts ./
 COPY prisma ./prisma/
 RUN npm ci
 
-# Generate Prisma client
+# Generate Prisma client (outputs to src/generated/prisma per schema)
 RUN npx prisma generate
 
 # ---------- Builder stage ----------
@@ -20,6 +21,10 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+
+# Regenerate the Prisma client inside the full source tree
+# (src/generated is gitignored, so COPY . . would wipe the deps copy)
+RUN npx prisma generate
 
 # Disable telemetry during build
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -45,7 +50,8 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
+# Prisma 7 generates the client to src/generated/prisma (not node_modules/.prisma)
+COPY --from=builder --chown=nextjs:nodejs /app/src/generated ./src/generated
 
 USER nextjs
 

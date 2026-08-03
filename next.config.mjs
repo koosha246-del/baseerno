@@ -1,10 +1,19 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Standalone output — required by the Dockerfile (copies
-  // .next/standalone + server.js) and makes image tracing lean.
-  output: "standalone",
   poweredByHeader: false,
+  // Required by Dockerfile (railway deploy): the runner stage only ships
+  // the standalone output (.next/standalone + server.js).
+  output: "standalone",
+  // Pin the tracing root to THIS directory — otherwise Next infers the
+  // workspace root from the git worktree location and the standalone
+  // output lands in the wrong folder (breaks the Docker build).
+  outputFileTracingRoot: __dirname,
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: [
