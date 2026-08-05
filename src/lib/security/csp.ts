@@ -1,20 +1,24 @@
 /**
- * Content Security Policy builder + nonce generator.
+ * Content Security Policy — static policy builder.
  *
- * Production: `script-src` is locked down with a per-request nonce and
- * `'strict-dynamic'` — NO `'unsafe-inline'` for scripts. Next.js applies
- * the `x-nonce` request header to its own inline scripts automatically.
+ * The policy is applied as a STATIC header via `next.config.mjs` (headers()
+ * for every route). It is defined here as a single source of truth and
+ * covered by unit tests; keep `buildStaticCsp()` in sync with the header
+ * string in next.config.mjs.
  *
- * Development: Next.js dev tooling (Fast Refresh, webpack HMR, error
- * overlay) requires inline + eval, so the CSP is relaxed in dev only.
+ * Why static instead of per-request nonces?
+ * -----------------------------------------
+ * The app relies on ISR / full-route caching (homepage + course pages use
+ * `revalidate`). A per-request nonce CSP (`script-src 'nonce-<n>'
+ * 'strict-dynamic'`) breaks under caching: the cached HTML keeps the nonce
+ * baked in at render time, while every response gets a FRESH nonce on the
+ * CSP header — they never match on cache hits, so all scripts are blocked.
+ * Per-request nonces require dynamic rendering, which would defeat ISR.
  *
- * The remaining directives stay compatible with the stack:
- *   - style-src 'unsafe-inline'  → Next.js inline <style> / next-themes
- *   - img-src https:             → Cloudinary / Unsplash images
- *   - connect-src https:         → Sentry ingest, GA beacons
- *   - worker-src blob:           → Sentry Replay worker
- *   - frame-src (embed hosts)    → YouTube / Vimeo lesson embeds
- *   - media-src https:           → native <video> from any CDN
+ * Static policy keeps the rest locked down (object-src 'none',
+ * frame-ancestors 'none', base-uri 'self', …) and allows 'unsafe-inline'
+ * for scripts — the standard trade-off for ISR-heavy Next.js apps. GA hosts
+ * stay explicit because external scripts are not 'self'.
  */
 
 const SCRIPT_HOSTS =
@@ -28,45 +32,22 @@ const FRAME_HOSTS =
   "https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com";
 
 /**
- * Generate a fresh CSP nonce per request.
- *
- * Edge-safe: uses Web Crypto (`crypto.randomUUID`) + `btoa` — no Node
- * `Buffer`/`crypto.randomBytes` dependency (middleware runs on the edge).
+ * Build the full static CSP header value (production and dev identical —
+ * dev tooling is compatible with 'unsafe-inline').
  */
-export function generateNonce(): string {
-  const uuid = crypto.randomUUID();
-  return btoa(uuid).replace(/[+/=]/g, "").slice(0, 32);
-}
-
-export interface BuildCspOptions {
-  nonce: string;
-  isDev: boolean;
-}
-
-/**
- * Build the full CSP header value.
- *
- * - Production: `script-src 'self' 'nonce-<n>' 'strict-dynamic' <hosts>`.
- *   GA is loaded via next/script with the same nonce, so it keeps working.
- * - Development: adds back `'unsafe-inline' 'unsafe-eval'` for HMR.
- */
-export function buildCsp({ nonce, isDev }: BuildCspOptions): string {
-  const scriptSrc = isDev
-    ? `'self' 'unsafe-inline' 'unsafe-eval' ${SCRIPT_HOSTS}`
-    : `'self' 'nonce-${nonce}' 'strict-dynamic' ${SCRIPT_HOSTS}`;
-
+export function buildStaticCsp(): string {
   return [
-    `default-src 'self'`,
-    `script-src ${scriptSrc}`,
-    `style-src 'self' 'unsafe-inline'`,
-    `img-src 'self' data: https:`,
-    `font-src 'self' data:`,
-    `connect-src 'self' https:`,
-    `worker-src 'self' blob:`,
+    "default-src 'self'",
+    `script-src 'self' 'unsafe-inline' ${SCRIPT_HOSTS}`,
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: https:",
+    "font-src 'self' data:",
+    "connect-src 'self' https:",
+    "worker-src 'self' blob:",
     `frame-src ${FRAME_HOSTS}`,
-    `media-src 'self' https:`,
-    `object-src 'none'`,
-    `base-uri 'self'`,
-    `frame-ancestors 'none'`,
+    "media-src 'self' https:",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "frame-ancestors 'none'",
   ].join("; ");
 }

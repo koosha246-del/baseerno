@@ -7,14 +7,10 @@ const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_ID;
 /**
  * Google Analytics, injected client-side.
  *
- * The middleware generates a per-request CSP nonce and forwards it as the
- * `x-nonce` request header; Next.js automatically stamps it onto its own
- * inline scripts. We read the nonce from the DOM here instead of calling
- * `headers()` in the root layout — that would force the whole app into
- * dynamic rendering and defeat ISR on the course pages.
- *
- * Under `'strict-dynamic'` the nonce'd inline bootstrap is trusted, and
- * the gtag script it loads inherits trust, so GA keeps working.
+ * The production CSP is a static header (next.config.mjs) whose script-src
+ * allows 'unsafe-inline' plus the GA hosts, so dynamically injected gtag
+ * scripts are allowed without a nonce. We still read a nonce from the DOM
+ * when one happens to be present (harmless; nothing stamps one anymore).
  */
 export function GoogleAnalytics() {
   useEffect(() => {

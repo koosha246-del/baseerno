@@ -63,11 +63,39 @@ const nextConfig = {
             key: "Strict-Transport-Security",
             value: "max-age=63072000; includeSubDomains; preload",
           },
-          // Content-Security-Policy is intentionally NOT set here — it is
-          // generated per-request in src/middleware.ts with a fresh nonce
-          // (script-src 'nonce-<n>' 'strict-dynamic' in production, no
-          // 'unsafe-inline'). A static header here would not carry the
-          // nonce and would conflict with the dynamic one.
+          // Content-Security-Policy is set here as a STATIC header.
+          //
+          // Why not a per-request nonce (as before)? The app relies on ISR /
+          // full-route caching (revalidate=300 on the homepage, course pages,
+          // …). A cached HTML response keeps the nonce baked in at render
+          // time, while the middleware stamps a FRESH nonce on every
+          // response's CSP header — the two never match on cache hits, so
+          // `script-src 'nonce-<n>' 'strict-dynamic'` silently blocks ALL
+          // scripts (broken hydration, no JS). Per-request nonces require
+          // dynamic rendering, which would defeat ISR entirely.
+          //
+          // Static policy keeps the rest locked down (object-src 'none',
+          // frame-ancestors 'none', base-uri 'self', …) and allows
+          // 'unsafe-inline' for scripts — the standard trade-off for
+          // ISR-heavy Next.js apps. GA hosts stay explicit because external
+          // scripts are not 'self'.
+          {
+            key: "Content-Security-Policy",
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: https:",
+              "font-src 'self' data:",
+              "connect-src 'self' https:",
+              "worker-src 'self' blob:",
+              "frame-src https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com",
+              "media-src 'self' https:",
+              "object-src 'none'",
+              "base-uri 'self'",
+              "frame-ancestors 'none'",
+            ].join("; "),
+          },
         ],
       },
     ];

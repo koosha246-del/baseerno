@@ -20,13 +20,12 @@ export const viewport: Viewport = {
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  // CSP nonce handling: the middleware generates a per-request nonce and
-  // forwards it as the `x-nonce` request header; Next.js auto-stamps it
-  // onto its own inline scripts (hydration/RSC payload). We deliberately
-  // do NOT call headers() here — it would force dynamic rendering and
-  // defeat ISR on course pages. GoogleAnalytics reads the nonce from the
-  // DOM instead. Inline JSON-LD (`application/ld+json`) is a data block
-  // and is not subject to script-src, so it needs no nonce.
+  // CSP is applied as a static header in next.config.mjs (see the comment
+  // there for why per-request nonces were dropped — they are incompatible
+  // with ISR caching). We deliberately do NOT call headers() here — it
+  // would force dynamic rendering and defeat ISR on course pages.
+  // Inline JSON-LD (`application/ld+json`) is a data block and is not
+  // subject to script-src, so it needs no nonce.
   return (
     <html
       lang={siteConfig.lang}
