@@ -90,6 +90,11 @@ export const libraryBooks: Book[] = [
 
 /** Get a book's cover image URL (Cloudinary CDN or local fallback). */
 export function getBookCover(book: Book): string {
+  // When Cloudinary is not configured, use the local JPG directly
+  // instead of the SVG placeholder path that cldImage() generates.
+  if (!process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME) {
+    return book.file;
+  }
   return cldImage(book.cover, { width: 400, height: 600, crop: "fit", quality: 80 });
 }
 
