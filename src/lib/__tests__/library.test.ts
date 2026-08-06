@@ -25,9 +25,9 @@ describe("libraryBooks", () => {
 
 describe("findBook", () => {
   it("finds a book by id", () => {
-    const b = findBook("interchange-1");
+    const b = findBook("genius-1");
     expect(b).toBeDefined();
-    expect(b?.title).toContain("Interchange 1");
+    expect(b?.title).toContain("Genius 1");
   });
 
   it("returns undefined for unknown id", () => {

@@ -37,7 +37,7 @@ export const messages = {
         eyebrow: "کتاب‌های آموزشی",
         title: "با کتاب‌های استاندارد دنیا یاد بگیر",
         description:
-          "مجموعه Interchange و Connect از انتشارات Cambridge — همان کتاب‌هایی که در بهترین آکادمی‌های زبان دنیا تدریس می‌شود.",
+          "مجموعه Milestones، Genius، Ace it!‌، Smart English و Smart plus از انتشارات Setayesh — کتاب‌های استاندارد آموزش زبان انگلیسی.",
       },
       courses: {
         eyebrow: "دوره‌های زبان انگلیسی",
@@ -56,7 +56,7 @@ export const messages = {
         reasons: {
           books: {
             title: "کتاب‌های استاندارد جهانی",
-            desc: "از مجموعه‌های Cambridge (Interchange, Connect) استفاده می‌کنیم — همان کتاب‌هایی که در آکادمی‌های برتر دنیا تدریس می‌شود.",
+            desc: "از کتاب‌های استاندارد Setayesh (Milestones، Genius، Ace it!‌، Smart English، Smart plus) استفاده می‌کنیم — منابع معتبر آموزش زبان انگلیسی.",
           },
           teachers: {
             title: "اساتید متخصص زبان",

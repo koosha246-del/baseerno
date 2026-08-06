@@ -4,13 +4,13 @@ import { signDownloadToken, verifyDownloadToken } from "../library-token";
 describe("signDownloadToken / verifyDownloadToken", () => {
   it("round-trips a payload", () => {
     const token = signDownloadToken({
-      bookId: "interchange-1",
+      bookId: "genius-1",
       purchaseId: "p-1",
       amount: 280000,
     });
     const payload = verifyDownloadToken(token);
     expect(payload).not.toBeNull();
-    expect(payload?.bookId).toBe("interchange-1");
+    expect(payload?.bookId).toBe("genius-1");
     expect(payload?.purchaseId).toBe("p-1");
     expect(payload?.amount).toBe(280000);
   });

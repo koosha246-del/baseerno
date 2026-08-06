@@ -66,7 +66,7 @@ export const capabilityItems: Capability[] = [
     id: "library",
     icon: BookOpen,
     title: "کتابخانه‌ی دیجیتال",
-    description: "کتاب‌های Interchange و Connect — همیشه در جیب تو.",
+    description: "کتاب‌های Setayesh — Milestones، Genius، Ace it!‌، Smart English، Smart plus.",
     href: "/library",
     tone: "sunny",
   },

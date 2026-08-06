@@ -35,9 +35,9 @@ describe("libraryBooks", () => {
 
 describe("findBook", () => {
   it("returns the correct book by id", () => {
-    const book = findBook("interchange-1");
+    const book = findBook("genius-1");
     expect(book).toBeDefined();
-    expect(book?.title).toBe("Interchange 1");
+    expect(book?.title).toBe("Genius 1");
   });
 
   it("returns undefined for unknown id", () => {

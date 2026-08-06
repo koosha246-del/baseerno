@@ -38,7 +38,7 @@ import {
  *   │  Hero — product window (showcase)    │
  *   │  Capabilities — real feature grid    │
  *   │  Welcome / About بصیر نو            │
- *   │  Books (Interchange 1–5)             │
+ *   │  Books (Setayesh catalog)              │
  *   │  Courses (English skills)            │
  *   │  Why بصیر نو (4 reasons)             │
  *   │  CTA / ثبت‌نام                      │
@@ -100,7 +100,7 @@ export default async function HomePage() {
         {/* ─── 3. WELCOME — what is بصیر نو? ────────────────────── */}
         <WelcomeSection />
 
-        {/* ─── 4. BOOKS — Interchange & Connect catalog ──────────── */}
+        {/* ─── 4. BOOKS — Setayesh catalog ──────────────────────────── */}
         <BooksSection />
 
         {/* ─── 5. COURSES — English skills, DB-driven ────────────── */}
@@ -208,7 +208,7 @@ function BooksSection() {
                 با <GradientText>کتاب‌های استاندارد</GradientText> دنیا یاد بگیر
               </>
             }
-            description="مجموعه Interchange و Connect از انتشارات Cambridge — همان کتاب‌هایی که در بهترین آکادمی‌های زبان دنیا تدریس می‌شود."
+            description="مجموعه Milestones، Genius، Ace it!‌، Smart English و Smart plus از انتشارات Setayesh — کتاب‌های استاندارد آموزش زبان انگلیسی."
           />
         </ScrollReveal>
 
@@ -326,7 +326,7 @@ function WhyUsSection() {
       icon: BookText,
       tone: "sky",
       title: "کتاب‌های استاندارد جهانی",
-      desc: "از مجموعه‌های Cambridge (Interchange, Connect) استفاده می‌کنیم — همان کتاب‌هایی که در آکادمی‌های برتر دنیا تدریس می‌شود.",
+      desc: "از کتاب‌های استاندارد Setayesh (Milestones، Genius، Ace it!‌، Smart English، Smart plus) استفاده می‌کنیم — منابع معتبر آموزش زبان انگلیسی.",
     },
     {
       icon: GraduationCap,

@@ -132,7 +132,7 @@ export default function AboutPage() {
               </div>
               <div className="rounded-2xl bg-white p-5 text-center shadow-sm">
                 <p className="text-3xl font-extrabold text-kid-sunny-600">۵+</p>
-                <p className="mt-1 text-xs text-fg-secondary">کتاب استاندارد Cambridge</p>
+                <p className="mt-1 text-xs text-fg-secondary">کتاب استاندارد Setayesh</p>
               </div>
             </div>
           </div>
@@ -148,8 +148,8 @@ export default function AboutPage() {
               کتاب‌های استاندارد بین‌المللی، اساتید مجرب، و تمرین کافی.
             </p>
             <p className="text-base leading-loose text-fg-secondary">
-              ما از مجموعه‌های Cambridge (Interchange و Connect) استفاده می‌کنیم
-              — همان کتاب‌هایی که در بهترین آکادمی‌های زبان دنیا تدریس می‌شود.
+              ما از کتاب‌های استاندارد Setayesh (Milestones، Genius، Ace it!‌،
+              Smart English، Smart plus) استفاده می‌کنیم — منابع معتبر آموزش زبان انگلیسی.
               <span className="font-bold text-fg-primary"> ۷۰٪ زمان هر دوره تمرین عملی است</span>،
               نه فقط تماشای ویدیو.
             </p>

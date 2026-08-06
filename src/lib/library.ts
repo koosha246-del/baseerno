@@ -15,76 +15,76 @@ export interface Book {
   level: string;
   description: string;
   price: number; // Tomans
-  cover: string; // Cloudinary public ID (e.g. "library/interchange-intro")
+  cover: string; // Cloudinary public ID (e.g. "library/milestones-a")
   file: string; // public path to the actual downloadable file
   pages?: number;
 }
 
 export const libraryBooks: Book[] = [
   {
-    id: "interchange-intro",
-    title: "Interchange Intro",
-    subtitle: "Student's Book (5th Edition)",
-    author: "Jack C. Richards",
+    id: "milestones-a",
+    title: "Milestones A",
+    subtitle: "Student Book with Workbook",
+    author: "Fereshteh Torkaman & Masoud Bahrami",
     level: "مقدماتی",
     description:
-      "کتاب پایه برای شروع یادگیری زبان انگلیسی. مناسب افرادی که هیچ پیش‌زمینه‌ای ندارند.",
+      "کتاب پایه مجموعه Milestones برای شروع یادگیری زبان انگلیسی. شامل تمرین‌ها و تکالیف تعاملی برای تثبیت مفاهیم پایه.",
     price: 250_000,
-    cover: "library/interchange-intro",
-    file: "/library/interchange-intro.jpg",
-    pages: 144,
+    cover: "library/milestones-a",
+    file: "/library/milestones-a.jpg",
+    pages: 120,
   },
   {
-    id: "interchange-1",
-    title: "Interchange 1",
-    subtitle: "Student's Book (5th Edition)",
-    author: "Jack C. Richards",
+    id: "genius-1",
+    title: "Genius 1",
+    subtitle: "Student Book • Readers • Workbook",
+    author: "Masoud Bahrami, Fereshteh Torkaman & Maryam Azarakhshi",
+    level: "A1",
+    description:
+      "کتاب اول مجموعه Genius در سطح A1. شامل Student Book، کتابخوان (Readers) و کتاب تمرین برای یادگیری جامع زبان.",
+    price: 280_000,
+    cover: "library/genius-1",
+    file: "/library/genius-1.jpg",
+    pages: 152,
+  },
+  {
+    id: "ace-it-1",
+    title: "Ace it! 1",
+    subtitle: "Student Book",
+    author: "Masoud Bahrami, Fereshteh Torkaman & Maryam Azarakhshi",
     level: "A1 – A2",
     description:
-      "سطح اول مجموعه Interchange. گرامر و واژگان پایه برای مکالمه روزمره.",
-    price: 280_000,
-    cover: "library/interchange-1",
-    file: "/library/interchange-1.jpg",
-    pages: 152,
+      "کتاب اول مجموعه Ace it! برای تقویت مهارت‌های چهارگانه زبان انگلیسی با رویکرد عملی و کاربردی.",
+    price: 260_000,
+    cover: "library/ace-it-1",
+    file: "/library/ace-it-1.jpg",
+    pages: 140,
   },
   {
-    id: "interchange-2",
-    title: "Interchange 2",
-    subtitle: "Student's Book (5th Edition)",
-    author: "Jack C. Richards",
+    id: "smart-english-2",
+    title: "Smart English 2",
+    subtitle: "Student Book with Workbook",
+    author: "Fereshteh Torkaman & Masoud Bahrami",
+    level: "A1 – A2",
+    description:
+      "کتاب دوم مجموعه Smart English با تمرکز بر مکالمه روزمره و واژگان کاربردی در موقعیت‌های واقعی.",
+    price: 270_000,
+    cover: "library/smart-english-2",
+    file: "/library/smart-english-2.jpg",
+    pages: 148,
+  },
+  {
+    id: "smart-plus",
+    title: "Smart plus",
+    subtitle: "Student Book • Readers • Notebook",
+    author: "Masoud Bahrami, Fereshteh Torkaman & Maryam Azarakhshi",
     level: "A2 – B1",
     description:
-      "سطح دوم مجموعه Interchange. تقویت مهارت مکالمه و listening در موقعیت‌های متنوع.",
-    price: 280_000,
-    cover: "library/interchange-2",
-    file: "/library/interchange-2.jpg",
-    pages: 152,
-  },
-  {
-    id: "interchange-3",
-    title: "Interchange 3",
-    subtitle: "Student's Book (5th Edition)",
-    author: "Jack C. Richards",
-    level: "B1 – B2",
-    description:
-      "سطح سوم مجموعه Interchange. گرامر پیشرفته‌تر و مهارت‌های ارتباطی حرفه‌ای.",
-    price: 280_000,
-    cover: "library/interchange-3",
-    file: "/library/interchange-3.jpg",
-    pages: 152,
-  },
-  {
-    id: "connect-series",
-    title: "Connect Second Edition",
-    subtitle: "مجموعه ۴ جلدی (Student's Book 1–4 + Teacher's Edition)",
-    author: "Jack C. Richards & Carlos Barbisan",
-    level: "A1 – B2",
-    description:
-      "مجموعه کامل ۴ جلدی Connect برای یادگیری ساختارمند زبان انگلیسی.",
-    price: 450_000,
-    cover: "library/connect-series",
-    file: "/library/connect-series.jpg",
-    pages: 600,
+      "مجموعه جامع Smart plus شامل کتاب درسی، کتابخوان و دفتر تمرین. مناسب زبان‌آموزان سطح متوسط برای تقویت هر چهار مهارت.",
+    price: 300_000,
+    cover: "library/smart-plus",
+    file: "/library/smart-plus.jpg",
+    pages: 180,
   },
 ];
 
