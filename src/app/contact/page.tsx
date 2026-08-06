@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Container } from "@/components/shared/Container";
 import { siteConfig } from "@/config/site";
+import { buildPageMetadata } from "@/lib/seo";
 import { ContactForm } from "./ContactForm";
 import {
   Mail,
@@ -14,10 +15,11 @@ import {
   MessageSquare,
 } from "lucide-react";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: "تماس با ما",
   description: `ارتباط با آکادمی ${siteConfig.name} — ${siteConfig.contact.address}. پشتیبانی ۲۴ ساعته.`,
-};
+  path: "/contact",
+});
 
 const supportChannels = [
   {

@@ -1,6 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { vazirmatn } from "@/lib/fonts";
-import { buildBaseMetadata, buildOrganizationLd, ldJson } from "@/lib/seo";
+import {
+  buildBaseMetadata,
+  buildOrganizationLd,
+  buildWebSiteLd,
+  ldJson,
+} from "@/lib/seo";
 import { siteConfig } from "@/config/site";
 import { Providers } from "@/providers/Providers";
 import { ServiceWorkerRegistration } from "@/components/shared/ServiceWorkerRegistration";
@@ -37,6 +42,10 @@ export default function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: ldJson(buildOrganizationLd()) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: ldJson(buildWebSiteLd()) }}
         />
       </head>
       <body className="min-h-screen bg-background text-fg-primary font-sans antialiased">

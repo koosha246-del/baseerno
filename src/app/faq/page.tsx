@@ -3,6 +3,8 @@ import Link from "next/link";
 import { Container } from "@/components/shared/Container";
 import { ScrollReveal } from "@/components/shared/ScrollReveal";
 import { GradientText } from "@/components/shared/GradientText";
+import { buildPageMetadata, buildFaqLd, buildBreadcrumbLd, ldJson } from "@/lib/seo";
+import { siteConfig } from "@/config/site";
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -20,14 +22,12 @@ import {
 import { MessageCircleQuestion, Mail, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export const metadata: Metadata = {
-  title: "سوالات متداول | بصیر نو",
+export const metadata: Metadata = buildPageMetadata({
+  title: "سوالات متداول",
   description:
     "پاسخ سوالات پرتکرار درباره بصیر نو، ثبت‌نام، دوره‌های آموزشی، تعیین سطح، اشتراک و پشتیبانی.",
-  alternates: {
-    canonical: "/faq",
-  },
-};
+  path: "/faq",
+});
 
 const faqCategories = [
   {
@@ -107,9 +107,29 @@ const faqCategories = [
   },
 ];
 
+// Flattened Q&A pairs for FAQPage JSON-LD (all categories).
+const faqLdItems = faqCategories.flatMap((cat) =>
+  cat.items.map((item) => ({ question: item.q, answer: item.a })),
+);
+
 export default function FaqPage() {
   return (
     <main className="bg-background pb-20 pt-[calc(var(--header-h)+2rem)]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: ldJson(buildFaqLd(faqLdItems)) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: ldJson(
+            buildBreadcrumbLd([
+              { name: "خانه", url: siteConfig.url },
+              { name: "سوالات متداول", url: `${siteConfig.url}/faq` },
+            ]),
+          ),
+        }}
+      />
       {/* Breadcrumb */}
       <Container width="page" className="mb-6">
         <Breadcrumb>

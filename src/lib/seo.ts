@@ -89,6 +89,48 @@ export function buildBaseMetadata(): Metadata {
   };
 }
 
+/**
+ * Build full page metadata (title, description, canonical, OG + Twitter)
+ * for a static page. Keeps social tags consistent across all public
+ * pages instead of each page hand-rolling partial metadata.
+ */
+export function buildPageMetadata(opts: {
+  title: string;
+  description: string;
+  path: string;
+}): Metadata {
+  const ogTitle = `${opts.title} | ${siteConfig.name}`;
+  return {
+    title: opts.title,
+    description: opts.description,
+    alternates: {
+      canonical: opts.path,
+    },
+    openGraph: {
+      type: "website",
+      locale: siteConfig.locale,
+      url: `${siteConfig.url}${opts.path}`,
+      siteName: siteConfig.name,
+      title: ogTitle,
+      description: opts.description,
+      images: [
+        {
+          url: OG_IMAGE,
+          width: OG_IMAGE_WIDTH,
+          height: OG_IMAGE_HEIGHT,
+          alt: siteConfig.name,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: ogTitle,
+      description: opts.description,
+      images: [OG_IMAGE],
+    },
+  };
+}
+
 /** EducationalOrganization + Organization JSON-LD. */
 export function buildOrganizationLd() {
   const sameAs = Object.values(siteConfig.social);
@@ -124,6 +166,34 @@ export function buildOrganizationLd() {
         sameAs,
       },
     ],
+  };
+}
+
+/**
+ * WebSite + SearchAction JSON-LD — emitted once in the root layout.
+ * Gives Google a site-wide search box that deep-links into the course
+ * catalog (which reads the ?q= query param — see /courses).
+ */
+export function buildWebSiteLd() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "@id": `${siteConfig.url}/#website`,
+    url: siteConfig.url,
+    name: siteConfig.name,
+    alternateName: siteConfig.nameEn,
+    inLanguage: "fa-IR",
+    publisher: {
+      "@id": `${siteConfig.url}/#org`,
+    },
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: `${siteConfig.url}/courses?q={search_term_string}`,
+      },
+      "query-input": "required name=search_term_string",
+    },
   };
 }
 

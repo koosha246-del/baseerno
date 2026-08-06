@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Container } from "@/components/shared/Container";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
+import { buildPageMetadata } from "@/lib/seo";
 import {
   GraduationCap,
   Target,
@@ -16,10 +17,11 @@ import {
   Globe,
 } from "lucide-react";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: "درباره ما",
   description: `آشنایی با آکادمی ${siteConfig.name} — تیم، تاریخچه و ماموریت ما برای آموزش زبان انگلیسی.`,
-};
+  path: "/about",
+});
 
 const values = [
   {

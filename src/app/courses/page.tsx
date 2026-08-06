@@ -4,20 +4,22 @@ import { Container } from "@/components/shared/Container";
 import { ScrollReveal } from "@/components/shared/ScrollReveal";
 import { SectionHeading } from "@/components/shared/SectionHeading";
 import { GradientText } from "@/components/shared/GradientText";
-import { PopularCoursesClient } from "@/features/courses/components/PopularCoursesClient";
+import { PopularCoursesCatalog } from "@/features/courses/components/PopularCoursesCatalog";
 import { courseCategories, accentClasses } from "@/features/courses/constants";
 import { mapDbCourse } from "@/features/courses/courseMapper";
+import { buildPageMetadata } from "@/lib/seo";
 import {
   BookOpen,
   GraduationCap,
   Sparkles,
 } from "lucide-react";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: "همه دوره‌ها",
   description:
     "کاملترین catalog دوره‌های زبان انگلیسی بصیر نو — گرامر، واژگان، مکالمه، شنیدن، خواندن، نوشتن و آیلتس.",
-};
+  path: "/courses",
+});
 
 /**
  * ISR: revalidate at most every 5 minutes. Course rows come from the
@@ -74,7 +76,7 @@ export default async function CoursesPage() {
 
           <ScrollReveal delay={0.1}>
             <div className="mt-10">
-              <PopularCoursesClient
+              <PopularCoursesCatalog
                 courses={courseList}
                 categories={courseCategories}
                 accentClasses={accentClasses}
