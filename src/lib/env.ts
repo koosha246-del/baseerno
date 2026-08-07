@@ -167,7 +167,15 @@ function loadEnv(): Env {
   const isTest = data.NODE_ENV === "test";
 
   // Production hard requirements
-  if (isProduction) {
+  // During `next build` (Docker build), route modules are evaluated at build
+  // time but the runtime env vars may not yet be injected.  We skip the hard
+  // validation when we detect a build process so that `docker build` doesn't
+  // crash — the real values will be present when the runner starts.
+  const isBuildTime =
+    process.argv[1]?.includes("next") ||
+    process.argv.some((a) => a.includes("next/dist/bin/next"));
+
+  if (isProduction && !isBuildTime) {
     const productionErrors: string[] = [];
 
     if (!data.DATABASE_URL) {
