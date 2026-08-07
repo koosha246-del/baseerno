@@ -144,7 +144,7 @@ on("certificate:issued", async (event) => {
   await revalidateTag(notifications);
 });
 
-on("payment:created", async (event) => {
+on("payment:created", async (_event) => {
   const { payments } = await getCACHE_TAGS();
   await revalidateTag(payments);
 });
