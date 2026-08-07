@@ -1,0 +1,5 @@
+# Force LF line endings for Docker/build-critical files
+# Docker on Linux cannot parse .dockerignore / Dockerfile with CRLF
+Dockerfile text eol=lf
+Dockerfile.worker text eol=lf
+.dockerignore text eol=lf
