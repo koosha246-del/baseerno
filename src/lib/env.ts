@@ -171,9 +171,15 @@ function loadEnv(): Env {
   // time but the runtime env vars may not yet be injected.  We skip the hard
   // validation when we detect a build process so that `docker build` doesn't
   // crash — the real values will be present when the runner starts.
+  // Detect build time via multiple signals — argv[1] contains "next"
+  // during `next build`, NEXT_PHASE is set by Next.js during build,
+  // and __NEXT_PRIVATE_RENDER_RUNTIME is set during prerendering.
   const isBuildTime =
     process.argv[1]?.includes("next") ||
-    process.argv.some((a) => a.includes("next/dist/bin/next"));
+    process.argv.some((a) => a.includes("next/dist/bin/next")) ||
+    process.env.NEXT_PHASE === "phase-production-build" ||
+    process.env.__NEXT_PRIVATE_RENDER_RUNTIME === "edge" ||
+    process.env.__NEXT_PRIVATE_RENDER_RUNTIME === "nodejs";
 
   if (isProduction && !isBuildTime) {
     const productionErrors: string[] = [];
