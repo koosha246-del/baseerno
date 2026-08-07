@@ -14,7 +14,7 @@ const envSchema = z.object({
   NODE_ENV: nodeEnvSchema,
 
   /** PostgreSQL connection string — required whenever the DB client is used. */
-  DATABASE_URL: z.string().min(1).optional(),
+  DATABASE_URL: z.string().optional(),
 
   /**
    * Direct (non-pooled) PostgreSQL connection string. When set, the app
