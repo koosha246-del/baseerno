@@ -128,34 +128,93 @@ function formatZodError(error: z.ZodError): string {
     .join("\n");
 }
 
+/** Convert empty strings to undefined so Zod .optional() works correctly. */
+function emptyToUndef(v: string | undefined): string | undefined {
+  return v && v.length > 0 ? v : undefined;
+}
+
 function loadEnv(): Env {
-  const parsed = envSchema.safeParse({
-    NODE_ENV: process.env.NODE_ENV,
-    DATABASE_URL: process.env.DATABASE_URL,
-    DIRECT_URL: process.env.DIRECT_URL,
-    REPLICA_URL: process.env.REPLICA_URL,
-    JWT_SECRET: process.env.JWT_SECRET,
-    JWT_SECRET_OLD: process.env.JWT_SECRET_OLD,
-    PAYMENT_SIGNATURE_SECRET: process.env.PAYMENT_SIGNATURE_SECRET,
-    PAYMENT_SIGNATURE_SECRET_OLD: process.env.PAYMENT_SIGNATURE_SECRET_OLD,
-    ZARINPAL_MERCHANT_ID: process.env.ZARINPAL_MERCHANT_ID,
-    ZARINPAL_SANDBOX: process.env.ZARINPAL_SANDBOX,
-    DEMO_MODE: process.env.DEMO_MODE,
-    RESEND_API_KEY: process.env.RESEND_API_KEY,
-    CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
-    CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
-    CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
-    REDIS_URL: process.env.REDIS_URL,
-    SENTRY_DSN: process.env.SENTRY_DSN,
-    RECAPTCHA_SECRET_KEY: process.env.RECAPTCHA_SECRET_KEY,
-    SEARCH_HOST: process.env.SEARCH_HOST,
-    SEARCH_API_KEY: process.env.SEARCH_API_KEY,
-    NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
-    NEXT_PUBLIC_GA_ID: process.env.NEXT_PUBLIC_GA_ID,
+  // Detect build time early — during `next build` route modules are evaluated
+  // but runtime env vars are not injected yet.  We skip Zod errors so
+  // `docker build` (Railway) doesn't crash.
+  const isBuildTime =
+    process.argv[1]?.includes("next") ||
+    process.argv.some((a) => a.includes("next/dist/bin/next")) ||
+    process.env.NEXT_PHASE === "phase-production-build" ||
+    process.env.__NEXT_PRIVATE_RENDER_RUNTIME === "edge" ||
+    process.env.__NEXT_PRIVATE_RENDER_RUNTIME === "nodejs";
+
+  const raw: Record<string, unknown> = {
+    NODE_ENV: process.env.NODE_ENV || (isBuildTime ? "production" : "development"),
+    DATABASE_URL: emptyToUndef(process.env.DATABASE_URL),
+    DIRECT_URL: emptyToUndef(process.env.DIRECT_URL),
+    REPLICA_URL: emptyToUndef(process.env.REPLICA_URL),
+    JWT_SECRET: emptyToUndef(process.env.JWT_SECRET),
+    JWT_SECRET_OLD: emptyToUndef(process.env.JWT_SECRET_OLD),
+    PAYMENT_SIGNATURE_SECRET: emptyToUndef(process.env.PAYMENT_SIGNATURE_SECRET),
+    PAYMENT_SIGNATURE_SECRET_OLD: emptyToUndef(process.env.PAYMENT_SIGNATURE_SECRET_OLD),
+    ZARINPAL_MERCHANT_ID: emptyToUndef(process.env.ZARINPAL_MERCHANT_ID),
+    ZARINPAL_SANDBOX: emptyToUndef(process.env.ZARINPAL_SANDBOX),
+    DEMO_MODE: emptyToUndef(process.env.DEMO_MODE),
+    RESEND_API_KEY: emptyToUndef(process.env.RESEND_API_KEY),
+    CLOUDINARY_CLOUD_NAME: emptyToUndef(process.env.CLOUDINARY_CLOUD_NAME),
+    CLOUDINARY_API_KEY: emptyToUndef(process.env.CLOUDINARY_API_KEY),
+    CLOUDINARY_API_SECRET: emptyToUndef(process.env.CLOUDINARY_API_SECRET),
+    REDIS_URL: emptyToUndef(process.env.REDIS_URL),
+    SENTRY_DSN: emptyToUndef(process.env.SENTRY_DSN),
+    RECAPTCHA_SECRET_KEY: emptyToUndef(process.env.RECAPTCHA_SECRET_KEY),
+    SEARCH_HOST: emptyToUndef(process.env.SEARCH_HOST),
+    SEARCH_API_KEY: emptyToUndef(process.env.SEARCH_API_KEY),
+    NEXT_PUBLIC_SITE_URL: emptyToUndef(process.env.NEXT_PUBLIC_SITE_URL),
+    NEXT_PUBLIC_GA_ID: emptyToUndef(process.env.NEXT_PUBLIC_GA_ID),
     LOAD_REGRESSION_EMAIL_THRESHOLD: process.env.LOAD_REGRESSION_EMAIL_THRESHOLD,
-  });
+  };
+
+  const parsed = envSchema.safeParse(raw);
 
   if (!parsed.success) {
+    if (isBuildTime) {
+      // During `next build` in Docker, route modules are evaluated but runtime
+      // env vars may be empty/missing. Return a safe dummy object so the build
+      // succeeds — the real values are injected at runtime by Railway.
+      console.warn("⚠️ Build-time env validation skipped (vars will be set at runtime)");
+      return {
+        NODE_ENV: (process.env.NODE_ENV as Env["NODE_ENV"]) || "production",
+        DATABASE_URL: undefined,
+        DIRECT_URL: undefined,
+        REPLICA_URL: undefined,
+        JWT_SECRET: undefined,
+        JWT_SECRET_OLD: undefined,
+        PAYMENT_SIGNATURE_SECRET: undefined,
+        PAYMENT_SIGNATURE_SECRET_OLD: undefined,
+        ZARINPAL_MERCHANT_ID: undefined,
+        ZARINPAL_SANDBOX: false,
+        DEMO_MODE: false,
+        RESEND_API_KEY: undefined,
+        AI_API_KEY: undefined,
+        AI_BASE_URL: undefined,
+        AI_MODEL: undefined,
+        CLOUDINARY_CLOUD_NAME: undefined,
+        CLOUDINARY_API_KEY: undefined,
+        CLOUDINARY_API_SECRET: undefined,
+        REDIS_URL: undefined,
+        SENTRY_DSN: undefined,
+        SEARCH_HOST: undefined,
+        SEARCH_API_KEY: undefined,
+        RECAPTCHA_SECRET_KEY: undefined,
+        NEXT_PUBLIC_SITE_URL: undefined,
+        NEXT_PUBLIC_GA_ID: undefined,
+        LOAD_REGRESSION_EMAIL_THRESHOLD: undefined,
+        jwtSecret: "",
+        paymentSignatureSecret: "",
+        isProduction: true,
+        isDevelopment: false,
+        isTest: false,
+        zarinpalEnabled: false,
+        captchaConfigured: false,
+        demoMode: false,
+      };
+    }
     const msg = `Invalid environment variables:\n${formatZodError(parsed.error)}`;
     console.error(`❌ ${msg}`);
     throw new Error(msg);
@@ -171,16 +230,6 @@ function loadEnv(): Env {
   // time but the runtime env vars may not yet be injected.  We skip the hard
   // validation when we detect a build process so that `docker build` doesn't
   // crash — the real values will be present when the runner starts.
-  // Detect build time via multiple signals — argv[1] contains "next"
-  // during `next build`, NEXT_PHASE is set by Next.js during build,
-  // and __NEXT_PRIVATE_RENDER_RUNTIME is set during prerendering.
-  const isBuildTime =
-    process.argv[1]?.includes("next") ||
-    process.argv.some((a) => a.includes("next/dist/bin/next")) ||
-    process.env.NEXT_PHASE === "phase-production-build" ||
-    process.env.__NEXT_PRIVATE_RENDER_RUNTIME === "edge" ||
-    process.env.__NEXT_PRIVATE_RENDER_RUNTIME === "nodejs";
-
   if (isProduction && !isBuildTime) {
     const productionErrors: string[] = [];
 
