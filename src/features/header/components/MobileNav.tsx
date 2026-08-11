@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import Link from "next/link";
 import {
   Menu,
   Phone,
@@ -8,12 +9,10 @@ import {
   GraduationCap,
   Search,
   Globe,
-  Bell,
   LayoutDashboard,
   BookOpen,
   Award,
   MessageSquare,
-  Settings,
 } from "lucide-react";
 import {
   Sheet,
@@ -91,14 +90,14 @@ export function MobileNav({ className }: MobileNavProps) {
             className="flex flex-1 flex-col gap-1 overflow-y-auto px-4 py-6"
           >
             {/* Search */}
-            <a
+            <Link
               href="/courses"
               onClick={closeNav}
               className="flex items-center gap-3 rounded-xl px-4 py-3.5 text-base font-semibold text-fg-primary transition-colors hover:bg-surface-subtle"
             >
               <Search className="size-5 text-fg-muted" />
               جستجوی دوره...
-            </a>
+            </Link>
 
             <Separator className="my-2" />
 

@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Search, X, ArrowLeft } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 /**
