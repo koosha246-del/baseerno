@@ -3,8 +3,6 @@ import Link from "next/link";
 import { Container } from "@/components/shared/Container";
 import { ScrollReveal } from "@/components/shared/ScrollReveal";
 import { GradientText } from "@/components/shared/GradientText";
-import { buildPageMetadata, buildFaqLd, buildBreadcrumbLd, ldJson } from "@/lib/seo";
-import { siteConfig } from "@/config/site";
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -22,12 +20,14 @@ import {
 import { MessageCircleQuestion, Mail, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export const metadata: Metadata = buildPageMetadata({
-  title: "سوالات متداول",
+export const metadata: Metadata = {
+  title: "سوالات متداول | بصیر نو",
   description:
     "پاسخ سوالات پرتکرار درباره بصیر نو، ثبت‌نام، دوره‌های آموزشی، تعیین سطح، اشتراک و پشتیبانی.",
-  path: "/faq",
-});
+  alternates: {
+    canonical: "/faq",
+  },
+};
 
 const faqCategories = [
   {
@@ -75,12 +75,12 @@ const faqCategories = [
     items: [
       {
         q: "از چه کتاب‌هایی استفاده می‌کنید؟",
-        a: "ما از کتاب‌های استاندارد انتشارات Setayesh شامل Milestones، Genius، Ace it!‌، Smart English و Smart plus استفاده می‌کنیم. این کتاب‌ها در بهترین آکادمی‌های زبان دنیا تدریس می‌شوند.",
+        a: "ما از کتاب‌های استاندارد انتشارات Cambridge University Press شامل مجموعه Interchange (ویرایش پنجم) و Connect استفاده می‌کنیم. این کتاب‌ها در بهترین آکادمی‌های زبان دنیا تدریس می‌شوند.",
         value: "book-1",
       },
       {
         q: "آیا کتاب‌ها جداگانه فروخته می‌شوند؟",
-        a: "بله، کتاب‌های Setayesh (Milestones، Genius، Ace it!‌، Smart English و Smart plus) به صورت فایل PDF در کتابخانه ما موجود هستند. می‌تونید هر کتاب رو جداگانه تهیه کنید یا همراه دوره تهیه کنید.",
+        a: "بله، کتاب‌های Interchange و Connect به صورت فایل PDF در کتابخانه ما موجود هستند. می‌تونید هر کتاب رو جداگانه تهیه کنید یا همراه دوره تهیه کنید.",
         value: "book-2",
       },
     ],
@@ -107,29 +107,9 @@ const faqCategories = [
   },
 ];
 
-// Flattened Q&A pairs for FAQPage JSON-LD (all categories).
-const faqLdItems = faqCategories.flatMap((cat) =>
-  cat.items.map((item) => ({ question: item.q, answer: item.a })),
-);
-
 export default function FaqPage() {
   return (
-    <main className="bg-background pb-20 pt-[calc(var(--header-h)+2rem)]">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: ldJson(buildFaqLd(faqLdItems)) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: ldJson(
-            buildBreadcrumbLd([
-              { name: "خانه", url: siteConfig.url },
-              { name: "سوالات متداول", url: `${siteConfig.url}/faq` },
-            ]),
-          ),
-        }}
-      />
+    <main id="main-content" className="bg-background pb-20 pt-[calc(var(--header-h)+2rem)]">
       {/* Breadcrumb */}
       <Container width="page" className="mb-6">
         <Breadcrumb>
@@ -147,7 +127,7 @@ export default function FaqPage() {
 
       {/* Hero */}
       <Container width="narrow">
-        <section className="mb-14 text-center">
+        <section className="public-page-hero mb-16 text-right">
           <ScrollReveal>
             <span className="mb-4 inline-flex items-center gap-2 rounded-pill bg-kid-sky-100 px-4 py-1.5 text-sm font-bold text-kid-sky-700">
               <MessageCircleQuestion className="size-4" />

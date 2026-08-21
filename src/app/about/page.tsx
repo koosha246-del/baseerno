@@ -4,7 +4,6 @@ import Link from "next/link";
 import { Container } from "@/components/shared/Container";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
-import { buildPageMetadata } from "@/lib/seo";
 import {
   GraduationCap,
   Target,
@@ -17,11 +16,26 @@ import {
   Globe,
 } from "lucide-react";
 
-export const metadata: Metadata = buildPageMetadata({
+export const metadata: Metadata = {
   title: "درباره ما",
   description: `آشنایی با آکادمی ${siteConfig.name} — تیم، تاریخچه و ماموریت ما برای آموزش زبان انگلیسی.`,
-  path: "/about",
-});
+  alternates: {
+    canonical: "/about",
+  },
+  openGraph: {
+    type: "website",
+    locale: siteConfig.locale,
+    url: `${siteConfig.url}/about`,
+    siteName: siteConfig.name,
+    title: `درباره ${siteConfig.name} | آکادمی زبان انگلیسی`,
+    description: `آشنایی با آکادمی ${siteConfig.name} — تیم، تاریخچه و ماموریت ما برای آموزش زبان انگلیسی.`,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `درباره ${siteConfig.name} | آکادمی زبان انگلیسی`,
+    description: `آشنایی با آکادمی ${siteConfig.name} — تیم، تاریخچه و ماموریت ما برای آموزش زبان انگلیسی.`,
+  },
+};
 
 const values = [
   {
@@ -82,10 +96,10 @@ const stats = [
 
 export default function AboutPage() {
   return (
-    <main className="bg-background pb-20 pt-[calc(var(--header-h)+2rem)]">
+    <main id="main-content" className="bg-background pb-20 pt-[calc(var(--header-h)+2rem)]">
       <Container width="page">
         {/* Hero */}
-        <section className="mb-16 text-center">
+        <section className="public-page-hero mb-16 text-right">
           <span className="mb-4 inline-flex items-center gap-2 rounded-pill bg-kid-sky-100 px-4 py-1.5 text-sm font-semibold text-kid-sky-600">
             <GraduationCap className="size-4" />
             درباره ما
@@ -132,7 +146,7 @@ export default function AboutPage() {
               </div>
               <div className="rounded-2xl bg-white p-5 text-center shadow-sm">
                 <p className="text-3xl font-extrabold text-kid-sunny-600">۵+</p>
-                <p className="mt-1 text-xs text-fg-secondary">کتاب استاندارد Setayesh</p>
+                <p className="mt-1 text-xs text-fg-secondary">کتاب استاندارد Cambridge</p>
               </div>
             </div>
           </div>
@@ -148,8 +162,8 @@ export default function AboutPage() {
               کتاب‌های استاندارد بین‌المللی، اساتید مجرب، و تمرین کافی.
             </p>
             <p className="text-base leading-loose text-fg-secondary">
-              ما از کتاب‌های استاندارد Setayesh (Milestones، Genius، Ace it!‌،
-              Smart English، Smart plus) استفاده می‌کنیم — منابع معتبر آموزش زبان انگلیسی.
+              ما از مجموعه‌های Cambridge (Interchange و Connect) استفاده می‌کنیم
+              — همان کتاب‌هایی که در بهترین آکادمی‌های زبان دنیا تدریس می‌شود.
               <span className="font-bold text-fg-primary"> ۷۰٪ زمان هر دوره تمرین عملی است</span>،
               نه فقط تماشای ویدیو.
             </p>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import type { Metadata } from "next";
 import { SiteHeader } from "@/features/header/components/SiteHeader";
 import { SiteFooter } from "@/features/footer/components/SiteFooter";
 import { HeroContent } from "@/features/hero/components/HeroContent";
@@ -56,6 +57,28 @@ import {
  */
 export const revalidate = 300;
 
+/** Homepage metadata — the most important page for SERP + social sharing. */
+export const metadata: Metadata = {
+  title: `${siteConfig.name} | ${siteConfig.tagline}`,
+  description: siteConfig.description,
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    locale: siteConfig.locale,
+    url: siteConfig.url,
+    siteName: siteConfig.name,
+    title: `${siteConfig.name} | ${siteConfig.tagline}`,
+    description: siteConfig.description,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${siteConfig.name} | ${siteConfig.tagline}`,
+    description: siteConfig.description,
+  },
+};
+
 export default async function HomePage() {
   // Pull published courses from the data cache; fall back to an empty
   // list if the DB is unreachable. The section itself is ALWAYS rendered
@@ -79,7 +102,7 @@ export default async function HomePage() {
   return (
     <>
       <SiteHeader />
-      <main id="home">
+      <main id="main-content">
         {/* ─── 1. HERO — the product, above the fold ─────────────── */}
         <section
           className="relative overflow-hidden bg-background pt-[calc(var(--header-h)+2rem)] pb-16 lg:pt-[calc(var(--header-h)+3.5rem)] lg:pb-24"
@@ -87,7 +110,7 @@ export default async function HomePage() {
           {/* Aurora backdrop */}
           <div aria-hidden className="pointer-events-none absolute inset-0 bg-aurora opacity-70" />
           <Container width="page" className="relative">
-            <div className="grid items-center gap-14 lg:grid-cols-[1.05fr_0.95fr]">
+            <div className="grid items-center gap-16 lg:grid-cols-[1.15fr_0.85fr] lg:gap-10">
               <HeroContent />
               <HeroShowcase />
             </div>
@@ -132,7 +155,7 @@ function WelcomeSection() {
     >
       <Container width="page">
         <ScrollReveal>
-          <div className="mx-auto max-w-3xl text-center">
+          <div className="max-w-3xl text-right">
             <span className="mb-4 inline-flex items-center gap-2 rounded-pill bg-kid-sky-100 px-4 py-1.5 text-sm font-bold text-kid-sky-600 dark:bg-kid-sky-500/15 dark:text-kid-sky-300">
               <Sparkles className="size-4" />
               خوش اومدی به {siteConfig.name}
@@ -149,7 +172,7 @@ function WelcomeSection() {
         </ScrollReveal>
 
         <ScrollReveal delay={0.1}>
-          <div className="mx-auto mt-12 grid max-w-4xl gap-4 sm:grid-cols-3">
+          <div className="mt-12 grid max-w-5xl gap-4 sm:grid-cols-[1.15fr_0.85fr_1fr]">
             <Stat icon={Users} value="+۱۲٬۰۰۰" label="دانش‌آموز فعال" tone="sky" />
             <Stat icon={BookOpen} value="۵+" label="کتاب استاندارد بین‌المللی" tone="coral" />
             <Stat icon={Award} value="۹۶٪" label="رضایت والدین" tone="mint" />
@@ -177,7 +200,7 @@ function Stat({
     mint: "bg-kid-mint-50 text-kid-mint-600 dark:bg-kid-mint-500/15 dark:text-kid-mint-300",
   };
   return (
-    <div className="flex flex-col items-center gap-2 rounded-2xl border border-app-border-subtle bg-surface p-5 text-center">
+    <div className="editorial-panel flex flex-col items-start gap-2 rounded-[1.25rem_0.4rem_1.25rem_0.4rem] p-5 text-right">
       <span className={`flex size-12 items-center justify-center rounded-xl ${palette[tone]}`}>
         <Icon className="size-6" />
       </span>

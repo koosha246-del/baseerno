@@ -2,14 +2,15 @@
  * Design Tokens — بصیر نو (Baseer No)
  * Single source of truth for the entire design system.
  *
- * Direction: "Pure White Academy"
- *   Maximum brightness, minimal decoration, clean typography.
- *   Pure white backgrounds with near-black text for max contrast.
+ * Direction: "Bright Editorial Classroom"
+ *   Warm paper surfaces, ink-like typography, hand-cut geometry and
+ *   controlled primary colors inspired by notebooks and learning tools.
  *
  * Palette anchors:
- *   Deep Blue  #1E3A5F — authority, textbook cover
- *   Royal Blue #2563EB — "learning" color, signature accent
- *   White      #FFFFFF — maximum brightness, clean surfaces
+ *   Ink        #17324D — readable editorial authority
+ *   Teal       #087F8C — signature learning accent
+ *   Persimmon  #E85D3F — energetic calls to action
+ *   Paper      #FFF9ED — warm, low-glare canvas
  *
  * ⚠️  Keep these in sync with the CSS custom properties in globals.css
  */
@@ -17,39 +18,39 @@
 // ─── Colors ───────────────────────────────────────────────────────────
 
 export const colors = {
-  background: "#FFFFFF",
+  background: "#FFF9ED",
 
-  surface: "#FFFFFF",
-  surfaceMuted: "#F8FAFC",
-  surfaceSubtle: "#F1F5F9",
+  surface: "#FFFEF9",
+  surfaceMuted: "#F4EEDC",
+  surfaceSubtle: "#E9F5F2",
   surfaceElevated: "#FFFFFF",
 
   brand: {
-    navy: "#1E3A5F",
-    blue: "#2563EB",
-    amber: "#D4A017",
-    gold: "#F5C518",
+    navy: "#17324D",
+    blue: "#087F8C",
+    amber: "#D89B19",
+    gold: "#F2C14E",
   },
 
-  accent: "#2563EB",
+  accent: "#087F8C",
 
   text: {
-    primary: "#0F172A",
-    secondary: "#475569",
-    muted: "#94A3B8",
+    primary: "#17324D",
+    secondary: "#425466",
+    muted: "#66717D",
     inverse: "#FFFFFF",
   },
 
   border: {
-    DEFAULT: "#E5E7EB",
-    subtle: "#F1F5F9",
-    strong: "#D1D5DB",
+    DEFAULT: "#CFC7B5",
+    subtle: "#E6DECC",
+    strong: "#9E9582",
   },
 
-  success: "#10B981",
-  warning: "#F59E0B",
-  danger: "#EF4444",
-  info: "#3B82F6",
+  success: "#17805C",
+  warning: "#B87500",
+  danger: "#C7422F",
+  info: "#087F8C",
 } as const;
 
 // ─── Kid-friendly palette ──────────────────────────────────────────────
@@ -96,12 +97,12 @@ export const kidColors = {
 // ─── Gradients ─────────────────────────────────────────────────────────
 
 export const gradients = {
-  brand: "linear-gradient(135deg, #1E3A5F 0%, #2563EB 100%)",
-  brandReverse: "linear-gradient(135deg, #2563EB 0%, #1E3A5F 100%)",
-  brandRtl: "linear-gradient(225deg, #1E3A5F 0%, #2563EB 100%)",
-  brandSoft: "linear-gradient(135deg, #EFF6FF 0%, #F8FAFC 100%)",
-  aurora: "linear-gradient(135deg, #1E3A5F 0%, #2563EB 30%, #60A5FA 70%, #93C5FD 100%)",
-  text: "linear-gradient(135deg, #1E3A5F 0%, #2563EB 100%)",
+  brand: "linear-gradient(115deg, #087F8C 0%, #087F8C 58%, #E85D3F 58%, #E85D3F 100%)",
+  brandReverse: "linear-gradient(115deg, #E85D3F 0%, #E85D3F 42%, #087F8C 42%, #087F8C 100%)",
+  brandRtl: "linear-gradient(245deg, #087F8C 0%, #087F8C 58%, #E85D3F 58%, #E85D3F 100%)",
+  brandSoft: "linear-gradient(135deg, #E9F5F2 0%, #FFF4D6 100%)",
+  aurora: "radial-gradient(circle at 18% 22%, rgba(242,193,78,.34) 0 12%, transparent 13%), radial-gradient(circle at 86% 18%, rgba(232,93,63,.18) 0 15%, transparent 16%), linear-gradient(135deg, #FFF9ED 0%, #E9F5F2 100%)",
+  text: "linear-gradient(105deg, #087F8C 0%, #087F8C 62%, #E85D3F 62%, #E85D3F 100%)",
   scrim: "linear-gradient(0deg, rgba(15, 23, 42, 0.45) 0%, transparent 100%)",
   glass: "linear-gradient(135deg, rgba(255,255,255,0.88) 0%, rgba(255,255,255,0.70) 100%)",
   // Kid-friendly gradients
@@ -132,13 +133,13 @@ export const radii = {
 // ─── Shadows ───────────────────────────────────────────────────────────
 
 export const shadows = {
-  sm: "0 1px 2px 0 rgba(15, 23, 42, 0.06)",
-  DEFAULT: "0 2px 4px rgba(15, 23, 42, 0.08)",
-  md: "0 4px 12px rgba(15, 23, 42, 0.08)",
-  lg: "0 8px 24px rgba(15, 23, 42, 0.10)",
-  xl: "0 12px 36px rgba(15, 23, 42, 0.12)",
-  glow: "0 4px 14px rgba(37, 99, 235, 0.25)",
-  "glow-lg": "0 8px 24px rgba(37, 99, 235, 0.30)",
+  sm: "2px 3px 0 rgba(23, 50, 77, 0.10)",
+  DEFAULT: "3px 4px 0 rgba(23, 50, 77, 0.12)",
+  md: "5px 6px 0 rgba(23, 50, 77, 0.13)",
+  lg: "7px 9px 0 rgba(23, 50, 77, 0.14)",
+  xl: "10px 12px 0 rgba(23, 50, 77, 0.15)",
+  glow: "3px 4px 0 rgba(23, 50, 77, 0.18)",
+  "glow-lg": "6px 7px 0 rgba(23, 50, 77, 0.20)",
   "inner-sm": "inset 0 1px 2px rgba(15, 23, 42, 0.04)",
   inner: "inset 0 2px 4px rgba(15, 23, 42, 0.06)",
 } as const;
