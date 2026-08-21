@@ -23,7 +23,16 @@ import { observe } from "@/lib/metrics";
 import { withUtcSession } from "./conn";
 
 const databaseUrl = env.DATABASE_URL;
-if (!databaseUrl) {
+
+// During `next build` (e.g. Docker build on Railway), runtime env vars may not
+// be available yet. Skip the hard throw so the build can complete — the real
+// values are injected when the runner starts.
+const isBuildTime =
+  process.argv[1]?.includes("next") ||
+  process.argv.some((a) => a.includes("next/dist/bin/next")) ||
+  process.env.NEXT_PHASE === "phase-production-build";
+
+if (!databaseUrl && !isBuildTime) {
   throw new Error(
     "DATABASE_URL environment variable is not set. Add it to .env or your deployment environment.",
   );
@@ -32,7 +41,9 @@ if (!databaseUrl) {
 // Pin the session to UTC (see ./conn.ts): Prisma serializes DateTime params
 // as naive UTC wall-clock strings, so a non-UTC session (e.g. Asia/Tehran)
 // silently shifts every instant and breaks backoff + stuck-row recovery.
-const adapter = new PrismaPg({ connectionString: withUtcSession(databaseUrl) });
+const adapter = databaseUrl
+  ? new PrismaPg({ connectionString: withUtcSession(databaseUrl) })
+  : null;
 
 /** The raw (un-extended) client. Reserved for admin / repair / migration work. */
 const baseClient =
@@ -40,16 +51,18 @@ const baseClient =
 
 export const prismaRaw: PrismaClient =
   baseClient.__prismaBase ??
-  new PrismaClient({
-    adapter,
-    log:
-      env.isDevelopment
-        ? [
-            { level: "warn", emit: "stdout" },
-            { level: "error", emit: "stdout" },
-          ]
-        : ["error"],
-  });
+  (adapter
+    ? new PrismaClient({
+        adapter,
+        log:
+          env.isDevelopment
+            ? [
+                { level: "warn", emit: "stdout" },
+                { level: "error", emit: "stdout" },
+              ]
+            : ["error"],
+      })
+    : (null as unknown as PrismaClient));
 
 if (!env.isProduction) {
   baseClient.__prismaBase = prismaRaw;
@@ -176,7 +189,8 @@ export function extendWithSoftDelete(base: PrismaClient): PrismaClient {
   }) as unknown as PrismaClient;
 }
 
-export const prisma: PrismaClient = extendWithSoftDelete(prismaRaw);
+export const prisma: PrismaClient =
+  prismaRaw ? extendWithSoftDelete(prismaRaw) : (null as unknown as PrismaClient);
 
 /** Strip password hash for client-safe user shape. */
 export function toSafe(user: {
