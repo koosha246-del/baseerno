@@ -53,7 +53,7 @@ export function LibraryClient({ books }: Props) {
         </BreadcrumbList>
       </Breadcrumb>
 
-      <header className="mb-10 flex flex-col items-start gap-3">
+      <header className="public-page-hero mb-14 flex flex-col items-start gap-3">
         <span className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent-soft px-3 py-1 text-xs font-bold text-accent">
           <BookOpen className="size-3.5" />
           کتابخانه دیجیتال
@@ -94,7 +94,7 @@ export function LibraryClient({ books }: Props) {
           return (
             <article
               key={book.id}
-              className="group flex flex-col overflow-hidden rounded-2xl border border-app-border-subtle bg-surface shadow-sm transition-shadow hover:shadow-lg"
+              className="group flex flex-col overflow-hidden rounded-[1.5rem_0.5rem_1.5rem_0.5rem] border border-app-border-strong bg-surface shadow-md transition-all hover:-translate-y-1 hover:shadow-lg"
             >
               <div className="relative aspect-[3/4] w-full overflow-hidden bg-gradient-to-br from-blue-50 to-amber-50">
                 <Image

@@ -14,8 +14,10 @@ import { siteConfig } from "@/config/site";
  */
 export function SiteFooter() {
   return (
-    <footer className="border-t border-app-border-subtle bg-surface-muted">
-      <Container width="page" className="py-14 lg:py-16">
+    <footer className="relative overflow-hidden border-t-2 border-fg-primary bg-surface-muted">
+      <div aria-hidden className="absolute left-[-3rem] top-[-3rem] size-40 rounded-full bg-kid-sunny-200/60" />
+      <div aria-hidden className="absolute bottom-8 right-[-2rem] h-20 w-44 rotate-6 rounded-[50%] bg-kid-mint-200/60" />
+      <Container width="page" className="relative py-14 lg:py-16">
         <div className="grid gap-10 lg:grid-cols-4 lg:gap-8">
           {/* Brand + newsletter */}
           <div className="flex flex-col gap-6 lg:col-span-1">

@@ -6,12 +6,13 @@ import { Providers } from "@/providers/Providers";
 import { ServiceWorkerRegistration } from "@/components/shared/ServiceWorkerRegistration";
 import { GoogleAnalytics } from "@/components/shared/GoogleAnalytics";
 import { CookieConsent } from "@/components/shared/CookieConsent";
+import { aria } from "@/constants/aria";
 import "./globals.css";
 
 export const metadata: Metadata = buildBaseMetadata();
 
 export const viewport: Viewport = {
-  themeColor: "#1E3A5F",
+  themeColor: "#FFF9ED",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
@@ -44,10 +45,10 @@ export default function RootLayout({
         <GoogleAnalytics />
         <ServiceWorkerRegistration />
         <a
-          href="#home"
+          href="#main-content"
           className="sr-only focus:not-sr-only focus:fixed focus:right-4 focus:top-4 focus:z-[1600] focus:rounded-md focus:bg-accent focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white"
         >
-          رفتن به محتوای اصلی
+          {aria.mainContent}
         </a>
         <Providers>{children}</Providers>
         <CookieConsent />

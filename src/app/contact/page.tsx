@@ -17,6 +17,22 @@ import {
 export const metadata: Metadata = {
   title: "تماس با ما",
   description: `ارتباط با آکادمی ${siteConfig.name} — ${siteConfig.contact.address}. پشتیبانی ۲۴ ساعته.`,
+  alternates: {
+    canonical: "/contact",
+  },
+  openGraph: {
+    type: "website",
+    locale: siteConfig.locale,
+    url: `${siteConfig.url}/contact`,
+    siteName: siteConfig.name,
+    title: `تماس با ${siteConfig.name} | پشتیبانی و مشاوره`,
+    description: `ارتباط با آکادمی ${siteConfig.name} — ${siteConfig.contact.address}. پشتیبانی ۲۴ ساعته.`,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `تماس با ${siteConfig.name} | پشتیبانی و مشاوره`,
+    description: `ارتباط با آکادمی ${siteConfig.name} — ${siteConfig.contact.address}. پشتیبانی ۲۴ ساعته.`,
+  },
 };
 
 const supportChannels = [
@@ -48,10 +64,10 @@ const workingHours = [
 
 export default function ContactPage() {
   return (
-    <main className="bg-background pb-20 pt-[calc(var(--header-h)+2rem)]">
+    <main id="main-content" className="bg-background pb-20 pt-[calc(var(--header-h)+2rem)]">
       <Container width="page">
         {/* Hero */}
-        <section className="mb-12 text-center">
+        <section className="public-page-hero mb-16 text-right">
           <span className="mb-3 inline-flex items-center gap-2 rounded-pill bg-kid-mint-100 px-4 py-1.5 text-sm font-semibold text-kid-mint-600">
             <MessageSquare className="size-4" />
             پشتیبانی ۲۴ ساعته

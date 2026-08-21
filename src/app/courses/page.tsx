@@ -12,11 +12,30 @@ import {
   GraduationCap,
   Sparkles,
 } from "lucide-react";
+import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
   title: "همه دوره‌ها",
   description:
     "کاملترین catalog دوره‌های زبان انگلیسی بصیر نو — گرامر، واژگان، مکالمه، شنیدن، خواندن، نوشتن و آیلتس.",
+  alternates: {
+    canonical: "/courses",
+  },
+  openGraph: {
+    type: "website",
+    locale: siteConfig.locale,
+    url: `${siteConfig.url}/courses`,
+    siteName: siteConfig.name,
+    title: "همه دوره‌های زبان انگلیسی | بصیر نو",
+    description:
+      "کاملترین catalog دوره‌های زبان انگلیسی بصیر نو — گرامر، واژگان، مکالمه، شنیدن، خواندن، نوشتن و آیلتس.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "همه دوره‌های زبان انگلیسی | بصیر نو",
+    description:
+      "کاملترین catalog دوره‌های زبان انگلیسی بصیر نو — گرامر، واژگان، مکالمه، شنیدن، خواندن، نوشتن و آیلتس.",
+  },
 };
 
 /**
@@ -41,10 +60,10 @@ export default async function CoursesPage() {
   }
 
   return (
-    <main className="bg-background pb-20 pt-[calc(var(--header-h)+2rem)]">
+    <main id="main-content" className="bg-background pb-20 pt-[calc(var(--header-h)+2rem)]">
       <Container width="page">
         {/* Hero */}
-        <section className="mb-12 text-center">
+        <section className="public-page-hero mb-16 text-right">
           <span className="mb-4 inline-flex items-center gap-2 rounded-pill bg-kid-sky-100 px-4 py-1.5 text-sm font-bold text-kid-sky-600">
             <GraduationCap className="size-4" />
             همه دوره‌ها

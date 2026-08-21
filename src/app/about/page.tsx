@@ -19,6 +19,22 @@ import {
 export const metadata: Metadata = {
   title: "درباره ما",
   description: `آشنایی با آکادمی ${siteConfig.name} — تیم، تاریخچه و ماموریت ما برای آموزش زبان انگلیسی.`,
+  alternates: {
+    canonical: "/about",
+  },
+  openGraph: {
+    type: "website",
+    locale: siteConfig.locale,
+    url: `${siteConfig.url}/about`,
+    siteName: siteConfig.name,
+    title: `درباره ${siteConfig.name} | آکادمی زبان انگلیسی`,
+    description: `آشنایی با آکادمی ${siteConfig.name} — تیم، تاریخچه و ماموریت ما برای آموزش زبان انگلیسی.`,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `درباره ${siteConfig.name} | آکادمی زبان انگلیسی`,
+    description: `آشنایی با آکادمی ${siteConfig.name} — تیم، تاریخچه و ماموریت ما برای آموزش زبان انگلیسی.`,
+  },
 };
 
 const values = [
@@ -80,10 +96,10 @@ const stats = [
 
 export default function AboutPage() {
   return (
-    <main className="bg-background pb-20 pt-[calc(var(--header-h)+2rem)]">
+    <main id="main-content" className="bg-background pb-20 pt-[calc(var(--header-h)+2rem)]">
       <Container width="page">
         {/* Hero */}
-        <section className="mb-16 text-center">
+        <section className="public-page-hero mb-16 text-right">
           <span className="mb-4 inline-flex items-center gap-2 rounded-pill bg-kid-sky-100 px-4 py-1.5 text-sm font-semibold text-kid-sky-600">
             <GraduationCap className="size-4" />
             درباره ما

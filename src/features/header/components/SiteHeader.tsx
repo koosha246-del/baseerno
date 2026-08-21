@@ -11,10 +11,10 @@ import { ThemeToggle } from "./ThemeToggle";
 import { MobileNav } from "./MobileNav";
 
 /**
- * SiteHeader — sticky glassmorphism header.
+ * SiteHeader — sticky editorial navigation bar.
  *
  * - Fixed at top with z-header.
- * - Glass blur + border + shadow appear only after scroll (useScrolled).
+ * - An opaque paper surface and graphic rule appear after scroll.
  * - Desktop nav hidden under md; mobile drawer takes over.
  */
 export function SiteHeader() {
@@ -26,8 +26,8 @@ export function SiteHeader() {
       className={cn(
         "fixed inset-x-0 top-0 z-header transition-all duration-slow ease-luxury",
         scrolled
-          ? "glass border-b border-app-border-subtle shadow-sm"
-          : "border-b border-transparent bg-transparent"
+          ? "border-b-2 border-accent bg-surface shadow-[0_4px_0_rgba(23,50,77,0.10)]"
+          : "border-b border-app-border-subtle bg-background/95"
       )}
       style={{ height: "var(--header-h)" }}
     >

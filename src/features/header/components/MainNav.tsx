@@ -29,16 +29,16 @@ export function MainNav({ items }: MainNavProps) {
                 href={item.href}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "relative inline-flex items-center rounded-pill px-4 py-2 text-sm font-semibold transition-colors duration-base ease-luxury",
+                  "relative inline-flex items-center rounded-md px-4 py-2 text-sm font-semibold transition-colors duration-base ease-luxury",
                   isActive
-                    ? "text-accent"
-                    : "text-fg-secondary hover:text-fg-primary",
+                    ? "bg-accent-soft text-accent"
+                    : "text-fg-secondary hover:bg-surface-subtle hover:text-fg-primary",
                   isKeyboard && "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
                 )}
               >
                 {item.label}
                 {isActive ? (
-                  <span className="absolute inset-x-3 -bottom-0.5 h-0.5 rounded-full bg-brand-gradient" />
+                  <span className="absolute -bottom-1 right-3 h-1 w-6 -rotate-2 bg-[#e85d3f]" />
                 ) : null}
               </a>
             </li>

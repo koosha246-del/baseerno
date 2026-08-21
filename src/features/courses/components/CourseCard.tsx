@@ -58,12 +58,12 @@ export function CourseCard({ course, accentClasses: accentClassesProp }: CourseC
   return (
     <motion.article
       variants={staggerItem}
-      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-app-border-subtle bg-surface shadow-sm transition-all duration-slow ease-luxury hover:-translate-y-1.5 hover:border-accent/30 hover:shadow-lg"
+      className="group flex h-full flex-col overflow-hidden rounded-[1.5rem_0.5rem_1.5rem_0.5rem] border border-app-border-strong bg-surface shadow-md transition-all duration-slow ease-luxury hover:-translate-y-1.5 hover:-rotate-[0.4deg] hover:border-accent hover:shadow-lg"
     >
       {/* Cover */}
       <div
         className={cn(
-          "relative flex aspect-[16/10] items-center justify-center bg-gradient-to-br",
+          "relative flex aspect-[16/10] items-center justify-center overflow-hidden border-b border-app-border-strong bg-gradient-to-br before:absolute before:-bottom-12 before:-left-8 before:size-28 before:rounded-full before:border-[18px] before:border-white/35",
           accentMap[accent]
         )}
       >

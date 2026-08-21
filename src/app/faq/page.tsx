@@ -109,7 +109,7 @@ const faqCategories = [
 
 export default function FaqPage() {
   return (
-    <main className="bg-background pb-20 pt-[calc(var(--header-h)+2rem)]">
+    <main id="main-content" className="bg-background pb-20 pt-[calc(var(--header-h)+2rem)]">
       {/* Breadcrumb */}
       <Container width="page" className="mb-6">
         <Breadcrumb>
@@ -127,7 +127,7 @@ export default function FaqPage() {
 
       {/* Hero */}
       <Container width="narrow">
-        <section className="mb-14 text-center">
+        <section className="public-page-hero mb-16 text-right">
           <ScrollReveal>
             <span className="mb-4 inline-flex items-center gap-2 rounded-pill bg-kid-sky-100 px-4 py-1.5 text-sm font-bold text-kid-sky-700">
               <MessageCircleQuestion className="size-4" />
