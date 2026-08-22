@@ -93,15 +93,7 @@ const envSchema = z.object({
   RECAPTCHA_SECRET_KEY: z.string().optional(),
 
   /** Public site origin (used for payment callbacks / absolute URLs). */
-  NEXT_PUBLIC_SITE_URL: z
-    .string()
-    .optional()
-    .transform((v) => {
-      if (!v) return v;
-      if (v.startsWith("http://") || v.startsWith("https://")) return v;
-      return `https://${v}`;
-    })
-    .pipe(z.string().url().optional()),
+  NEXT_PUBLIC_SITE_URL: z.string().url().optional(),
 
   NEXT_PUBLIC_GA_ID: z.string().optional(),
 
@@ -141,13 +133,22 @@ function emptyToUndef(v: string | undefined): string | undefined {
   return v && v.length > 0 ? v : undefined;
 }
 
+/** Prepend https:// if the URL has no protocol. */
+function normalizeUrl(v: string | undefined): string | undefined {
+  if (!v) return v;
+  if (v.startsWith("http://") || v.startsWith("https://")) return v;
+  return `https://${v}`;
+}
+
 function loadEnv(): Env {
   // Detect build time early — during `next build` route modules are evaluated
   // but runtime env vars are not injected yet.  We skip Zod errors so
   // `docker build` (Railway) doesn't crash.
+  // process.argv may not exist in Edge runtime (middleware), so guard it.
+  const argv: string[] = Array.isArray(process.argv) ? process.argv : [];
   const isBuildTime =
-    process.argv[1]?.includes("next") ||
-    process.argv.some((a) => a.includes("next/dist/bin/next")) ||
+    argv[1]?.includes("next") ||
+    argv.some((a) => a.includes("next/dist/bin/next")) ||
     process.env.NEXT_PHASE === "phase-production-build" ||
     process.env.__NEXT_PRIVATE_RENDER_RUNTIME === "edge" ||
     process.env.__NEXT_PRIVATE_RENDER_RUNTIME === "nodejs";
@@ -173,7 +174,7 @@ function loadEnv(): Env {
     RECAPTCHA_SECRET_KEY: emptyToUndef(process.env.RECAPTCHA_SECRET_KEY),
     SEARCH_HOST: emptyToUndef(process.env.SEARCH_HOST),
     SEARCH_API_KEY: emptyToUndef(process.env.SEARCH_API_KEY),
-    NEXT_PUBLIC_SITE_URL: emptyToUndef(process.env.NEXT_PUBLIC_SITE_URL),
+    NEXT_PUBLIC_SITE_URL: normalizeUrl(emptyToUndef(process.env.NEXT_PUBLIC_SITE_URL)),
     NEXT_PUBLIC_GA_ID: emptyToUndef(process.env.NEXT_PUBLIC_GA_ID),
     LOAD_REGRESSION_EMAIL_THRESHOLD: process.env.LOAD_REGRESSION_EMAIL_THRESHOLD,
   };
