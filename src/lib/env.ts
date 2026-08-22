@@ -93,7 +93,15 @@ const envSchema = z.object({
   RECAPTCHA_SECRET_KEY: z.string().optional(),
 
   /** Public site origin (used for payment callbacks / absolute URLs). */
-  NEXT_PUBLIC_SITE_URL: z.string().url().optional(),
+  NEXT_PUBLIC_SITE_URL: z
+    .string()
+    .optional()
+    .transform((v) => {
+      if (!v) return v;
+      if (v.startsWith("http://") || v.startsWith("https://")) return v;
+      return `https://${v}`;
+    })
+    .pipe(z.string().url().optional()),
 
   NEXT_PUBLIC_GA_ID: z.string().optional(),
 
