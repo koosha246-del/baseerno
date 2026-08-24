@@ -44,4 +44,4 @@ export function verifyToken(token: string): AuthToken | null {
   return null;
 }
 
-export const AUTH_COOKIE = "bn_session";
+export { AUTH_COOKIE } from "@/lib/auth/constants";

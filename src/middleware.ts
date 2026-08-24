@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { AUTH_COOKIE } from "@/lib/auth/jwt";
+import { AUTH_COOKIE } from "@/lib/auth/constants";
 import { publicPageCacheControl } from "@/lib/cache-control";
 
 /**

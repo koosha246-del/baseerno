@@ -145,13 +145,56 @@ function loadEnv(): Env {
   // but runtime env vars are not injected yet.  We skip Zod errors so
   // `docker build` (Railway) doesn't crash.
   // process.argv may not exist in Edge runtime (middleware), so guard it.
-  const argv: string[] = Array.isArray(process.argv) ? process.argv : [];
+  const argv: string[] =
+    typeof process !== "undefined" && Array.isArray(process.argv)
+      ? process.argv
+      : [];
   const isBuildTime =
-    argv[1]?.includes("next") ||
+    (argv.length > 1 && argv[1] !== undefined && argv[1].includes("next")) ||
     argv.some((a) => a.includes("next/dist/bin/next")) ||
-    process.env.NEXT_PHASE === "phase-production-build" ||
-    process.env.__NEXT_PRIVATE_RENDER_RUNTIME === "edge" ||
-    process.env.__NEXT_PRIVATE_RENDER_RUNTIME === "nodejs";
+    process.env?.NEXT_PHASE === "phase-production-build" ||
+    process.env?.__NEXT_PRIVATE_RENDER_RUNTIME === "edge" ||
+    process.env?.__NEXT_PRIVATE_RENDER_RUNTIME === "nodejs";
+
+  // In Edge runtime (middleware), skip heavy validation entirely.
+  if (process.env?.__NEXT_PRIVATE_RENDER_RUNTIME === "edge") {
+    return {
+      NODE_ENV: "production",
+      DATABASE_URL: undefined,
+      DIRECT_URL: undefined,
+      REPLICA_URL: undefined,
+      JWT_SECRET: undefined,
+      JWT_SECRET_OLD: undefined,
+      PAYMENT_SIGNATURE_SECRET: undefined,
+      PAYMENT_SIGNATURE_SECRET_OLD: undefined,
+      ZARINPAL_MERCHANT_ID: undefined,
+      ZARINPAL_SANDBOX: false,
+      DEMO_MODE: false,
+      RESEND_API_KEY: undefined,
+      AI_API_KEY: undefined,
+      AI_BASE_URL: undefined,
+      AI_MODEL: undefined,
+      CLOUDINARY_CLOUD_NAME: undefined,
+      CLOUDINARY_API_KEY: undefined,
+      CLOUDINARY_API_SECRET: undefined,
+      REDIS_URL: undefined,
+      SENTRY_DSN: undefined,
+      SEARCH_HOST: undefined,
+      SEARCH_API_KEY: undefined,
+      RECAPTCHA_SECRET_KEY: undefined,
+      NEXT_PUBLIC_SITE_URL: undefined,
+      NEXT_PUBLIC_GA_ID: undefined,
+      LOAD_REGRESSION_EMAIL_THRESHOLD: undefined,
+      jwtSecret: process.env?.JWT_SECRET || "",
+      paymentSignatureSecret: process.env?.PAYMENT_SIGNATURE_SECRET || "",
+      isProduction: true,
+      isDevelopment: false,
+      isTest: false,
+      zarinpalEnabled: false,
+      captchaConfigured: false,
+      demoMode: false,
+    };
+  }
 
   const raw: Record<string, unknown> = {
     NODE_ENV: process.env.NODE_ENV || (isBuildTime ? "production" : "development"),
