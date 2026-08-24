@@ -27,9 +27,10 @@ const databaseUrl = env.DATABASE_URL;
 // During `next build` (e.g. Docker build on Railway), runtime env vars may not
 // be available yet. Skip the hard throw so the build can complete — the real
 // values are injected when the runner starts.
+const argv: string[] = Array.isArray(process.argv) ? process.argv : [];
 const isBuildTime =
-  process.argv[1]?.includes("next") ||
-  process.argv.some((a) => a.includes("next/dist/bin/next")) ||
+  argv[1]?.includes("next") ||
+  argv.some((a) => a.includes("next/dist/bin/next")) ||
   process.env.NEXT_PHASE === "phase-production-build";
 
 if (!databaseUrl && !isBuildTime) {
