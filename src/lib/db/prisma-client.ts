@@ -42,8 +42,16 @@ if (!databaseUrl && !isBuildTime) {
 // Pin the session to UTC (see ./conn.ts): Prisma serializes DateTime params
 // as naive UTC wall-clock strings, so a non-UTC session (e.g. Asia/Tehran)
 // silently shifts every instant and breaks backoff + stuck-row recovery.
+// Fail fast when Postgres is unreachable (e.g. local dev without a DB):
+// without `connectionTimeoutMillis` the pg pool retries connections
+// indefinitely and every awaited query hangs ~90s, leaving route-level
+// `loading.tsx` skeletons stuck on screen forever.
 const adapter = databaseUrl
-  ? new PrismaPg({ connectionString: withUtcSession(databaseUrl) })
+  ? new PrismaPg({
+      connectionString: withUtcSession(databaseUrl),
+      connectionTimeoutMillis: 5_000,
+      idleTimeoutMillis: 30_000,
+    })
   : null;
 
 /** The raw (un-extended) client. Reserved for admin / repair / migration work. */

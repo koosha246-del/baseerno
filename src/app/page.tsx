@@ -70,10 +70,17 @@ export default async function HomePage() {
   let courseList: ReturnType<typeof mapDbCourse>[] = [];
   try {
     const { getCachedPublishedCourses } = await import("@/lib/db/queries");
-    const dbCourses = await getCachedPublishedCourses(HOMEPAGE_COURSES_TAKE);
+    // Hard 5s cap: if the DB is unreachable/slow, the query must never hold
+    // the whole page hostage (the route skeleton would stay visible forever).
+    const dbCourses = await Promise.race([
+      getCachedPublishedCourses(HOMEPAGE_COURSES_TAKE),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("homepage courses query timed out")), 5_000),
+      ),
+    ]);
     courseList = dbCourses.map(mapDbCourse);
   } catch {
-    // DB not reachable — grid shows the empty state.
+    // DB not reachable (or too slow) — grid shows the empty state.
   }
 
   return (
