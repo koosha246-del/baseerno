@@ -20,7 +20,7 @@ async function markReadHandler(
   }
 
   const { id } = await params;
-  await repository.markNotificationRead(id);
+  await repository.markNotificationRead(id, user.id);
 
   return NextResponse.json({ ok: true });
 }

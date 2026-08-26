@@ -3,6 +3,7 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import { getCurrentUser } from "@/lib/auth/session";
 import { repository } from "@/lib/db/repository";
 import { CertificatePdfDocument } from "@/components/certificates/CertificatePdfDocument";
+import { withRateLimit } from "@/lib/api-middleware";
 
 /**
  * GET /api/certificates/[id]/pdf
@@ -13,7 +14,7 @@ import { CertificatePdfDocument } from "@/components/certificates/CertificatePdf
  *
  * Authorization: the certificate owner OR an admin.
  */
-export async function GET(
+async function pdfHandler(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -83,3 +84,13 @@ export async function GET(
     );
   }
 }
+
+/**
+ * PDF rendering is CPU-heavy, so we rate limit it per client (moderate
+ * preset) — prevents a single user from hammering the renderer.
+ */
+export const GET = withRateLimit(
+  pdfHandler,
+  { windowMs: 60_000, max: 10, burst: 2, burstWindowMs: 10_000 },
+  { keyPrefix: "pdf" },
+);

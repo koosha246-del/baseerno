@@ -35,8 +35,13 @@ export async function createNotification(input: {
   });
 }
 
-export async function markNotificationRead(id: string) {
-  return prisma.notification.update({ where: { id }, data: { read: true } });
+export async function markNotificationRead(id: string, userId: string) {
+  // Scope the update to the notification's owner so one user can never
+  // mark another user's notification as read (IDOR).
+  return prisma.notification.updateMany({
+    where: { id, userId },
+    data: { read: true },
+  });
 }
 
 export async function markAllNotificationsRead(userId: string) {

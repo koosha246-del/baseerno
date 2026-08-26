@@ -1,8 +1,10 @@
+import { Suspense } from "react";
 import { getCurrentUser } from "@/lib/auth/session";
 import { repository } from "@/lib/db/repository";
 import { formatDate } from "@/lib/format";
 import { Award } from "lucide-react";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { CardSkeleton } from "@/components/shared/Skeletons";
 import { env } from "@/lib/env";
 import { DemoUnavailableCard } from "@/components/shared/DemoUnavailableCard";
 import { DownloadCertificateButton } from "./DownloadCertificateButton";
@@ -16,8 +18,19 @@ export default async function CertificatesPage() {
     return <DemoUnavailableCard />;
   }
 
-  const certs = await repository.listCertificates(user.id);
-  const courses = await repository.listCourses();
+  return (
+    <Suspense fallback={<CardSkeleton />}>
+      <CertificatesBody userId={user.id} />
+    </Suspense>
+  );
+}
+
+async function CertificatesBody({ userId }: { userId: string }) {
+  const certs = await repository.listCertificates(userId);
+  const courses = await repository.listCourses({
+    ids: [...new Set(certs.map((c) => c.courseId))],
+  });
+  const courseById = new Map(courses.map((c) => [c.id, c]));
 
   return (
     <div className="flex flex-col gap-6">
@@ -35,7 +48,7 @@ export default async function CertificatesPage() {
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {certs.map((c) => {
-            const course = courses.find((x) => x.id === c.courseId);
+            const course = courseById.get(c.courseId);
             return (
               <div
                 key={c.id}

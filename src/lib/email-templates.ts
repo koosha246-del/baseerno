@@ -24,6 +24,11 @@ const headerHtml = `
   </div>
 `;
 
+/** Strip characters that could inject extra email headers (BCC, CC, etc.). */
+function sanitizeSubject(value: string): string {
+  return value.replace(/[\r\n\t]/g, " ").replace(/\s+/g, " ").trim();
+}
+
 const footerHtml = `
   <div style="margin-top: 32px; padding-top: 16px; border-top: 1px solid #e6e3f0; text-align: center; color: #6b7280; font-size: 12px;">
     <p>آکادمی ${siteConfig.name} — ${siteConfig.tagline}</p>
@@ -32,18 +37,19 @@ const footerHtml = `
 `;
 
 export function welcomeEmail(name: string): { subject: string; html: string } {
+  const safeName = escapeHtml(name);
   return {
     subject: `خوش آمدید به ${siteConfig.name}`,
     html: `
       <div style="${baseStyle}">
         ${headerHtml}
-        <h2 style="color: #0f172a; font-size: 22px;">سلام ${name} عزیز!</h2>
+        <h2 style="color: #0f172a; font-size: 22px;">سلام ${safeName} عزیز!</h2>
         <p style="color: #4b5563; line-height: 1.8; font-size: 15px;">
           ثبت‌نام شما در آکادمی ${siteConfig.name} با موفقیت انجام شد.
           اکنون می‌توانید وارد پنل کاربری خود شوید و از دوره‌های آموزشی استفاده کنید.
         </p>
         <div style="text-align: center; margin: 24px 0;">
-          <a href="${siteConfig.url}/dashboard"
+          <a href="${escapeAttr(siteConfig.url)}/dashboard"
              style="display: inline-block; padding: 12px 32px; background: linear-gradient(90deg, #1E3A5F, #2563EB); color: white; text-decoration: none; border-radius: 999px; font-weight: bold;">
             ورود به پنل کاربری
           </a>
@@ -60,24 +66,26 @@ export function paymentConfirmationEmail(
   amount: number
 ): { subject: string; html: string } {
   const formattedAmount = new Intl.NumberFormat("fa-IR").format(amount);
+  const safeName = escapeHtml(name);
+  const safeCourseTitle = escapeHtml(courseTitle);
   return {
-    subject: `تأیید پرداخت — ${courseTitle}`,
+    subject: `تأیید پرداخت — ${sanitizeSubject(courseTitle)}`,
     html: `
       <div style="${baseStyle}">
         ${headerHtml}
         <h2 style="color: #0f172a; font-size: 22px;">پرداخت شما تأیید شد!</h2>
         <p style="color: #4b5563; line-height: 1.8; font-size: 15px;">
-          ${name} عزیز، پرداخت شما برای دوره <strong>${courseTitle}</strong> با موفقیت انجام شد.
+          ${safeName} عزیز، پرداخت شما برای دوره <strong>${safeCourseTitle}</strong> با موفقیت انجام شد.
         </p>
         <div style="background: #f5f3fa; border-radius: 12px; padding: 16px; margin: 16px 0;">
           <p style="margin: 0; color: #4b5563; font-size: 14px;">
-            <strong>دوره:</strong> ${courseTitle}<br/>
+            <strong>دوره:</strong> ${safeCourseTitle}<br/>
             <strong>مبلغ:</strong> ${formattedAmount} تومان<br/>
             <strong>وضعیت:</strong> <span style="color: #15803d;">پرداخت موفق</span>
           </p>
         </div>
         <div style="text-align: center; margin: 24px 0;">
-          <a href="${siteConfig.url}/dashboard/courses"
+          <a href="${escapeAttr(siteConfig.url)}/dashboard/courses"
              style="display: inline-block; padding: 12px 32px; background: linear-gradient(90deg, #1E3A5F, #2563EB); color: white; text-decoration: none; border-radius: 999px; font-weight: bold;">
             مشاهده دوره
           </a>
@@ -92,6 +100,8 @@ export function passwordResetEmail(
   name: string,
   resetUrl: string
 ): { subject: string; html: string } {
+  const safeName = escapeHtml(name);
+  const safeResetUrl = escapeAttr(resetUrl);
   return {
     subject: `بازیابی رمز عبور — ${siteConfig.name}`,
     html: `
@@ -99,11 +109,11 @@ export function passwordResetEmail(
         ${headerHtml}
         <h2 style="color: #0f172a; font-size: 22px;">بازیابی رمز عبور</h2>
         <p style="color: #4b5563; line-height: 1.8; font-size: 15px;">
-          ${name} عزیز، درخواست بازیابی رمز عبور برای حساب شما ثبت شده است.
+          ${safeName} عزیز، درخواست بازیابی رمز عبور برای حساب شما ثبت شده است.
           روی دکمه زیر کلیک کنید تا رمز عبور جدید تنظیم کنید.
         </p>
         <div style="text-align: center; margin: 24px 0;">
-          <a href="${resetUrl}"
+          <a href="${safeResetUrl}"
              style="display: inline-block; padding: 12px 32px; background: linear-gradient(90deg, #1E3A5F, #2563EB); color: white; text-decoration: none; border-radius: 999px; font-weight: bold;">
             تغییر رمز عبور
           </a>
@@ -166,14 +176,15 @@ export function loadRegressionAlertEmail(
 ): { subject: string; html: string } {
   const fmt = (n: number) => Math.round(n).toLocaleString("fa-IR");
   const diff = Math.round(diffPercent).toLocaleString("fa-IR");
+  const safeScenario = escapeHtml(scenario);
   return {
-    subject: `⚠️ رگرسیون عملکرد — ${scenario} p95`,
+    subject: `⚠️ رگرسیون عملکرد — ${sanitizeSubject(safeScenario)} p95`,
     html: `
       <div style="${baseStyle}">
         ${headerHtml}
         <h2 style="color: #0f172a; font-size: 22px;">هشدار: افت عملکرد در load test</h2>
         <p style="color: #4b5563; line-height: 1.8; font-size: 15px;">
-          سناریوی <strong dir="ltr">${scenario}</strong> نسبت به میانگین اجراهای قبلی دچار رگرسیون شده است:
+          سناریوی <strong dir="ltr">${safeScenario}</strong> نسبت به میانگین اجراهای قبلی دچار رگرسیون شده است:
         </p>
         <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 16px; margin: 16px 0;">
           <p style="margin: 4px 0; color: #991b1b; font-size: 14px;">
@@ -205,4 +216,9 @@ function escapeHtml(s: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+/** Escape a value that will be embedded inside an HTML attribute value. */
+function escapeAttr(s: string): string {
+  return escapeHtml(s).replace(/`/g, "&#96;");
 }

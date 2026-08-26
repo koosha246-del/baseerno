@@ -177,7 +177,7 @@ export async function revenueByMonth(db: typeof prisma = prisma) {
   >`
     SELECT date_trunc('month', "paidAt") AS month, SUM(amount)::bigint AS total
     FROM "Payment"
-    WHERE status = 'PAID' AND "paidAt" IS NOT NULL
+    WHERE status = 'PAID' AND "paidAt" IS NOT NULL AND "deletedAt" IS NULL
     GROUP BY date_trunc('month', "paidAt")
     ORDER BY month ASC
   `;

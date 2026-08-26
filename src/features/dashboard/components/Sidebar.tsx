@@ -110,7 +110,7 @@ export function Sidebar({ role, userName, collapsed = false, onToggle }: Sidebar
       <button
         onClick={onToggle}
         className="absolute left-0 top-20 hidden -translate-x-1/2 rounded-full border border-white/10 bg-slate-800 p-1.5 text-slate-400 hover:text-white lg:block"
-        style={{ right: collapsed ? "-12px" : "-12px", left: collapsed ? "auto" : undefined }}
+        style={{ right: "-12px", left: collapsed ? "auto" : "0" }}
       >
         {collapsed ? (
           <PanelLeftOpen className="size-4" />

@@ -92,7 +92,12 @@ export async function countByRole(db: typeof prisma = prisma): Promise<Record<Ro
 
 export async function updatePassword(id: string, passwordHash: string): Promise<boolean> {
   try {
-    await prisma.user.update({ where: { id }, data: { passwordHash } });
+    // Bump tokenVersion so every existing JWT for this user becomes
+    // invalid (session revocation on password change/reset).
+    await prisma.user.update({
+      where: { id },
+      data: { passwordHash, tokenVersion: { increment: 1 } },
+    });
     return true;
   } catch {
     return false;

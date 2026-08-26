@@ -12,7 +12,9 @@ services:
     environment:
       NODE_ENV: production
       DATABASE_URL: ${DATABASE_URL}
-      AUTH_SECRET: ${AUTH_SECRET}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
+      PAYMENT_SIGNATURE_SECRET: ${PAYMENT_SIGNATURE_SECRET:?PAYMENT_SIGNATURE_SECRET must be set}
+      DIRECT_URL: ${DIRECT_URL:-}
       NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
@@ -20,7 +22,10 @@ services:
       CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
       SENTRY_DSN: ${SENTRY_DSN:-}
       SEARCH_HOST: ${SEARCH_HOST:-http://meilisearch:7700}
-      SEARCH_API_KEY: ${SEARCH_API_KEY:-baseerno-dev-master-key}
+      SEARCH_API_KEY: ${SEARCH_API_KEY}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_BASE_URL: ${AI_BASE_URL:-}
+      AI_MODEL: ${AI_MODEL:-}
     depends_on:
       db:
         condition: service_healthy
@@ -41,6 +46,8 @@ services:
     environment:
       NODE_ENV: production
       DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
+      PAYMENT_SIGNATURE_SECRET: ${PAYMENT_SIGNATURE_SECRET:?PAYMENT_SIGNATURE_SECRET must be set}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       REDIS_URL: ${REDIS_URL:-}
     depends_on:
@@ -52,9 +59,11 @@ services:
     container_name: bayan-meili
     restart: unless-stopped
     environment:
-      MEILI_MASTER_KEY: ${SEARCH_API_KEY:-baseerno-dev-master-key}
+      # Required — no built-in default. A hardcoded master key would leave
+      # the search index unauthenticated for anyone on the same network.
+      MEILI_MASTER_KEY: ${SEARCH_API_KEY:?SEARCH_API_KEY must be set}
       MEILI_NO_ANALYTICS: "true"
-      MEILI_ENV: development
+      MEILI_ENV: production
     ports:
       - "7700:7700"
     volumes:

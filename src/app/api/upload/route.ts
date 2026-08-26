@@ -4,13 +4,53 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { isSameOriginRequest, csrfRejectedResponse } from "@/lib/csrf";
 import { env } from "@/lib/env";
 import { withRateLimit } from "@/lib/api-middleware";
-import { RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
 
 cloudinary.config({
   cloud_name: env.CLOUDINARY_CLOUD_NAME || "",
   api_key: env.CLOUDINARY_API_KEY || "",
   api_secret: env.CLOUDINARY_API_SECRET || "",
 });
+
+/** Folders the client may write into — anything else is rejected. */
+const ALLOWED_FOLDER_PREFIXES = ["baseerno/", "avatars/", "lessons/"];
+
+const MIME_MAGIC_BYTES: Array<{ mime: string; magic: (buf: Buffer) => boolean }> = [
+  // JPEG: FF D8 FF
+  { mime: "image/jpeg", magic: (b) => b.length >= 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff },
+  // PNG: 89 50 4E 47 0D 0A 1A 0A
+  {
+    mime: "image/png",
+    magic: (b) =>
+      b.length >= 8 &&
+      b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47 &&
+      b[4] === 0x0d && b[5] === 0x0a && b[6] === 0x1a && b[7] === 0x0a,
+  },
+  // WEBP: "RIFF" .... "WEBP"
+  {
+    mime: "image/webp",
+    magic: (b) =>
+      b.length >= 12 &&
+      b.toString("latin1", 0, 4) === "RIFF" && b.toString("latin1", 8, 12) === "WEBP",
+  },
+  // GIF: "GIF87a" | "GIF89a"
+  {
+    mime: "image/gif",
+    magic: (b) =>
+      b.length >= 6 && (b.toString("latin1", 0, 6) === "GIF87a" || b.toString("latin1", 0, 6) === "GIF89a"),
+  },
+  // MP4 (ftyp): bytes 4..8 == "ftyp"
+  { mime: "video/mp4", magic: (b) => b.length >= 12 && b.toString("latin1", 4, 8) === "ftyp" },
+  // WEBM: EBML header (0x1A 0x45 0xDF 0xA3)
+  { mime: "video/webm", magic: (b) => b.length >= 4 && b[0] === 0x1a && b[1] === 0x45 && b[2] === 0xdf && b[3] === 0xa3 },
+];
+
+/** Reject uploads whose magic bytes don't match an allowed type. */
+function sniffMime(buffer: Buffer): string | null {
+  for (const candidate of MIME_MAGIC_BYTES) {
+    if (candidate.magic(buffer)) return candidate.mime;
+  }
+  return null;
+}
 
 async function uploadHandler(req: Request) {
   // CSRF: uploads are billed to our Cloudinary account, so lock the origin.
@@ -31,14 +71,23 @@ async function uploadHandler(req: Request) {
     return NextResponse.json({ error: "فایل ارسال نشده." }, { status: 400 });
   }
 
+  // Restrict the Cloudinary folder to a known allowlist — never let the
+  // client invent arbitrary folder paths.
+  if (!ALLOWED_FOLDER_PREFIXES.some((p) => folder === p || folder.startsWith(p))) {
+    return NextResponse.json({ error: "پوشه مجاز نیست." }, { status: 400 });
+  }
+
   // Max 10MB
   if (file.size > 10 * 1024 * 1024) {
     return NextResponse.json({ error: "حجم فایل نباید بیشتر از ۱۰ مگابایت باشد." }, { status: 400 });
   }
 
-  // Check type
-  const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif", "video/mp4", "video/webm"];
-  if (!allowed.includes(file.type)) {
+  const bytes = await file.arrayBuffer();
+  const buffer = Buffer.from(bytes);
+
+  // Never trust the client-declared MIME type — sniff the actual bytes.
+  const sniffed = sniffMime(buffer);
+  if (!sniffed) {
     return NextResponse.json({ error: "فرمت فایل مجاز نیست." }, { status: 400 });
   }
 
@@ -50,14 +99,12 @@ async function uploadHandler(req: Request) {
   }
 
   try {
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
     const base64 = buffer.toString("base64");
-    const dataUri = `data:${file.type};base64,${base64}`;
+    const dataUri = `data:${sniffed};base64,${base64}`;
 
     const result = await cloudinary.uploader.upload(dataUri, {
       folder,
-      resource_type: file.type.startsWith("video/") ? "video" : "image",
+      resource_type: sniffed.startsWith("video/") ? "video" : "image",
     });
 
     return NextResponse.json({

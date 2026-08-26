@@ -17,7 +17,7 @@ import { siteConfig } from "@/config/site";
 export const metadata: Metadata = {
   title: "همه دوره‌ها",
   description:
-    "کاملترین catalog دوره‌های زبان انگلیسی بصیر نو — گرامر، واژگان، مکالمه، شنیدن، خواندن، نوشتن و آیلتس.",
+    "فهرست دوره‌های منتشرشده زبان انگلیسی بصیر نو با امکان جست‌وجو و فیلتر بر اساس مهارت.",
   alternates: {
     canonical: "/courses",
   },
@@ -28,13 +28,13 @@ export const metadata: Metadata = {
     siteName: siteConfig.name,
     title: "همه دوره‌های زبان انگلیسی | بصیر نو",
     description:
-      "کاملترین catalog دوره‌های زبان انگلیسی بصیر نو — گرامر، واژگان، مکالمه، شنیدن، خواندن، نوشتن و آیلتس.",
+      "فهرست دوره‌های منتشرشده زبان انگلیسی بصیر نو با امکان جست‌وجو و فیلتر بر اساس مهارت.",
   },
   twitter: {
     card: "summary_large_image",
     title: "همه دوره‌های زبان انگلیسی | بصیر نو",
     description:
-      "کاملترین catalog دوره‌های زبان انگلیسی بصیر نو — گرامر، واژگان، مکالمه، شنیدن، خواندن، نوشتن و آیلتس.",
+      "فهرست دوره‌های منتشرشده زبان انگلیسی بصیر نو با امکان جست‌وجو و فیلتر بر اساس مهارت.",
   },
 };
 
@@ -72,8 +72,8 @@ export default async function CoursesPage() {
             هر مهارتی که نیاز داری، <GradientText>اینجاست</GradientText>
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-base leading-loose text-fg-secondary">
-            از گرامر پایه تا آیلتس پیشرفته. هر دوره توسط متخصصان طراحی شده
-            و با کتاب‌های استاندارد Cambridge تدریس می‌شود.
+            دوره‌های منتشرشده را بر اساس مهارت و سطح مرور کن و با جست‌وجو
+            مسیر مناسب خودت را پیدا کن.
           </p>
         </section>
 
@@ -107,13 +107,13 @@ export default async function CoursesPage() {
           <ScrollReveal>
             <span className="mb-3 inline-flex items-center gap-2 rounded-pill bg-white px-4 py-1.5 text-sm font-bold text-kid-sky-600 shadow-sm dark:bg-surface">
               <Sparkles className="size-4" />
-              اولین درس رایگان
+              انتخاب آگاهانه
             </span>
             <h2 className="font-display text-2xl font-extrabold text-fg-primary sm:text-3xl">
               هنوز مطمئن نیستی؟
             </h2>
             <p className="mx-auto mt-3 max-w-md text-base leading-loose text-fg-secondary">
-              اولین درس هر دوره رایگانه. ثبت‌نام کن، امتحان کن، بعد تصمیم بگیر.
+              جزئیات دوره‌ها را بخوان، مهارت موردنظرت را پیدا کن و بعد تصمیم بگیر.
             </p>
             <div className="mt-6">
               <Link

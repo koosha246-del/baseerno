@@ -53,8 +53,9 @@ const handlers = new Map<AppEvent["type"], Set<EventHandler>>();
 
 /**
  * Publish an event: all registered handlers for this event type are
- * called concurrently.  Errors are caught and logged individually so
- * one failing handler never blocks the others.
+ * called concurrently.  Errors are caught, retried once with a short
+ * delay, and then logged if still failing.  One failing handler never
+ * blocks the others.
  */
 export async function publish(event: AppEvent): Promise<void> {
   const set = handlers.get(event.type);
@@ -63,9 +64,19 @@ export async function publish(event: AppEvent): Promise<void> {
   const promises: Promise<void>[] = [];
   for (const handler of set) {
     promises.push(
-      handler(event as never).catch((err) => {
-        console.error(`[events] Handler failed for ${event.type}:`, err);
-      }),
+      (async () => {
+        try {
+          await handler(event as never);
+        } catch {
+          // One retry with a short delay for transient failures
+          await new Promise((r) => setTimeout(r, 1000));
+          try {
+            await handler(event as never);
+          } catch (retryErr) {
+            console.error(`[events] Handler failed for ${event.type} (after retry):`, retryErr);
+          }
+        }
+      })(),
     );
   }
   await Promise.all(promises);

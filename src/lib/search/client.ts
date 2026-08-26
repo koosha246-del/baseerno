@@ -86,17 +86,23 @@ export interface SearchTask {
 }
 
 /**
- * Apply index settings. Meilisearch returns an async task; callers that
- * need the settings live before indexing should `await waitForSearchTask`.
+ * Apply index settings and wait for them to take effect.
+ * Meilisearch returns an async task; we poll until the settings are live
+ * so callers can immediately index documents with the new configuration.
  */
 export async function configureCourseIndex(
   settings: typeof COURSE_INDEX_SETTINGS = COURSE_INDEX_SETTINGS,
 ): Promise<SearchTask | null> {
   if (!isSearchEnabled()) return null;
-  return request<SearchTask>(`/indexes/${COURSES_INDEX}/settings`, {
+  const task = await request<SearchTask>(`/indexes/${COURSES_INDEX}/settings`, {
     method: "PATCH",
     body: JSON.stringify(settings),
   });
+  // Wait for the settings to be applied before returning
+  if (task?.taskUid) {
+    await waitForSearchTask(task.taskUid);
+  }
+  return task;
 }
 
 /** Liveness probe — GET /health (no auth required by Meilisearch). */

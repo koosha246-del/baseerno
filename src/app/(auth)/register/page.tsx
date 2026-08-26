@@ -95,7 +95,11 @@ export default function RegisterPage() {
           ) : null}
 
           <div className="mb-4">
+            <label htmlFor="register-name" className="sr-only">
+              نام و نام‌خانوادگی
+            </label>
             <input
+              id="register-name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -106,7 +110,11 @@ export default function RegisterPage() {
           </div>
 
           <div className="mb-4">
+            <label htmlFor="register-email" className="sr-only">
+              ایمیل
+            </label>
             <input
+              id="register-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -118,8 +126,12 @@ export default function RegisterPage() {
           </div>
 
           <div className="mb-6">
+            <label htmlFor="register-password" className="sr-only">
+              رمز عبور
+            </label>
             <div className="relative">
               <input
+                id="register-password"
                 type={showPass ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

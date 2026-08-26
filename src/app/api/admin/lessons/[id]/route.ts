@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/session";
 import { repository } from "@/lib/db/repository";
 import { z } from "zod";
+import { isSameOriginRequest, csrfRejectedResponse } from "@/lib/csrf";
 import { invalidateCache, invalidateSearchCourseCache } from "@/lib/cache";
 import { CACHE_TAGS, publishedCoursesCacheKeys } from "@/lib/cache-tags";
 
@@ -15,11 +16,26 @@ const updateLessonSchema = z.object({
   published: z.boolean().optional(),
 });
 
+/** A TEACHER may only act on lessons in courses they own. */
+async function assertTeacherOwnsLesson(
+  user: { id: string; role: string },
+  courseId: string,
+): Promise<boolean> {
+  if (user.role === "ADMIN") return true;
+  const course = await repository.findCourseById(courseId);
+  return course?.mentorId === user.id;
+}
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // CSRF: lesson update mutates course content on behalf of the session.
+    if (!isSameOriginRequest(req)) {
+      return csrfRejectedResponse();
+    }
+
     const user = await getCurrentUser();
     if (!user || (user.role !== "ADMIN" && user.role !== "TEACHER")) {
       return NextResponse.json({ error: "دسترسی غیرمجاز" }, { status: 403 });
@@ -31,11 +47,20 @@ export async function PATCH(
       return NextResponse.json({ error: "درس یافت نشد" }, { status: 404 });
     }
 
+    // Ownership gate: a teacher cannot edit another teacher's lesson.
+    if (!(await assertTeacherOwnsLesson(user, existing.courseId))) {
+      return NextResponse.json(
+        { error: "شما مدرس این دوره نیستید" },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
     const parsed = updateLessonSchema.safeParse(body);
     if (!parsed.success) {
+      const first = parsed.error.issues[0];
       return NextResponse.json(
-        { error: "داده‌های نامعتبر", details: parsed.error.flatten() },
+        { error: first?.message ?? "داده‌های نامعتبر" },
         { status: 400 }
       );
     }
@@ -69,6 +94,11 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // CSRF: lesson deletion mutates course content on behalf of the session.
+    if (!isSameOriginRequest(_req)) {
+      return csrfRejectedResponse();
+    }
+
     const user = await getCurrentUser();
     if (!user || user.role !== "ADMIN") {
       return NextResponse.json({ error: "دسترسی غیرمجاز" }, { status: 403 });
@@ -76,6 +106,9 @@ export async function DELETE(
 
     const { id } = await params;
     const existing = await repository.findLessonById(id);
+    if (!existing) {
+      return NextResponse.json({ error: "درس یافت نشد." }, { status: 404 });
+    }
     await repository.deleteLesson(id);
     // Bust the Redis published-course keys AND the Next.js tags.
     await invalidateCache(publishedCoursesCacheKeys(), [

@@ -48,7 +48,17 @@ const config: Config = {
           subtle: "var(--surface-subtle)",
           elevated: "var(--surface-elevated)",
         },
-        brand: colors.brand,
+        brand: {
+          ...colors.brand,
+          DEFAULT: "#1E5FD9",
+          dark: "#1747A8",
+        },
+        // Dim scrim behind sheets/dialogs.
+        overlay: "#0B1220",
+        destructive: {
+          DEFAULT: "#DC2626",
+          soft: "#FEE2E2",
+        },
         accent: {
           DEFAULT: "var(--theme-accent)",
           hover: "var(--theme-accent-hover)",
@@ -76,6 +86,31 @@ const config: Config = {
         // Kid-facing palette — use for child-targeted surfaces.
         // Each scale follows Tailwind's 50→600 convention.
         kid: kidColors,
+        // Landing page palette (Basir Academy branding)
+        navy: {
+          DEFAULT: "#0e2a54",
+          deep: "#0a1f40",
+        },
+        sun: {
+          DEFAULT: "#ffc53d",
+          soft: "#fff4d6",
+        },
+        tang: {
+          DEFAULT: "#f4772e",
+          soft: "#feeadd",
+        },
+        leaf: {
+          DEFAULT: "#27b876",
+          soft: "#e2f6ec",
+        },
+        ink: {
+          DEFAULT: "#16273f",
+          soft: "#5a6b84",
+        },
+        "brand-tint": {
+          DEFAULT: "#eff5fd",
+          2: "#f6f9fe",
+        },
       },
       fontFamily: {
         sans: ["var(--font-vazirmatn)", "IranSans", "system-ui", "sans-serif"],
@@ -194,6 +229,7 @@ const config: Config = {
         ...animations,
         "accordion-down": "accordion-down 0.3s ease-standard",
         "accordion-up": "accordion-up 0.3s ease-standard",
+        "float-soft": "float-soft 5s ease-in-out infinite",
       },
     },
   },

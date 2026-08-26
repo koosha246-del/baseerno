@@ -12,12 +12,13 @@ export async function GET(
   }
 
   const { id } = await params;
-  const certs = await repository.listCertificates(user.id);
-  const cert = certs.find((c) => c.id === id);
 
-  if (!cert && user.role !== "ADMIN") {
-    return NextResponse.json({ error: "گواهی‌نامه یافت نشد." }, { status: 404 });
-  }
+  // Try to find the cert in the user's own list first
+  const certs = await repository.listCertificates(user.id);
+  const ownedCert = certs.find((c) => c.id === id);
+
+  // Admin fallback: look up any certificate by ID
+  const cert = ownedCert ?? (user.role === "ADMIN" ? await repository.findCertificateById(id) : null);
 
   if (!cert) {
     return NextResponse.json({ error: "گواهی‌نامه یافت نشد." }, { status: 404 });

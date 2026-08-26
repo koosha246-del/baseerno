@@ -12,7 +12,8 @@ test.describe("Catalog (public)", () => {
   });
 
   test("courses list has at least one card link", async ({ page }) => {
-    await page.goto("/");
+    // Landing is now anchor-based; course links live on the catalog page.
+    await page.goto("/courses");
     const courseLink = page.locator('a[href^="/courses/"]').first();
     await expect(courseLink).toBeVisible({ timeout: 10000 });
   });

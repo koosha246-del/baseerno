@@ -116,8 +116,12 @@ export async function invalidateSearchCourseCache(): Promise<void> {
 
   try {
     if (typeof client.scanIterator !== "function") return;
+    // Match BOTH search caches: the authenticated TopBar
+    // (`search:courses:*`) and the public header autocomplete
+    // (`search:public-courses:*`) — otherwise course mutations leave
+    // stale/unpublished docs in the public dropdown until TTL.
     for await (const key of client.scanIterator({
-      MATCH: "cache:search:courses:*",
+      MATCH: "cache:search:*courses*",
       COUNT: 100,
     })) {
       await client.del(key);

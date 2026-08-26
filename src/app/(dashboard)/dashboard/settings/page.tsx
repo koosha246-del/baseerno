@@ -1,6 +1,7 @@
 import { getCurrentUser } from "@/lib/auth/session";
 import { SettingsForm } from "./SettingsForm";
 import { PasswordForm } from "./PasswordForm";
+import { TwoFactorForm } from "./TwoFactorForm";
 
 export default async function SettingsPage() {
   const user = await getCurrentUser();
@@ -14,6 +15,7 @@ export default async function SettingsPage() {
       </div>
 
       <SettingsForm user={user} />
+      <TwoFactorForm />
       <PasswordForm />
     </div>
   );

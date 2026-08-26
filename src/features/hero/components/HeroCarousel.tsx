@@ -54,6 +54,14 @@ export function HeroCarousel({ className }: { className?: string }) {
   useEffect(() => {
     const root = document.documentElement;
     const theme = activeSlide.theme;
+    const props = [
+      "--theme-accent",
+      "--theme-accent-hover",
+      "--theme-accent-soft",
+      "--theme-text-gradient",
+      "--theme-brand-gradient",
+      "--theme-scrim",
+    ] as const;
 
     root.style.setProperty("--theme-accent", theme.accent);
     root.style.setProperty("--theme-accent-hover", theme.accentHover);
@@ -61,6 +69,10 @@ export function HeroCarousel({ className }: { className?: string }) {
     root.style.setProperty("--theme-text-gradient", theme.textGradient);
     root.style.setProperty("--theme-brand-gradient", theme.brandGradient);
     root.style.setProperty("--theme-scrim", theme.scrimColor);
+
+    return () => {
+      for (const prop of props) root.style.removeProperty(prop);
+    };
   }, [active, activeSlide.theme]);
 
   // Autoplay — advance to the next slide.

@@ -30,9 +30,16 @@ export async function sendEmail(options: SendEmailOptions): Promise<boolean> {
 
   const resendKey = env.RESEND_API_KEY;
 
-  // No key at all — log and enqueue (worker can still process later if key appears)
+  // No key at all — enqueue for later delivery (worker can process it if a
+  // key appears). Only log the full recipient in development; elsewhere we
+  // log a masked address so email addresses don't land in production logs.
   if (!resendKey) {
-    console.log(`[EMAIL MOCK] To: ${options.to} | Subject: ${options.subject}`);
+    if (env.isDevelopment) {
+      console.log(`[EMAIL MOCK] To: ${options.to} | Subject: ${options.subject}`);
+    } else {
+      const masked = options.to.replace(/^(.)(.*)@(.*)$/, "$1***@$3");
+      console.log(`[EMAIL] Queued for: ${masked} | Subject: ${options.subject}`);
+    }
     await enqueueEmail(options);
     return true;
   }
@@ -51,7 +58,12 @@ export async function sendEmail(options: SendEmailOptions): Promise<boolean> {
   } catch (error) {
     // Direct send failed — enqueue for retry via worker
     console.error("[email] Direct send failed, enqueuing for retry:", error);
-    await enqueueEmail(options);
-    return true; // Don't fail the request; the worker will retry
+    try {
+      await enqueueEmail(options);
+      return true;
+    } catch (enqueueError) {
+      console.error("[email] Enqueue also failed — email permanently lost:", enqueueError);
+      return false;
+    }
   }
 }

@@ -74,6 +74,7 @@ export function demoAccountToSafeUser(account: DemoAccount): SafeUser {
     avatar: account.avatar,
     phone: account.phone,
     bio: account.bio,
+    tokenVersion: 0,
     createdAt: now,
     updatedAt: now,
   };

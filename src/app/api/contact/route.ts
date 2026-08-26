@@ -35,11 +35,14 @@ async function contactHandler(req: Request) {
 
   const { name, email, subject, message } = parsed.data;
 
+  // Sanitize subject to prevent email header injection
+  const safeSubject = subject.replace(/[\r\n\t]/g, " ").replace(/\s+/g, " ").trim();
+
   // Send the message to site admin
-  const adminEmail = contactFormEmail({ name, email, subject, message });
+  const adminEmail = contactFormEmail({ name, email, subject: safeSubject, message });
   const sent = await sendEmail({
     to: siteConfig.contact.email,
-    subject: `[تماس با ما] ${subject}`,
+    subject: `[تماس با ما] ${safeSubject}`,
     html: adminEmail,
   });
 

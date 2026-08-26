@@ -20,9 +20,9 @@ export const heroData: HeroData = {
     href: "#why",
   },
   stats: [
-    { value: "+۹٬۰۰۰", label: "دانش‌آموز" },
-    { value: "۴۰+", label: "درس" },
-    { value: "۱۴۰۳", label: "شروع" },
+    { value: "کوتاه", label: "درس‌ها" },
+    { value: "مرحله‌ای", label: "مسیر" },
+    { value: "روشن", label: "بازخورد" },
   ],
   features: [
     { icon: "Mic", title: "تمرین حرف زدن" },

@@ -22,27 +22,54 @@ export type RealtimeEvent =
 
 type StreamWriter = (payload: string) => void;
 
-const connections = new Map<string, Set<StreamWriter>>();
+interface RegisteredConnection {
+  write: StreamWriter;
+  /** Terminates the underlying stream — invoked when evicted. */
+  close?: () => void;
+}
+
+const connections = new Map<string, Set<RegisteredConnection>>();
 
 const MAX_CONNECTIONS_PER_USER = 5;
 
 /** Register a connection for a user. Returns an unsubscribe function. */
-export function subscribeToUser(userId: string, write: StreamWriter): () => void {
+export function subscribeToUser(
+  userId: string,
+  write: StreamWriter,
+  close?: () => void,
+): () => void {
+  const conn: RegisteredConnection = { write, close };
   let set = connections.get(userId);
   if (!set) {
     set = new Set();
     connections.set(userId, set);
   }
-  set.add(write);
+  set.add(conn);
 
   // Bound the number of open streams per user (a tab storm must not leak).
+  // The evicted connection must be TOLD it was dropped: write a reconnect
+  // hint and close its stream so EventSource fires an error and reconnects.
+  // Without this the old tab stays open as a "zombie" — heartbeat pinging
+  // but deaf to every future event.
   if (set.size > MAX_CONNECTIONS_PER_USER) {
     const oldest = set.values().next().value;
-    if (oldest) set.delete(oldest);
+    if (oldest && oldest !== conn) {
+      set.delete(oldest);
+      try {
+        oldest.write("event: reconnect\ndata: {}\n\nretry: 1000\n\n");
+      } catch {
+        // Stream already gone.
+      }
+      try {
+        oldest.close?.();
+      } catch {
+        // Already closed.
+      }
+    }
   }
 
   return () => {
-    set?.delete(write);
+    set?.delete(conn);
     if (set && set.size === 0) connections.delete(userId);
   };
 }
@@ -62,13 +89,13 @@ export function pushToUser(userId: string, event: RealtimeEvent): number {
 
   const payload = encodeSse(event);
   let delivered = 0;
-  for (const write of [...set]) {
+  for (const conn of [...set]) {
     try {
-      write(payload);
+      conn.write(payload);
       delivered++;
     } catch {
       // Broken stream — drop it.
-      set.delete(write);
+      set.delete(conn);
     }
   }
   return delivered;

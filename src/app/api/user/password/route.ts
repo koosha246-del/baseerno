@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getCurrentUser } from "@/lib/auth/session";
+import { getCurrentUser, clearSession } from "@/lib/auth/session";
 import { repository } from "@/lib/db/repository";
 import { verifyPassword, hashPassword } from "@/lib/auth/password";
 import { isSameOriginRequest, csrfRejectedResponse } from "@/lib/csrf";
@@ -48,6 +48,11 @@ async function changePasswordHandler(req: Request) {
 
   const newHash = await hashPassword(parsed.data.newPassword);
   await repository.updatePassword(user.id, newHash);
+
+  // Invalidate the current session (tokenVersion bumped above) so the
+  // password change takes effect immediately and the old cookie can't
+  // be replayed with the previous credentials.
+  await clearSession();
 
   return NextResponse.json({ ok: true });
 }

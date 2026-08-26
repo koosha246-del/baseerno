@@ -17,6 +17,12 @@ describe("welcomeEmail", () => {
     const { html } = welcomeEmail("x");
     expect(html).toContain("/dashboard");
   });
+
+  it("escapes HTML special characters in the user name", () => {
+    const { html } = welcomeEmail('<img src=x onerror=alert(1)>');
+    expect(html).not.toContain("<img src=x");
+    expect(html).toContain("&lt;img src=x");
+  });
 });
 
 describe("paymentConfirmationEmail", () => {
@@ -25,6 +31,12 @@ describe("paymentConfirmationEmail", () => {
     expect(html).toContain("Speaking 101");
     // Persian digits
     expect(html).toMatch(/[۰-۹]/);
+  });
+
+  it("escapes the course title", () => {
+    const { html } = paymentConfirmationEmail("ali", '<b onclick=alert(1)>X</b>', 1000);
+    expect(html).not.toContain("<b onclick=alert(1)>");
+    expect(html).toContain("&lt;b onclick=alert(1)&gt;");
   });
 });
 

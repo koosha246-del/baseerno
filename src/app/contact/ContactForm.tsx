@@ -112,10 +112,14 @@ export function ContactForm() {
         </div>
 
         <div>
-          <label className="mb-1.5 block text-sm font-semibold text-fg-primary">
+          <label
+            htmlFor="subject"
+            className="mb-1.5 block text-sm font-semibold text-fg-primary"
+          >
             موضوع <span className="text-red-500">*</span>
           </label>
           <select
+            id="subject"
             name="subject"
             required
             defaultValue=""
@@ -123,6 +127,7 @@ export function ContactForm() {
               errors.subject ? "border-red-400" : "border-app-border"
             }`}
             aria-invalid={!!errors.subject}
+            aria-describedby={errors.subject ? "subject-error" : undefined}
           >
             <option value="" disabled>
               انتخاب کنید...
@@ -134,7 +139,9 @@ export function ContactForm() {
             ))}
           </select>
           {errors.subject && (
-            <p className="mt-1 text-xs text-red-500">{errors.subject}</p>
+            <p id="subject-error" className="mt-1 text-xs text-red-500">
+              {errors.subject}
+            </p>
           )}
         </div>
 
@@ -152,6 +159,7 @@ export function ContactForm() {
         {status === "success" && (
           <div
             role="status"
+            aria-live="polite"
             className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700"
           >
             <CheckCircle2 className="mt-0.5 size-4 shrink-0" />
@@ -224,11 +232,15 @@ function Field({
 
   return (
     <div>
-      <label className="mb-1.5 block text-sm font-semibold text-fg-primary">
+      <label
+        htmlFor={name}
+        className="mb-1.5 block text-sm font-semibold text-fg-primary"
+      >
         {label} {required && <span className="text-red-500">*</span>}
       </label>
       {as === "textarea" ? (
         <textarea
+          id={name}
           name={name}
           rows={rows ?? 4}
           placeholder={placeholder}
@@ -236,9 +248,11 @@ function Field({
           dir={dir}
           className={`${baseClass} ${borderClass} resize-none`}
           aria-invalid={!!error}
+          aria-describedby={error ? `${name}-error` : undefined}
         />
       ) : (
         <input
+          id={name}
           type={type}
           name={name}
           placeholder={placeholder}
@@ -246,9 +260,14 @@ function Field({
           dir={dir}
           className={`${baseClass} ${borderClass}`}
           aria-invalid={!!error}
+          aria-describedby={error ? `${name}-error` : undefined}
         />
       )}
-      {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
+      {error && (
+        <p id={`${name}-error`} className="mt-1 text-xs text-red-500">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

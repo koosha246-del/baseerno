@@ -79,7 +79,12 @@ async function buildTurns(
       turns.push({ role: m.role, content: m.content });
     }
   }
-  turns.push({ role: "user", content: input.content });
+  // Only add the user message if it's not already in the history
+  // (it may have been persisted to DB before buildTurns was called).
+  const lastHistoryMsg = history[history.length - 1];
+  if (!lastHistoryMsg || lastHistoryMsg.content !== input.content || lastHistoryMsg.role !== "user") {
+    turns.push({ role: "user", content: input.content });
+  }
   return turns;
 }
 

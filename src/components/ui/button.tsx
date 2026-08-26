@@ -9,24 +9,30 @@ import { cn } from "@/lib/utils";
  * paired with a colored glow shadow for the premium CTA look.
  */
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md border border-transparent font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98] [&_svg]:size-5 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98] [&_svg]:size-5 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         brand:
-          "border-fg-primary bg-accent text-white shadow-md hover:-translate-y-0.5 hover:bg-accent-hover",
+          "bg-accent text-white shadow-sm hover:bg-accent-hover",
         solid:
-          "border-fg-primary bg-accent text-white shadow-sm hover:-translate-y-0.5 hover:bg-accent-hover",
+          "bg-accent text-white shadow-sm hover:bg-accent-hover",
         soft: "bg-accent-soft text-accent hover:bg-accent-softHover",
         outline:
           "border border-app-border bg-surface text-fg-primary hover:bg-surface-subtle hover:border-app-border-strong",
         ghost: "text-fg-primary hover:bg-surface-subtle",
         link: "text-accent underline-offset-4 hover:underline",
+        // Landing-page palette variants (Basir Academy branding)
+        "outline-navy":
+          "border-2 border-navy bg-transparent text-navy hover:bg-navy hover:text-white",
+        sun: "bg-sun text-navy shadow-sm hover:bg-sun/90",
       },
       size: {
         sm: "h-9 px-4 text-sm",
         md: "h-11 px-6 text-sm",
         lg: "h-14 px-8 text-base",
+        xl: "h-16 px-10 text-lg",
+        hero: "h-16 px-10 text-lg",
         icon: "size-11",
       },
     },

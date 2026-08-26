@@ -69,16 +69,25 @@ describe("csrf", () => {
         vi.unstubAllEnvs();
       });
 
-      it("always returns true regardless of origin", () => {
-        const req = new Request("https://localhost:3000/api/auth/login", {
-          headers: { origin: "https://evil-site.com" },
+      // Dev relaxation is deliberately NARROW (localhost-only): cross-origin
+      // requests from real networks must still be enforced, even in dev.
+      it("allows localhost origins regardless of host mismatch", () => {
+        const req = new Request("http://localhost:3000/api/auth/login", {
+          headers: { origin: "http://localhost:3001" },
         });
         expect(isSameOriginRequest(req)).toBe(true);
       });
 
-      it("always returns true even without any headers", () => {
-        const req = new Request("https://localhost:3000/api/auth/login");
-        expect(isSameOriginRequest(req)).toBe(true);
+      it("still enforces CSRF for non-localhost cross-site origins", () => {
+        const req = new Request("https://baseerno.ir/api/auth/login", {
+          headers: { origin: "https://evil-site.com" },
+        });
+        expect(isSameOriginRequest(req)).toBe(false);
+      });
+
+      it("rejects requests without any Origin/Referer headers", () => {
+        const req = new Request("http://localhost:3000/api/auth/login");
+        expect(isSameOriginRequest(req)).toBe(false);
       });
     });
   });

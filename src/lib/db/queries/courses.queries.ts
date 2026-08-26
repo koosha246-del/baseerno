@@ -25,20 +25,24 @@ import { repository } from "../repository";
 /**
  * Cached list of published courses (with mentor info).
  *
- * The cache key includes `take` (e.g. `courses:published:8` vs
- * `courses:published`), so the homepage and catalog never share a
+ * The cache key includes `take` and `skip` (e.g. `courses:published:8:0` vs
+ * `courses:published`), so different paginated pages never share a
  * wrong-sized result.
  */
-export async function getCachedPublishedCourses(take?: number) {
-  const key = take
-    ? CACHE_KEYS.publishedCoursesTake(take)
-    : CACHE_KEYS.publishedCourses;
+export async function getCachedPublishedCourses(take?: number, skip?: number) {
+  // Fold BOTH pagination params into the key — `take` alone is not enough:
+  // getCachedPublishedCourses(undefined, 10) must not collide with page 0.
+  const key =
+    CACHE_KEYS.publishedCourses +
+    (take ? `:${take}` : "") +
+    (skip ? `:${skip}` : "");
 
   return getOrSet(key, 300, () =>
     repository.listCourses({
       publishedOnly: true,
       includeMentor: true,
       take,
+      skip,
     }),
     [CACHE_TAGS.courses],
   );

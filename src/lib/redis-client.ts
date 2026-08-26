@@ -35,12 +35,14 @@ let cachedClient: RedisClient | null = null;
 let loadAttempted = false;
 let lastHealthCheck = 0;
 const HEALTH_CHECK_INTERVAL = 30_000;
+const RECONNECT_COOLDOWN = 10_000;
+let lastFailedAt = 0;
 
 export async function getRedisClient(): Promise<RedisClient | null> {
   const redisUrl = env.REDIS_URL;
   if (!redisUrl) return null;
 
-  if (loadAttempted && cachedClient) {
+  if (cachedClient) {
     if (Date.now() - lastHealthCheck > HEALTH_CHECK_INTERVAL) {
       lastHealthCheck = Date.now();
       try {
@@ -48,14 +50,19 @@ export async function getRedisClient(): Promise<RedisClient | null> {
       } catch {
         cachedClient = null;
         loadAttempted = false;
+        lastFailedAt = Date.now();
         return getRedisClient();
       }
     }
     return cachedClient;
   }
 
-  if (loadAttempted) return null;
-  loadAttempted = true;
+  // Allow reconnection after a cooldown period instead of permanently
+  // giving up. This handles transient Redis outages at startup.
+  if (loadAttempted) {
+    if (Date.now() - lastFailedAt < RECONNECT_COOLDOWN) return null;
+    loadAttempted = false;
+  }
 
   try {
     const redisModule = await import("redis").catch(() => null);
@@ -63,9 +70,29 @@ export async function getRedisClient(): Promise<RedisClient | null> {
     const { createClient } = redisModule as { createClient: unknown };
     if (typeof createClient !== "function") return null;
 
-    const client = createClient({ url: redisUrl });
-    client.on("error", (err: Error) => {
-      console.error("[redis] Connection error:", err.message);
+    const client = (
+      createClient as (opts: Record<string, unknown>) => {
+        connect(): Promise<unknown>;
+        on(event: string, handler: (...args: unknown[]) => void): void;
+      }
+    )({
+      url: redisUrl,
+      // Fail fast when Redis is unreachable — node-redis's default
+      // reconnectStrategy retries forever, which would hang callers
+      // (e.g. page prerendering at build time) until they time out.
+      // Instead: short connect timeout + max 3 quick retries, then let
+      // connect() reject so callers fall back gracefully.
+      socket: {
+        connectTimeout: 3_000,
+        reconnectStrategy: (retries: number) =>
+          retries > 2 ? new Error("Redis unreachable") : retries * 100,
+      },
+    }) ;
+    client.on("error", (err: unknown) => {
+      console.error(
+        "[redis] Connection error:",
+        err instanceof Error ? err.message : String(err),
+      );
     });
 
     await client.connect();
@@ -73,6 +100,8 @@ export async function getRedisClient(): Promise<RedisClient | null> {
     cachedClient = client as unknown as RedisClient;
     return cachedClient;
   } catch (error) {
+    loadAttempted = true;
+    lastFailedAt = Date.now();
     console.warn(
       "[redis] Failed to connect. Falling back.",
       error instanceof Error ? error.message : "",

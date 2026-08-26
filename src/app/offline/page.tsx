@@ -46,7 +46,7 @@ export default function OfflinePage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center bg-background">
+    <main id="main-content" className="flex min-h-screen items-center bg-background">
       <Container width="narrow" className="py-12">
         <div className="flex flex-col items-center text-center">
           {/* Icon */}

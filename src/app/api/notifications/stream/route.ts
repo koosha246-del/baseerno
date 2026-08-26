@@ -63,7 +63,7 @@ export async function GET(req: Request) {
       };
       cleanupRef = cleanup;
 
-      const unsubscribe = subscribeToUser(userId, write);
+      const unsubscribe = subscribeToUser(userId, write, cleanup);
 
       // Standard Next.js abort pattern: the platform aborts the request
       // when the client disconnects.

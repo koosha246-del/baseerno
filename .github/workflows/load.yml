@@ -27,7 +27,8 @@ jobs:
 
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/bayan_load
-      AUTH_SECRET: ci-load-secret-min-32-chars-long-placeholder
+      JWT_SECRET: ci-load-secret-min-32-chars-long-placeholder
+      PAYMENT_SIGNATURE_SECRET: ci-load-payment-secret-min-16
       NEXT_PUBLIC_SITE_URL: http://localhost:3000
       NEXT_PUBLIC_SITE_NAME: "بصیر نو"
       # No K6_EMAIL/K6_PASSWORD → auth/search/dashboard scenarios skip;

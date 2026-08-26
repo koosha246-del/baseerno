@@ -25,13 +25,27 @@ export function escapeHtml(s: string): string {
 /**
  * Strip HTML tags from a string, leaving only plain text.
  * Useful for search indexing and preview snippets.
+ * Handles attributes containing `>` characters.
  *
  * @example
  *   stripHtml("<p>Hello <b>world</b></p>")
  *   // → "Hello world"
  */
 export function stripHtml(s: string): string {
-  return s.replace(/<[^>]*>/g, "");
+  // Remove HTML comments
+  let result = s.replace(/<!--[\s\S]*?-->/g, "");
+  // Remove script/style content entirely
+  result = result.replace(/<script[\s\S]*?<\/script>/gi, "");
+  result = result.replace(/<style[\s\S]*?<\/style>/gi, "");
+  // Remove tags: match opening tag (with optional attributes) or closing tag
+  result = result.replace(/<[^>]*>/g, "");
+  // Decode common HTML entities
+  result = result.replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+  return result;
 }
 
 /**

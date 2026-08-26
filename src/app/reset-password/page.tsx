@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff, KeyRound, CheckCircle, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token") ?? "";
 
@@ -131,5 +131,19 @@ export default function ResetPasswordPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-background px-4">
+          <div className="size-8 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+        </div>
+      }
+    >
+      <ResetPasswordForm />
+    </Suspense>
   );
 }

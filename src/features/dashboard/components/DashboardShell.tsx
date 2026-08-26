@@ -51,7 +51,7 @@ function ShellInner({ children, user }: DashboardShellProps) {
           role={user.role}
           userId={user.id}
         />
-        <main className="flex-1 overflow-y-auto p-4 transition-[padding] duration-300 ease-luxury lg:p-6">
+        <main id="main-content" className="flex-1 overflow-y-auto p-4 transition-[padding] duration-300 ease-luxury lg:p-6">
           <div
             className={cn(
               "mx-auto w-full transition-all duration-300 ease-luxury",

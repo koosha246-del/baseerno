@@ -23,7 +23,6 @@ export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export interface ForgotPasswordResult {
   ok: true;
   message: string;
-  _devToken?: string;
 }
 
 export type ForgotPasswordResponse = ForgotPasswordResult;
@@ -52,13 +51,16 @@ export async function forgotPassword(
     resetUrl,
   });
 
-  // Only expose the raw token in non-production so developers can test
-  // the reset flow without a configured mail server. Never leak it in prod.
-  const isDev = !env.isProduction;
+  // In development only, log the reset URL so developers can test without
+  // a mail server. NEVER return the raw token in API responses — even in
+  // development — to prevent accidental leaks via staging/preview deployments.
+  if (env.isDevelopment) {
+    console.log(`[DEV] Password reset URL: ${resetUrl}`);
+  }
+
   return {
     ok: true,
     message: "لینک بازیابی رمز عبور به ایمیل شما ارسال شد.",
-    ...(isDev ? { _devToken: reset.token } : {}),
   };
 }
 
@@ -67,6 +69,5 @@ export function buildUseCaseResponse(result: ForgotPasswordResponse): NextRespon
   return NextResponse.json({
     ok: true,
     message: result.message,
-    ...(result._devToken ? { _devToken: result._devToken } : {}),
   });
 }

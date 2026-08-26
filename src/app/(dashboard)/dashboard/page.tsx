@@ -77,8 +77,7 @@ export default async function DashboardPage() {
         repository.listEnrollments(user.id, { take: 5 }),
         repository.listGrades(user.id),
         repository.listCertificates(user.id),
-        repository.listCourses({ publishedOnly: true, take: 200 }),
-        repository.countEnrollmentsByStatus(),
+        repository.listCourses({ publishedOnly: true, take: 200 }),        repository.countEnrollmentsByStatus(),
         repository.averageScoreForUser(user.id),
       ]);
 

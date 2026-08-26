@@ -23,11 +23,21 @@ export async function GET(
       );
     }
 
-    // Teachers & admins can see all lessons, students only published
-    const lessons =
-      user.role === "ADMIN" || user.role === "TEACHER"
-        ? await repository.listAllLessons(courseId)
-        : await repository.listLessons(courseId);
+    // Teachers can see all lessons only for courses they mentor;
+    // students and other teachers see only published lessons.
+    let lessons;
+    if (user.role === "ADMIN") {
+      lessons = await repository.listAllLessons(courseId);
+    } else if (user.role === "TEACHER") {
+      const course = await repository.findCourseById(courseId);
+      if (course?.mentorId === user.id) {
+        lessons = await repository.listAllLessons(courseId);
+      } else {
+        lessons = await repository.listLessons(courseId);
+      }
+    } else {
+      lessons = await repository.listLessons(courseId);
+    }
 
     return NextResponse.json(lessons);
   } catch (err) {

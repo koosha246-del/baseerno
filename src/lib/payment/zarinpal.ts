@@ -60,7 +60,7 @@ export interface ZarinpalRequestResult {
 }
 
 export interface ZarinpalVerifyResult {
-  refId: number;
+  refId: number | null;
   cardPan?: string;
   fee?: number;
 }
@@ -169,7 +169,7 @@ export async function zarinpalVerifyPayment(input: {
   }
 
   return {
-    refId: json.data?.ref_id ?? 0,
+    refId: json.data?.ref_id ?? null,
     cardPan: json.data?.card_pan,
     fee: json.data?.fee,
   };

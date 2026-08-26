@@ -30,6 +30,7 @@ export async function countEnrollmentsByStatus(): Promise<Record<string, number>
 export async function countEnrollments(
   opts?: {
     userId?: string;
+    courseId?: string;
     status?: string;
   },
   db: typeof prisma = prisma,
@@ -37,6 +38,7 @@ export async function countEnrollments(
   return db.enrollment.count({
     where: {
       ...(opts?.userId ? { userId: opts.userId } : {}),
+      ...(opts?.courseId ? { courseId: opts.courseId } : {}),
       ...(opts?.status
         ? { status: opts.status as "ACTIVE" | "COMPLETED" | "DROPPED" }
         : {}),
@@ -46,12 +48,30 @@ export async function countEnrollments(
 
 export async function countUniqueStudentsForCourses(courseIds: string[]): Promise<number> {
   if (courseIds.length === 0) return 0;
-  const r = await prisma.enrollment.findMany({
+  // SQL COUNT(DISTINCT) — avoids materializing every enrollment row.
+  const groups = await prisma.enrollment.groupBy({
+    by: ["userId"],
     where: { courseId: { in: courseIds } },
-    select: { userId: true },
-    distinct: ["userId"],
   });
-  return r.length;
+  return groups.length;
+}
+
+/**
+ * Count enrollments per course in a single grouped query — avoids pulling
+ * the entire enrollment table into memory. Returns a Map of courseId → count.
+ */
+export async function countEnrollmentsPerCourse(
+  courseIds: string[],
+): Promise<Map<string, number>> {
+  if (courseIds.length === 0) return new Map();
+  const groups = await prisma.enrollment.groupBy({
+    by: ["courseId"],
+    where: { courseId: { in: courseIds } },
+    _count: { _all: true },
+  });
+  const out = new Map<string, number>();
+  for (const g of groups) out.set(g.courseId, g._count._all);
+  return out;
 }
 
 export async function listEnrollmentsForCourse(courseId: string) {
@@ -86,6 +106,7 @@ export async function enrollmentsByMonth(db: typeof prisma = prisma) {
   >`
     SELECT date_trunc('month', "enrolledAt") AS month, COUNT(*)::bigint AS count
     FROM "Enrollment"
+    WHERE "deletedAt" IS NULL
     GROUP BY date_trunc('month', "enrolledAt")
     ORDER BY month ASC
   `;

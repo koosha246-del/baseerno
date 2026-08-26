@@ -40,6 +40,11 @@ export function GoogleAnalytics() {
       });
     `;
     document.head.appendChild(inline);
+
+    return () => {
+      s.remove();
+      inline.remove();
+    };
   }, []);
 
   return null;

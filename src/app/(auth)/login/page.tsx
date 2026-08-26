@@ -16,6 +16,8 @@ export default function LoginPage() {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
+  const [twoFactorCode, setTwoFactorCode] = useState("");
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -26,28 +28,37 @@ export default function LoginPage() {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 20_000);
 
+      const payload: Record<string, string> = { email, password };
+      if (requiresTwoFactor) {
+        payload.twoFactorCode = twoFactorCode;
+      }
+
       let res: Response;
       try {
         res = await fetch("/api/auth/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
+          body: JSON.stringify(payload),
           signal: controller.signal,
         });
       } finally {
         clearTimeout(timeout);
       }
 
-      // Parse defensively — a non-JSON body (e.g. a proxy error page) must
-      // never throw here, or the button would stay stuck on "در حال ورود".
-      let data: { user?: unknown } | ApiError = {};
+      let data: { user?: unknown; requiresTwoFactor?: boolean } | ApiError = {};
       try {
-        data = (await res.json()) as { user?: unknown } | ApiError;
+        data = (await res.json()) as typeof data;
       } catch {
         data = {};
       }
 
       if (!res.ok) {
+        if (res.status === 403 && "requiresTwoFactor" in data && data.requiresTwoFactor) {
+          setRequiresTwoFactor(true);
+          setError("");
+          setLoading(false);
+          return;
+        }
         setError((data as ApiError).error ?? "خطایی رخ داد. لطفاً دوباره تلاش کنید.");
         return;
       }
@@ -98,7 +109,11 @@ export default function LoginPage() {
 
           {/* Email */}
           <div className="mb-4">
+            <label htmlFor="login-email" className="sr-only">
+              ایمیل
+            </label>
             <input
+              id="login-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -110,9 +125,13 @@ export default function LoginPage() {
           </div>
 
           {/* Password */}
-          <div className="mb-6">
+          <div className="mb-4">
+            <label htmlFor="login-password" className="sr-only">
+              رمز عبور
+            </label>
             <div className="relative">
               <input
+                id="login-password"
                 type={showPass ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -130,6 +149,28 @@ export default function LoginPage() {
               </button>
             </div>
           </div>
+
+          {/* 2FA Code */}
+          {requiresTwoFactor ? (
+            <div className="mb-6">
+              <label htmlFor="login-2fa" className="sr-only">
+                کد تأیید دومرحله‌ای
+              </label>
+              <input
+                id="login-2fa"
+                type="text"
+                value={twoFactorCode}
+                onChange={(e) => setTwoFactorCode(e.target.value)}
+                placeholder="کد تأیید دومرحله‌ای (۶ رقمی) *"
+                dir="ltr"
+                maxLength={6}
+                className="w-full rounded-xl border border-app-border bg-surface px-4 py-3 text-sm text-fg-primary transition-colors duration-base ease-luxury placeholder:text-fg-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                required
+              />
+            </div>
+          ) : (
+            <div className="mb-6" />
+          )}
 
           {/* Submit */}
           <Button

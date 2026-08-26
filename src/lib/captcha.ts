@@ -36,7 +36,10 @@ export async function verifyCaptcha(token: string | undefined): Promise<boolean>
     const response = await fetch("https://www.google.com/recaptcha/api/siteverify", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: `secret=${env.RECAPTCHA_SECRET_KEY}&response=${token}`,
+      body: new URLSearchParams({
+        secret: env.RECAPTCHA_SECRET_KEY!,
+        response: token,
+      }).toString(),
     });
     const data = await response.json();
     return data.success === true;

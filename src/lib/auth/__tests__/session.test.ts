@@ -59,6 +59,7 @@ describe("session", () => {
         sub: testUser.id,
         role: testUser.role,
         email: testUser.email,
+        ver: 0,
       });
       expect(mockCookieStore.set).toHaveBeenCalledWith(
         "bn_session",
@@ -126,6 +127,7 @@ describe("session", () => {
         bio: null,
         createdAt: "2024-01-01T00:00:00.000Z",
         updatedAt: "2024-01-01T00:00:00.000Z",
+        tokenVersion: 0,
       });
 
       const result = await getCurrentUser();

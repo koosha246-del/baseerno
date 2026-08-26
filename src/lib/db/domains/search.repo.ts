@@ -118,6 +118,7 @@ export async function searchMessages(userId: string, query: string, limit = 10) 
       SELECT id, body, "senderId", "receiverId", "sentAt"
       FROM "Message"
       WHERE ("senderId" = $1 OR "receiverId" = $1)
+        AND "deletedAt" IS NULL
         AND to_tsvector('simple', body) @@ plainto_tsquery('simple', $2)
       ORDER BY ts_rank(to_tsvector('simple', body), plainto_tsquery('simple', $2)) DESC
       LIMIT $3
@@ -155,7 +156,8 @@ export async function searchUsers(query: string, limit = 10) {
     const sql = `
       SELECT id, name, email, role
       FROM "User"
-      WHERE to_tsvector('simple', name || ' ' || email) @@ plainto_tsquery('simple', $1)
+      WHERE "deletedAt" IS NULL
+        AND to_tsvector('simple', name || ' ' || email) @@ plainto_tsquery('simple', $1)
       ORDER BY ts_rank(to_tsvector('simple', name || ' ' || email), plainto_tsquery('simple', $1)) DESC
       LIMIT $2
     `;
@@ -270,25 +272,32 @@ export async function syncCourseSearch(courseId?: string) {
   // Bulk mode rebuilds from scratch (clears first, so stale docs for
   // unpublished/hard-deleted courses can't survive); per-course mode
   // upserts incrementally. Failures are logged, never thrown.
-  if (isSearchEnabled() && publishedCourses.length > 0) {
+  // NOTE: the clear runs even when zero published courses remain —
+  // skipping it would leave the last unpublished/deleted course
+  // searchable forever.
+  if (isSearchEnabled()) {
     try {
       const { clearCoursesIndex, indexCourses } = await import("@/lib/search/client");
       if (!courseId) {
         await clearCoursesIndex();
       }
-      await indexCourses(publishedCourses.map(toIndexedCourse));
+      if (publishedCourses.length > 0) {
+        await indexCourses(publishedCourses.map(toIndexedCourse));
+      }
     } catch (err) {
       console.error("[search] Failed to mirror courses into index:", err);
     }
   }
 
   // ── Bulk-only: purge FTS orphans ───────────────────────────────
-  // Rows whose course is no longer published (or was hard-deleted
-  // without firing the event) must not stay findable via fallback FTS —
-  // the fallback query has no `published` filter.
+  // Rows whose course is no longer published (or was hard- or soft-
+  // deleted without firing the event) must not stay findable via
+  // fallback FTS — the fallback query has no `published` filter.
   if (!courseId) {
     await prisma.$executeRawUnsafe(
-      `DELETE FROM "CourseSearch" WHERE id NOT IN (SELECT id FROM "Course" WHERE published = true)`,
+      `DELETE FROM "CourseSearch" WHERE id NOT IN (
+         SELECT id FROM "Course" WHERE published = true AND "deletedAt" IS NULL
+       )`,
     );
   }
 

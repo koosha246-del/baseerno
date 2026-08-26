@@ -201,7 +201,29 @@ export function checkRateLimit(
  * 2. `x-real-ip` header.
  * 3. `cf-connecting-ip` (Cloudflare).
  * 4. Internal IP fallback.
+ *
+ * SECURITY: these headers are only trustworthy when the app sits behind a
+ * proxy/CDN that strips client-supplied values (Vercel, Railway, Cloudflare
+ * do this by default). To blunt naive spoofing (attacker rotating a fake
+ * header per request to reset the limit bucket), every extracted value is
+ * validated as a plausible IP address — non-IP garbage is ignored and the
+ * caller falls back to a shared "anonymous" bucket.
  */
+const IPV4_RE = /^(\d{1,3}\.){3}\d{1,3}$/;
+const IPV6_RE = /^[0-9a-fA-F:]{2,45}$/;
+
+function isPlausibleIp(value: string): boolean {
+  const v = value.trim();
+  if (v.length === 0 || v.length > 45) return false;
+  if (IPV4_RE.test(v)) {
+    // Reject octets > 255 and leading-zero octal ambiguity.
+    const octets = v.split(".");
+    return octets.every((o) => Number(o) <= 255);
+  }
+  if (v.includes(":") && IPV6_RE.test(v)) return true;
+  return false;
+}
+
 export function getClientIdentifier(req: Request | undefined): string {
   // Defensive: tests occasionally call the wrapped handler with no args
   // (or with a stub Request missing `headers`). Treat as a single shared
@@ -212,14 +234,15 @@ export function getClientIdentifier(req: Request | undefined): string {
   const forwarded = req.headers.get("x-forwarded-for");
   if (forwarded) {
     // Take the first IP in the chain (the actual client).
-    return forwarded.split(",")[0]?.trim() ?? "unknown";
+    const first = forwarded.split(",")[0]?.trim() ?? "";
+    if (isPlausibleIp(first)) return first;
   }
 
   const realIp = req.headers.get("x-real-ip");
-  if (realIp) return realIp;
+  if (realIp && isPlausibleIp(realIp)) return realIp.trim();
 
   const cfIp = req.headers.get("cf-connecting-ip");
-  if (cfIp) return cfIp;
+  if (cfIp && isPlausibleIp(cfIp)) return cfIp.trim();
 
   return "local";
 }

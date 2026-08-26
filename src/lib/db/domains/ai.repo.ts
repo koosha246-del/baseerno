@@ -44,11 +44,15 @@ export async function listChatMessages(
   conversationId: string,
   opts?: { take?: number },
 ) {
-  return prisma.chatMessage.findMany({
+  const take = opts?.take ?? 50;
+  // Fetch the LAST `take` messages (desc) then re-ascending so the LLM
+  // context window always contains the most recent turns, not the oldest.
+  const rows = await prisma.chatMessage.findMany({
     where: { conversationId },
-    orderBy: { createdAt: "asc" },
-    take: opts?.take ?? 50,
+    orderBy: { createdAt: "desc" },
+    take,
   });
+  return rows.reverse();
 }
 
 /**

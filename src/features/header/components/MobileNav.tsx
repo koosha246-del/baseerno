@@ -26,7 +26,7 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { headerData, headerPhone } from "../constants";
-import { Logo } from "./Logo";
+import { Logo } from "@/components/shared/Logo";
 
 interface MobileNavProps {
   className?: string;

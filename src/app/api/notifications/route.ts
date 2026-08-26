@@ -12,11 +12,20 @@ async function listNotificationsHandler(req: Request) {
   }
 
   const { searchParams } = new URL(req.url);
-  const take = Number(searchParams.get("take") ?? 20);
+  // Clamp take: integer (Prisma take is Int), 1..100, default 20 when absent.
+  // Number(null)===0 made the default unreachable — parse explicitly.
+  const rawTake = searchParams.get("take");
+  const parsedTake = rawTake === null ? NaN : Number.parseInt(rawTake, 10);
+  const take = Number.isNaN(parsedTake)
+    ? 20
+    : Math.min(Math.max(parsedTake, 1), 100);
   const unreadOnly = searchParams.get("unread") === "true";
 
-  const notifications = await repository.listNotifications(user.id, { take, unreadOnly });
-  const unreadCount = await repository.countUnreadNotifications(user.id);
+  // list + count are independent — run in parallel (this endpoint is polled).
+  const [notifications, unreadCount] = await Promise.all([
+    repository.listNotifications(user.id, { take, unreadOnly }),
+    repository.countUnreadNotifications(user.id),
+  ]);
 
   return NextResponse.json({ notifications, unreadCount });
 }

@@ -45,6 +45,13 @@ export const getCachedCountPayments = unstable_cache(
   { revalidate: 30, tags: ["payments"] },
 );
 
+export const getCachedCountPaymentsByStatus = unstable_cache(
+  async (status: "PAID" | "PENDING" | "FAILED") =>
+    runOnReplica((db) => repository.countPayments({ status }, db)),
+  ["dashboard", "payments-count-by-status"],
+  { revalidate: 30, tags: ["payments"] },
+);
+
 export const getCachedCountPaymentsForCourses = unstable_cache(
   async (courseIds: string[], status?: "PAID" | "PENDING" | "FAILED") =>
     runOnReplica((db) => repository.countPaymentsForCourses(courseIds, status, db)),
@@ -64,6 +71,7 @@ export async function getAdminStatsBundle() {
     courseCount,
     enrollmentCount,
     paidPaymentCount,
+    pendingPaymentCount,
     totalRevenue,
     enrollmentsByMonth,
     revenueByMonth,
@@ -72,14 +80,15 @@ export async function getAdminStatsBundle() {
     getCachedRoleCounts(),
     getCachedCountCourses(),
     getCachedCountEnrollments(),
-    runOnReplica((db) => repository.countPayments({ status: "PAID" }, db)),
+    getCachedCountPaymentsByStatus("PAID"),
+    // Count PENDING directly — deriving it as total-minus-paid silently
+    // counts FAILED payments into the "pending" KPI.
+    getCachedCountPaymentsByStatus("PENDING"),
     getCachedTotalRevenue(),
     getCachedEnrollmentsByMonth(),
     getCachedRevenueByMonth(),
     getCachedTopCourses(),
   ]);
-  const totalPaymentCount = await getCachedCountPayments();
-  const pendingPaymentCount = totalPaymentCount - paidPaymentCount;
   return {
     roleCounts,
     courseCount,

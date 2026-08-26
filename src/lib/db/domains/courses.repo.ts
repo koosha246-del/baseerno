@@ -12,11 +12,14 @@ export async function listCourses(opts?: {
   skip?: number;
   includeMentor?: boolean;
   includeEnrollmentCount?: boolean;
+  /** Restrict to specific course ids — avoids fetching the full catalog. */
+  ids?: string[];
 }) {
   return prisma.course.findMany({
     where: {
       ...(opts?.publishedOnly ? { published: true } : {}),
       ...(opts?.mentorId ? { mentorId: opts.mentorId } : {}),
+      ...(opts?.ids ? { id: { in: opts.ids } } : {}),
     },
     orderBy: { createdAt: "desc" },
     take: opts?.take,
@@ -117,6 +120,24 @@ export async function listLessons(courseId: string) {
   });
 }
 
+/** Public preview lessons — published + isFree, videoUrl stripped. */
+export async function listFreeLessons(courseId: string) {
+  const lessons = await prisma.lesson.findMany({
+    where: { courseId, published: true, isFree: true },
+    orderBy: { sortOrder: "asc" },
+  });
+  return lessons.map((l) => ({
+    id: l.id,
+    courseId: l.courseId,
+    title: l.title,
+    type: l.type,
+    durationMinutes: l.durationMinutes,
+    sortOrder: l.sortOrder,
+    isFree: true,
+    published: true,
+  }));
+}
+
 export async function listAllLessons(courseId: string) {
   return prisma.lesson.findMany({
     where: { courseId },
@@ -188,7 +209,10 @@ export async function updateLesson(
 }
 
 export async function deleteLesson(id: string) {
-  return prisma.lesson.delete({ where: { id } });
+  return prisma.lesson.update({
+    where: { id },
+    data: { deletedAt: new Date() },
+  });
 }
 
 export async function countLessons(courseId: string): Promise<number> {

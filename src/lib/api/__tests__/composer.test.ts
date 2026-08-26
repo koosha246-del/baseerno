@@ -40,6 +40,7 @@ const baseUser = {
   bio: null,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
+  tokenVersion: 0,
 };
 const STUDENT = { ...baseUser, role: "STUDENT" as const };
 const TEACHER = { ...baseUser, id: "u_t", role: "TEACHER" as const };

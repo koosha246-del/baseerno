@@ -40,20 +40,28 @@ function allowedOrigins(): Set<string> {
  * Returns `true` when the request is allowed, `false` when it should be rejected.
  */
 export function isSameOriginRequest(req: Request): boolean {
-  // Skip origin check in local development — same-site cookie is enough.
-  // Read NODE_ENV at call-time so tests can flip the flag per case.
-  if (process.env.NODE_ENV !== "production") return true;
-
   const origin = req.headers.get("origin");
   const referer = req.headers.get("referer");
+  const url = origin ?? referer;
+
+  // In development, allow localhost requests (varying origin formats).
+  // Staging/preview deployments that handle real user data enforce CSRF.
+  if (process.env.NODE_ENV !== "production" && url) {
+    try {
+      const parsed = new URL(url);
+      if (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1") {
+        return true;
+      }
+    } catch { /* fall through to enforce CSRF */ }
+  }
 
   const allowed = allowedOrigins();
 
   // Prefer Origin header.
   if (origin) {
     try {
-      const url = new URL(origin);
-      return allowed.has(url.host);
+      const parsedOrigin = new URL(origin);
+      return allowed.has(parsedOrigin.host);
     } catch {
       return false;
     }
@@ -62,8 +70,8 @@ export function isSameOriginRequest(req: Request): boolean {
   // Fall back to Referer header.
   if (referer) {
     try {
-      const url = new URL(referer);
-      return allowed.has(url.host);
+      const parsedReferer = new URL(referer);
+      return allowed.has(parsedReferer.host);
     } catch {
       return false;
     }

@@ -27,10 +27,53 @@ const createSchema = z.object({
 async function listCoursesHandler(req: Request) {
   const { searchParams } = new URL(req.url);
   const mentorId = searchParams.get("mentorId") ?? undefined;
-  const publishedOnly = searchParams.get("published") === "true";
 
-  const courses = await repository.listCourses({ mentorId, publishedOnly });
-  return NextResponse.json({ courses });
+  // Public listing is published-only by default. Drafts are exposed only
+  // to authenticated course owners / admins — an anonymous caller can
+  // never request `?published=false`.
+  const requestedPublished = searchParams.get("published");
+  const wantsDrafts = requestedPublished === "false";
+
+  // Pagination: default 20, hard cap 100, integers only. List views select
+  // only the columns the catalog needs — skips shipping `description`.
+  const rawTake = searchParams.get("take");
+  const parsedTake = rawTake === null ? NaN : Number.parseInt(rawTake, 10);
+  const take = Number.isNaN(parsedTake)
+    ? 20
+    : Math.min(Math.max(parsedTake, 1), 100);
+  const rawSkip = Number.parseInt(searchParams.get("skip") ?? "0", 10);
+  const skip = Number.isNaN(rawSkip) || rawSkip < 0 ? 0 : rawSkip;
+
+  if (wantsDrafts) {
+    const user = await getCurrentUser();
+    if (!user || (user.role !== "TEACHER" && user.role !== "ADMIN")) {
+      return NextResponse.json(
+        { error: "دسترسی غیرمجاز." },
+        { status: 403 },
+      );
+    }
+    // A TEACHER may only list their own drafts unless explicitly scoping
+    // to a mentorId they own; admins may see everything.
+    const effectiveMentorId =
+      user.role === "ADMIN" ? mentorId : user.id;
+    const courses = await repository.listCourses({
+      mentorId: effectiveMentorId,
+      publishedOnly: false,
+      take,
+      skip,
+    });
+    return NextResponse.json({ courses });
+  }
+
+  const courses = await repository.listCourses({
+    mentorId,
+    publishedOnly: true,
+    take,
+    skip,
+  });
+  return NextResponse.json({ courses }, {
+    headers: { "Cache-Control": "s-maxage=300, stale-while-revalidate" },
+  });
 }
 
 async function createCourseHandler(req: Request) {

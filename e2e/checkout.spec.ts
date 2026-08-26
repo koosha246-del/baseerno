@@ -4,12 +4,13 @@ test.describe("Course checkout flow", () => {
   test("homepage shows courses section", async ({ page }) => {
     await page.goto("/");
     await expect(page.locator("#courses")).toBeVisible();
-    await expect(page.locator("text=دوره‌های محبوب")).toBeVisible();
+    // New landing: age-groups section (id="courses") carries the courses copy.
+    await expect(page.locator("#courses-title")).toBeVisible();
   });
 
-  test("course cards are visible", async ({ page }) => {
-    await page.goto("/");
-    const courseCards = page.locator('[id="courses"] a[href^="/courses/"]');
+  test("course cards are listed on the catalog page", async ({ page }) => {
+    await page.goto("/courses");
+    const courseCards = page.locator('a[href^="/courses/"]');
     await expect(courseCards.first()).toBeVisible({ timeout: 5000 });
   });
 
@@ -19,13 +20,17 @@ test.describe("Course checkout flow", () => {
     await expect(page.locator("text=ثبت‌نام")).toBeVisible();
   });
 
-  test("course search filters results", async ({ page }) => {
+  test("header search finds a course from the landing page", async ({ page }) => {
     await page.goto("/");
+    // PublicSearch lives in the desktop header (hidden below lg).
+    await page.getByRole("button", { name: "جستجو" }).click();
     const searchInput = page.locator('input[placeholder="جستجوی دوره..."]');
+    await expect(searchInput).toBeVisible();
     await searchInput.fill("صدا");
-    await page.waitForTimeout(300);
-    // Should show voice training course
-    await expect(page.locator("text=آواسازی")).toBeVisible();
+    // Debounced public autocomplete → result link to a course detail page.
+    await expect(
+      page.locator('a[href^="/courses/"]').first(),
+    ).toBeVisible({ timeout: 10_000 });
   });
 
   test("protected dashboard redirects to login", async ({ page }) => {

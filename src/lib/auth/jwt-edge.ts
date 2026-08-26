@@ -11,10 +11,13 @@
 
 // ─── Base64URL helpers ─────────────────────────────────────────────
 
-function base64UrlToUint8Array(base64Url: string): Uint8Array<ArrayBuffer> {
+function base64UrlToBase64(base64Url: string): string {
   const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-  const padding = "=".repeat((4 - (base64.length % 4)) % 4);
-  const binary = atob(base64 + padding);
+  return base64 + "=".repeat((4 - (base64.length % 4)) % 4);
+}
+
+function base64UrlToUint8Array(base64Url: string): Uint8Array<ArrayBuffer> {
+  const binary = atob(base64UrlToBase64(base64Url));
   // Explicit ArrayBuffer (not ArrayBufferLike) so the result is
   // assignable to `BufferSource` in TS 5.7+'s strict WebCrypto types.
   const bytes = new Uint8Array(new ArrayBuffer(binary.length));
@@ -37,12 +40,13 @@ export interface EdgeAuthToken {
 // ─── Secret import ─────────────────────────────────────────────────
 
 let cachedKey: CryptoKey | null = null;
+let cachedSecret: string | null = null;
 
 async function getKey(secret: string): Promise<CryptoKey> {
-  if (cachedKey) return cachedKey;
+  if (cachedKey && cachedSecret === secret) return cachedKey;
 
   const encoder = new TextEncoder();
-  cachedKey = await crypto.subtle.importKey(
+  const key = await crypto.subtle.importKey(
     "raw",
     encoder.encode(secret),
     { name: "HMAC", hash: "SHA-256" },
@@ -50,6 +54,8 @@ async function getKey(secret: string): Promise<CryptoKey> {
     ["verify"],
   );
 
+  cachedKey = key;
+  cachedSecret = secret;
   return cachedKey;
 }
 
@@ -79,7 +85,7 @@ export async function verifyTokenEdge(
     const [headerB64, payloadB64, signatureB64] = parts as [string, string, string];
 
     // 2. Validate header algorithm
-    const header = JSON.parse(atob(headerB64));
+    const header = JSON.parse(atob(base64UrlToBase64(headerB64)));
     if (header.alg !== "HS256") return null;
 
     // 3. Read the secret from environment
@@ -107,7 +113,9 @@ export async function verifyTokenEdge(
     if (!valid) return null;
 
     // 6. Decode and validate payload
-    const payload: Record<string, unknown> = JSON.parse(atob(payloadB64));
+    const payload: Record<string, unknown> = JSON.parse(
+      atob(base64UrlToBase64(payloadB64)),
+    );
 
     // Check expiration
     if (typeof payload.exp === "number" && payload.exp < Date.now() / 1000) {

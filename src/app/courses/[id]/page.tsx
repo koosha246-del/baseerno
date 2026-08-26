@@ -48,7 +48,18 @@ export async function generateMetadata({
   return {
     title: course.title,
     description: course.subtitle,
+    alternates: {
+      canonical: `/courses/${id}`,
+    },
     openGraph: {
+      type: "article",
+      url: `${siteConfig.url}/courses/${id}`,
+      title: `${course.title} | ${siteConfig.name}`,
+      description: course.subtitle,
+      siteName: siteConfig.name,
+    },
+    twitter: {
+      card: "summary_large_image",
       title: `${course.title} | ${siteConfig.name}`,
       description: course.subtitle,
     },
@@ -73,7 +84,7 @@ export default async function CourseDetailPage({
   if (!course) notFound();
 
   return (
-    <main className="bg-surface-muted pb-20 pt-[calc(var(--header-h)+1.5rem)]">
+    <main id="main-content" className="bg-surface-muted pb-20 pt-[calc(var(--header-h)+1.5rem)]">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{

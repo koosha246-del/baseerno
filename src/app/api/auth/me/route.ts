@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/session";
-import { withRateLimit, handleApiError } from "@/lib/api-middleware";
+import { withRateLimit } from "@/lib/api-middleware";
 import { RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
 
 async function handler() {
@@ -12,13 +12,6 @@ async function handler() {
 }
 
 /** READ: max=60, burst=10 per minute. */
-export const GET = withRateLimit(async () => {
-  const correlationId = crypto.randomUUID();
-  try {
-    return await handler();
-  } catch (error) {
-    return handleApiError(error, correlationId);
-  }
-}, RATE_LIMIT_PRESETS.READ, {
+export const GET = withRateLimit(handler, RATE_LIMIT_PRESETS.READ, {
   keyPrefix: "auth:me",
 });

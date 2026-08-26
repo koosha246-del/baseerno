@@ -38,20 +38,40 @@ export async function POST(req: Request) {
 
   const parsed = issueSchema.safeParse(body);
   if (!parsed.success) {
+    const first = parsed.error.issues[0];
     return NextResponse.json(
-      { error: "داده‌های نامعتبر", details: parsed.error.flatten() },
+      { error: first?.message ?? "داده‌های نامعتبر" },
       { status: 422 },
     );
+  }
+
+  const { userId, courseId, enrollmentId } = parsed.data;
+
+  // Consistency + ownership: the enrollment must exist, belong to the
+  // given user and course, and (for teachers) the course must be theirs.
+  const enrollment = await repository.findEnrollment(userId, courseId);
+  if (!enrollment || enrollment.id !== enrollmentId) {
+    return NextResponse.json(
+      { error: "ثبت‌نام مطابقت ندارد." },
+      { status: 422 },
+    );
+  }
+
+  if (user.role === "TEACHER") {
+    const course = await repository.findCourseById(courseId);
+    if (!course || course.mentorId !== user.id) {
+      return NextResponse.json({ error: "دسترسی غیرمجاز" }, { status: 403 });
+    }
   }
 
   const certificate = await repository.issueCertificate(parsed.data);
 
   // Event bus: sends the student notification AND revalidates the
   // certificates / user / notifications cache tags (events.ts).
-  const course = await repository.findCourseById(parsed.data.courseId);
+  const course = await repository.findCourseById(courseId);
   await publish({
     type: "certificate:issued",
-    userId: parsed.data.userId,
+    userId,
     courseName: course?.title ?? "دوره",
   });
 

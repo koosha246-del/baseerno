@@ -8,6 +8,7 @@
 
 import { z } from "zod";
 import { NextResponse } from "next/server";
+import { timingSafeEqual } from "node:crypto";
 import { repository } from "@/lib/db/repository";
 import { verifyPassword } from "@/lib/auth/password";
 import { setSession } from "@/lib/auth/session";
@@ -71,19 +72,24 @@ export async function loginUser(input: LoginInput): Promise<LoginResponse> {
     // failed or found nothing).
     if (env.demoMode) {
       const demo = findDemoAccount(input.email);
-      if (demo && input.password === demo.password) {
-        const safeUser = demoAccountToSafeUser(demo);
-        await setSession(safeUser);
-        await publish({ type: "user:login", userId: demo.id, email: demo.email });
-        return {
-          ok: true,
-          user: {
-            id: demo.id,
-            name: demo.name,
-            email: demo.email,
-            role: demo.role,
-          },
-        };
+      if (demo) {
+        const inputBuf = Buffer.from(input.password, "utf8");
+        const demoBuf = Buffer.from(demo.password, "utf8");
+        const passwordMatch = inputBuf.length === demoBuf.length && timingSafeEqual(inputBuf, demoBuf);
+        if (passwordMatch) {
+          const safeUser = demoAccountToSafeUser(demo);
+          await setSession(safeUser);
+          await publish({ type: "user:login", userId: demo.id, email: demo.email });
+          return {
+            ok: true,
+            user: {
+              id: demo.id,
+              name: demo.name,
+              email: demo.email,
+              role: demo.role,
+            },
+          };
+        }
       }
     }
     incr("auth:failed");

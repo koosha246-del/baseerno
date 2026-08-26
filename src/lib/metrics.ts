@@ -31,13 +31,14 @@ interface HistogramEntry {
   totalMs: number;
   maxMs: number;
   lastUpdated: number;
+  samples: number[];
 }
 
 const counters = new Map<string, CounterEntry>();
 const histograms = new Map<string, HistogramEntry>();
 
 const MAX_ENTRIES = 500;
-const MAX_HISTOGRAM_SAMPLES = 10_000;
+const MAX_SAMPLES = 1000;
 
 /** Increment a named counter (default by 1). */
 export function incr(name: string, by = 1): void {
@@ -55,11 +56,20 @@ export function observe(name: string, ms: number): void {
     totalMs: 0,
     maxMs: 0,
     lastUpdated: Date.now(),
+    samples: [],
   };
   entry.count += 1;
   entry.totalMs += ms;
   entry.maxMs = Math.max(entry.maxMs, ms);
   entry.lastUpdated = Date.now();
+  // Reservoir sampling: keep up to MAX_SAMPLES evenly distributed
+  if (entry.samples.length < MAX_SAMPLES) {
+    entry.samples.push(ms);
+  } else {
+    // Replace a random entry to maintain a representative sample
+    const idx = Math.floor(Math.random() * entry.samples.length);
+    entry.samples[idx] = ms;
+  }
   histograms.set(name, entry);
   evictIfNeeded();
 }
@@ -101,13 +111,9 @@ export function snapshotMetrics(reset = false): MetricsSnapshot {
 
   const histOut: Record<string, MetricsSnapshot["histograms"][string]> = {};
   for (const [k, v] of histograms) {
-    // We only keep aggregate stats; percentile precision is approximate
-    // for the max samples window (fine for operational signals).
     const avgMs = v.count > 0 ? v.totalMs / v.count : 0;
-    // approxP95Ms = midpoint between avg and max — a cheap, honest proxy
-    // for the p95 when we don't retain the full sample list. Dashboards
-    // should treat it as a trend signal, not an exact percentile.
-    const approxP95Ms = avgMs + (v.maxMs - avgMs) * 0.5;
+    // Use reservoir samples to compute actual P95
+    const approxP95Ms = v.samples.length > 0 ? percentile(v.samples, 95) : avgMs;
     histOut[k] = {
       count: v.count,
       avgMs: Math.round(avgMs * 10) / 10,

@@ -16,6 +16,7 @@ export interface SafeUser {
   avatar: string | null;
   phone: string | null;
   bio: string | null;
+  tokenVersion: number;
   createdAt: string;
   updatedAt: string;
 }

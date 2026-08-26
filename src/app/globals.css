@@ -21,39 +21,46 @@
      and made the variable invalid at computed-value time, silently
      killing the Vazirmatn font across the whole site. */
 
-  /* Bright editorial classroom — ink, teal, persimmon and paper. */
-  --brand-navy: #17324d;
-  --brand-blue: #087f8c;
-  --brand-amber: #d89b19;
-  --brand-gold: #f2c14e;
+  /* Brand — authority (blue) + success (gold) */
+  --brand-navy: #1e3a5f;
+  --brand-blue: #2563eb;
+  --brand-amber: #d4a017;
+  --brand-gold: #f5c518;
 
-  --theme-accent: #087f8c;
-  --theme-accent-hover: #056570;
-  --theme-accent-soft: #dff1ed;
-  --theme-accent-soft-hover: #c9e7e1;
-  --theme-text-gradient: linear-gradient(105deg, #087f8c 0%, #087f8c 62%, #e85d3f 62%, #e85d3f 100%);
-  --theme-brand-gradient: linear-gradient(115deg, #087f8c 0%, #087f8c 58%, #e85d3f 58%, #e85d3f 100%);
-  --theme-scrim: rgba(23, 50, 77, 0.5);
+  /* Theme — dynamically overridden by the hero carousel each slide.
+     Defaults match the luxury accent palette. */
+  --theme-accent: #1b4fd4;
+  --theme-accent-hover: #153aa8;
+  --theme-accent-soft: #e8edf8;
+  --theme-accent-soft-hover: #d4dce8;
+  --theme-text-gradient: linear-gradient(120deg, #1E3A5F 0%, #1B4FD4 40%, #D4A017 70%, #F5C518 100%);
+  --theme-brand-gradient: linear-gradient(90deg, #1E3A5F 0%, #2563EB 33%, #D4A017 66%, #F5C518 100%);
+  --theme-scrim: rgba(30, 58, 95, 0.45);
 
-  --background: #fff9ed;
-  --surface: #fffef9;
-  --surface-muted: #f4eedc;
-  --surface-subtle: #e9f5f2;
+  /* Light-mode surfaces — cream default makes the chrome feel warm
+     and kid-friendly instead of stark white. */
+  --background: #fff7ed;
+  --surface: #ffffff;
+  --surface-muted: #fffbf5;
+  --surface-subtle: #fef3e8;
   --surface-elevated: #ffffff;
 
-  --text-primary: #17324d;
-  --text-secondary: #425466;
-  --text-muted: #66717d;
+  /* Light-mode text */
+  --text-primary: #0f172a;
+  --text-secondary: #3d4551;
+  --text-muted: #5a6272;
   --text-inverse: #ffffff;
-  --text-brand: #087f8c;
+  --text-brand: #1b4fd4;
 
-  --border-subtle: #e6decc;
-  --border: #cfc7b5;
-  --border-strong: #9e9582;
+  /* Light-mode borders */
+  --border-subtle: #e8e4df;
+  --border: #d9d5d0;
+  --border-strong: #c4bfb9;
 
-  --aurora: radial-gradient(circle at 12% 25%, rgba(242,193,78,.36) 0 8%, transparent 8.5%),
-    radial-gradient(circle at 88% 18%, rgba(232,93,63,.18) 0 12%, transparent 12.5%),
-    radial-gradient(ellipse at 62% 78%, rgba(8,127,140,.16) 0 20%, transparent 20.5%);
+  /* Warm aurora backdrop (auth pages, hero) — mirrors gradients.aurora */
+  --aurora: radial-gradient(55% 55% at 18% 22%, rgba(27,79,212,0.22) 0%, rgba(27,79,212,0) 60%),
+    radial-gradient(45% 45% at 85% 28%, rgba(245,197,24,0.20) 0%, rgba(245,197,24,0) 60%),
+    radial-gradient(50% 50% at 60% 88%, rgba(212,160,23,0.16) 0%, rgba(212,160,23,0) 60%);
 
   /* Durations & easings */
   --dur-base: 0.3s;
@@ -142,8 +149,6 @@
     @apply bg-background text-fg-primary font-sans antialiased;
     text-rendering: optimizeLegibility;
     font-feature-settings: "ss01", "ss02";
-    background-image: radial-gradient(rgba(23, 50, 77, 0.055) 0.7px, transparent 0.7px);
-    background-size: 12px 12px;
   }
 
   /* Persian typography: numbers & punctuation render correctly */
@@ -173,8 +178,8 @@
 
   /* Selection */
   ::selection {
-    background-color: #f2c14e;
-    color: #17324d;
+    background-color: rgba(27, 79, 212, 0.18);
+    color: #111827;
   }
 
   /* Custom scrollbar — warm, premium */
@@ -201,46 +206,21 @@
     @apply bg-text-gradient bg-clip-text text-transparent;
   }
 
-  /* Opaque paper panels: clearer and more distinctive than glass chrome. */
+  /* Glassmorphism surface (header, floating cards) */
   .glass {
-    background: color-mix(in srgb, var(--surface) 96%, transparent);
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
   .dark .glass {
-    background: color-mix(in srgb, var(--surface) 96%, transparent);
+    background: rgba(19, 25, 34, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
   }
 
+  /* Decorative gradient ring/border */
   .ring-brand {
-    background: linear-gradient(90deg, #087f8c 0 58%, #e85d3f 58%);
-  }
-
-  .editorial-panel {
-    border: 1px solid var(--border-strong);
-    background: var(--surface);
-    box-shadow: 6px 7px 0 rgba(23, 50, 77, 0.14);
-  }
-
-  .organic-frame {
-    border-radius: 2rem 0.75rem 2.75rem 1rem;
-  }
-
-  .public-page-hero {
-    position: relative;
-    overflow: hidden;
-    border: 1px solid var(--border);
-    border-radius: 1rem 3rem 1rem 2rem;
-    background: var(--surface);
-    box-shadow: 7px 8px 0 rgba(23, 50, 77, 0.12);
-    padding: clamp(2rem, 6vw, 4.5rem);
-  }
-  .public-page-hero::after {
-    content: "Aa";
-    position: absolute;
-    inset-inline-end: clamp(1rem, 5vw, 4rem);
-    bottom: -0.3em;
-    color: rgba(8, 127, 140, 0.08);
-    font: 900 clamp(5rem, 15vw, 11rem) / 1 system-ui, sans-serif;
-    direction: ltr;
-    pointer-events: none;
+    background: linear-gradient(90deg, #1e3a5f, #2563eb, #d4a017, #f5c518);
   }
 
   /* Section vertical rhythm */
@@ -272,6 +252,53 @@
     );
     transform: translateX(-100%);
     animation: shimmer 1.6s linear infinite;
+  }
+
+  /* ── Landing page: dot pattern ──────────────── */
+  .bg-dots {
+    background-image: radial-gradient(#c4d7f2 1.5px, transparent 1.5px);
+    background-size: 26px 26px;
+  }
+  .bg-dots-light {
+    background-image: radial-gradient(rgba(255, 255, 255, 0.22) 1.5px, transparent 1.5px);
+    background-size: 26px 26px;
+  }
+
+  /* ── Landing page: marquee ──────────────────── */
+  @keyframes marquee-rtl-landing {
+    from { transform: translateX(0); }
+    to { transform: translateX(50%); }
+  }
+  .animate-marquee-landing {
+    animation: marquee-rtl-landing 42s linear infinite;
+  }
+  .marquee-mask {
+    mask-image: linear-gradient(to right, transparent, black 6%, black 94%, transparent);
+  }
+
+  /* ── Landing page: soft float ───────────────── */
+  @keyframes float-soft {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+  .animate-float-soft {
+    animation: float-soft 5s ease-in-out infinite;
+  }
+
+  /* ── Landing page: hide scrollbar ───────────── */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* ── Landing page: dashed path line ─────────── */
+  .path-dash {
+    background-image: linear-gradient(to bottom, #9db9e6 55%, transparent 45%);
+    background-size: 2px 12px;
+    background-repeat: repeat-y;
   }
 }
 

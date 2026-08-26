@@ -15,7 +15,7 @@ const schema = z.object({
   isFree: z.boolean().optional(),
 });
 
-export async function GET(req: Request) {
+async function listLessonsHandler(req: Request) {
   const { searchParams } = new URL(req.url);
   const courseId = searchParams.get("courseId");
 
@@ -23,9 +23,39 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "courseId الزامی است." }, { status: 400 });
   }
 
+  const course = await repository.findCourseById(courseId);
+  if (!course) {
+    return NextResponse.json({ error: "دوره یافت نشد." }, { status: 404 });
+  }
+
+  // Unpublished courses are never exposed through the public lesson list.
+  if (!course.published) {
+    return NextResponse.json({ error: "دوره یافت نشد." }, { status: 404 });
+  }
+
+  // Free/preview lessons are public; the full lesson list (including paid
+  // video URLs) is only available to enrolled students, the course mentor,
+  // and admins.
+  const user = await getCurrentUser();
+  const isOwner = user && (user.role === "ADMIN" || course.mentorId === user.id);
+  const isEnrolled =
+    user && !isOwner
+      ? Boolean(await repository.findEnrollment(user.id, courseId))
+      : false;
+
+  if (!user || (!isOwner && !isEnrolled)) {
+    const freeLessons = await repository.listFreeLessons(courseId);
+    return NextResponse.json({ lessons: freeLessons });
+  }
+
   const lessons = await repository.listLessons(courseId);
   return NextResponse.json({ lessons });
 }
+
+/** GET is public (free lessons) — rate limit to prevent scraping. */
+export const GET = withRateLimit(listLessonsHandler, RATE_LIMIT_PRESETS.READ, {
+  keyPrefix: "lessons:list",
+});
 
 async function createLessonHandler(req: Request) {
   // CSRF: lesson creation mutates course content on behalf of the teacher session.

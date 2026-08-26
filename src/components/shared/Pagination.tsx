@@ -5,6 +5,7 @@ import { useTransition } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toPersianDigits } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 
 interface PaginationProps {
   /** Total number of records across all pages. */
@@ -36,6 +37,7 @@ export function Pagination({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
+  const { t } = useT();
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   if (totalPages <= 1) return null;
@@ -89,7 +91,7 @@ export function Pagination({
         className="inline-flex h-9 items-center gap-1 rounded-lg border border-app-border-subtle bg-surface px-3 text-fg-primary transition-colors hover:border-accent/40 disabled:cursor-not-allowed disabled:opacity-40"
       >
         <ChevronRight className="size-4" />
-        قبلی
+        {t("common.prev")}
       </button>
 
       {pages.map((p, i) =>
@@ -107,7 +109,7 @@ export function Pagination({
             type="button"
             onClick={() => go(p)}
             aria-current={p === currentPage ? "page" : undefined}
-            aria-label={`صفحه ${toPersianDigits(p)}`}
+            aria-label={`${t("common.page")} ${toPersianDigits(p)}`}
             className={cn(
               "inline-flex h-9 min-w-9 items-center justify-center rounded-lg border px-2.5 transition-colors",
               p === currentPage
@@ -120,21 +122,19 @@ export function Pagination({
         ),
       )}
 
-      {/* In RTL: "بعدی" (Next) appears on the left and its chevron
-          points left (the direction of going forward in RTL). */}
       <button
         type="button"
         onClick={() => go(currentPage + 1)}
         disabled={currentPage >= totalPages}
-        aria-label="صفحه بعدی"
+        aria-label={`${t("common.next")}`}
         className="inline-flex h-9 items-center gap-1 rounded-lg border border-app-border-subtle bg-surface px-3 text-fg-primary transition-colors hover:border-accent/40 disabled:cursor-not-allowed disabled:opacity-40"
       >
-        بعدی
+        {t("common.next")}
         <ChevronLeft className="size-4" />
       </button>
 
       <span className="ms-3 text-xs text-fg-secondary">
-        صفحه {toPersianDigits(currentPage)} از {toPersianDigits(totalPages)}
+        {t("common.page")} {toPersianDigits(currentPage)} {t("common.pageOf")} {toPersianDigits(totalPages)}
       </span>
     </nav>
   );

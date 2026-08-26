@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
 import { SiteHeader } from "@/features/header/components/SiteHeader";
-import { SiteFooter } from "@/features/footer/components/SiteFooter";
+import { SiteFooter } from "@/components/site/site-footer";
 import { HeroContent } from "@/features/hero/components/HeroContent";
 import { HeroShowcase } from "@/features/hero/components/HeroShowcase";
 import { CapabilitiesSection } from "@/features/capabilities/CapabilitiesSection";

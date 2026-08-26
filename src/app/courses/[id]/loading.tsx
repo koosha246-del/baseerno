@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
  */
 export default function CourseDetailLoading() {
   return (
-    <main className="bg-surface-muted pb-20 pt-[calc(var(--header-h)+1.5rem)]">
+    <main id="main-content" className="bg-surface-muted pb-20 pt-[calc(var(--header-h)+1.5rem)]">
       <Container width="page" className="animate-pulse">
         {/* Breadcrumb */}
         <div className="mb-6 flex items-center gap-2">

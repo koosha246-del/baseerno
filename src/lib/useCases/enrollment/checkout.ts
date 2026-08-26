@@ -19,6 +19,7 @@ import {
 } from "@/lib/payment/zarinpal";
 import { publish } from "@/lib/events";
 import { incr } from "@/lib/metrics";
+import { env } from "@/lib/env";
 import { freeEnroll, type FreeEnrollResult } from "./freeEnroll";
 
 export const checkoutSchema = z.object({
@@ -128,13 +129,26 @@ export async function checkout(
       incr("payment:failed");
       return {
         ok: false,
-        error:
-          err instanceof Error
-            ? `خطا در اتصال به درگاه: ${err.message}`
-            : "خطا در اتصال به درگاه پرداخت.",
+        error: "خطا در اتصال به درگاه پرداخت. لطفاً بعداً تلاش کنید.",
         status: 502,
       };
     }
+  }
+
+  // ── Paid course, but no real gateway available ────────────────
+  // The simulated gateway is a DEV-ONLY affordance: in production a
+  // self-signed callback URL would let the same client that requested it
+  // redeem it and gain enrollment without paying. If we cannot talk to
+  // Zarinpal in production, the checkout must fail — never mint a
+  // signature that grants access.
+  if (env.isProduction) {
+    await repository.markPaymentFailed(payment.id);
+    incr("payment:failed");
+    return {
+      ok: false,
+      error: "درگاه پرداخت در دسترس نیست. لطفاً بعداً تلاش کنید.",
+      status: 503,
+    };
   }
 
   // ── Simulated gateway (dev / no merchant id) ───────────────────

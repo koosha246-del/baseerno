@@ -45,29 +45,17 @@ export async function mapDbCourseDetail(
   try {
     dbRow = await repository.findCourseById(id);
     if (dbRow) {
-      // Fetch mentor info (non-critical — falls back to static)
-      try {
-        const mentor = await repository.findSafeUserById(dbRow.mentorId);
-        mentorName = mentor?.name ?? staticFallback?.mentor ?? "مدرس";
-        mentorBio = mentor?.bio ?? staticFallback?.mentorBio ?? "";
-      } catch {
-        mentorName = staticFallback?.mentor ?? "مدرس";
-      }
-
-      // Count enrolled students (non-critical)
-      try {
-        const enrolled = await repository.listEnrollmentsForCourse(id);
-        students = enrolled.length;
-      } catch {
-        students = staticFallback?.students ?? 0;
-      }
-
-      // Fetch published lessons for curriculum (non-critical)
-      try {
-        dbLessons = await repository.listLessons(id);
-      } catch {
-        dbLessons = [];
-      }
+      // Mentor, enrollment count, and lessons are independent — run them in
+      // parallel instead of four sequential round-trips. Each is wrapped so
+      // a failure in one falls back to static content instead of throwing.
+      const mentorRes = repository.findSafeUserById(dbRow.mentorId).catch(() => null);
+      const countRes = repository.countEnrollments({ courseId: id }).catch(() => 0);
+      const lessonsRes = repository.listLessons(id).catch(() => []);
+      const [mentor, enrolledCount, lessons] = await Promise.all([mentorRes, countRes, lessonsRes]);
+      mentorName = mentor?.name ?? staticFallback?.mentor ?? "مدرس";
+      mentorBio = mentor?.bio ?? staticFallback?.mentorBio ?? "";
+      students = enrolledCount || staticFallback?.students || 0;
+      dbLessons = lessons;
     }
   } catch {
     // DB unreachable — fall through to static

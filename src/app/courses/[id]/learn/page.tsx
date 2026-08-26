@@ -16,6 +16,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title: `${course.title} | ${siteConfig.name}`,
     description: course.subtitle,
+    // Private, enrolled-only learning area — never index it.
+    robots: {
+      index: false,
+      follow: false,
+      googleBot: { index: false, follow: false },
+    },
   };
 }
 
@@ -32,14 +38,15 @@ export default async function LearnPage({ params }: PageProps) {
     redirect(`/courses/${courseId}`);
   }
 
-  // Fetch lessons (teachers & admins see all)
-  const lessons =
-    user.role === "ADMIN" || user.role === "TEACHER"
-      ? await repository.listAllLessons(courseId)
-      : await repository.listLessons(courseId);
-
+  // Fetch lessons (mentors and admins see all; other teachers see published only)
   const course = await repository.findCourseById(courseId);
   if (!course) notFound();
+
+  const isMentor = user.role === "TEACHER" && course.mentorId === user.id;
+  const lessons =
+    user.role === "ADMIN" || isMentor
+      ? await repository.listAllLessons(courseId)
+      : await repository.listLessons(courseId);
 
   return (
     <LearnClient

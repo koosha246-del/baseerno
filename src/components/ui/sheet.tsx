@@ -21,7 +21,9 @@ const SheetOverlay = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SheetPrimitive.Overlay
     className={cn(
-      "fixed inset-0 z-overlay bg-overlay backdrop-blur-sm data-[state=open]:animate-fade-in",
+      // Overlay sits BELOW the panel: z-sheet(1100) < content z-overlay(1200)
+      // keeps the global scale while the drawer paints above its scrim.
+      "fixed inset-0 z-sheet bg-overlay/70 backdrop-blur-sm data-[state=open]:animate-fade-in",
       className
     )}
     {...props}
@@ -31,7 +33,7 @@ const SheetOverlay = React.forwardRef<
 SheetOverlay.displayName = "SheetOverlay";
 
 const sheetVariants = cva(
-  "fixed z-sheet flex flex-col gap-4 bg-surface shadow-2xl transition ease-luxury data-[state=open]:animate-fade-in data-[state=closed]:animate-fade-in",
+  "fixed z-overlay flex flex-col gap-4 bg-surface shadow-2xl transition ease-luxury data-[state=open]:animate-fade-in data-[state=closed]:animate-fade-in",
   {
     variants: {
       side: {

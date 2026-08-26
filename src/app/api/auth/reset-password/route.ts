@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { repository } from "@/lib/db/repository";
+import { prisma } from "@/lib/db/prisma-client";
 import { hashPassword } from "@/lib/auth/password";
+import { clearSession } from "@/lib/auth/session";
 import { isSameOriginRequest, csrfRejectedResponse } from "@/lib/csrf";
 import { withRateLimit } from "@/lib/api-middleware";
 import { RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
@@ -35,9 +37,32 @@ async function resetPasswordHandler(req: Request) {
     return NextResponse.json({ error: "توکن نامعتبر یا منقضی شده." }, { status: 400 });
   }
 
+  // Atomic + race-safe: the token is claimed INSIDE the transaction via a
+  // conditional updateMany (`used: false`) — two concurrent requests with
+  // the same token can't both succeed; the loser gets count=0 and 400.
   const newHash = await hashPassword(parsed.data.newPassword);
-  await repository.updatePassword(reset.userId, newHash);
-  await repository.markResetTokenUsed(parsed.data.token);
+  const claimed = await prisma.$transaction(async (tx) => {
+    const claim = await tx.passwordReset.updateMany({
+      where: { token: parsed.data.token, used: false },
+      data: { used: true },
+    });
+    if (claim.count === 0) return false;
+    await tx.user.update({
+      where: { id: reset.userId },
+      data: {
+        passwordHash: newHash,
+        tokenVersion: { increment: 1 },
+      },
+    });
+    return true;
+  });
+
+  if (!claimed) {
+    return NextResponse.json({ error: "توکن نامعتبر یا قبلاً استفاده شده." }, { status: 400 });
+  }
+
+  // Revoke any existing sessions (tokenVersion bumped above).
+  await clearSession();
 
   return NextResponse.json({ ok: true, message: "رمز عبور با موفقیت تغییر کرد." });
 }

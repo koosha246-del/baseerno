@@ -225,7 +225,7 @@ export async function processEmailQueue(
 
       await prisma.emailOutbox.update({
         where: { id: email.id },
-        data: { status: "sent", sentAt: new Date(), retries: email.retries + 1 },
+        data: { status: "sent", sentAt: new Date() },
       });
       sent++;
     } catch (error) {

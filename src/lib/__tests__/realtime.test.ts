@@ -63,4 +63,26 @@ describe("realtime", () => {
     subscribeToUser("u1", vi.fn());
     expect(connectionCount()).toBe(3);
   });
+
+  it("evicts the oldest connection past the per-user cap and closes its stream", () => {
+    const writers = Array.from({ length: 5 }, () => vi.fn());
+    const closers = writers.map(() => vi.fn());
+    // Register MAX_CONNECTIONS_PER_USER (5) connections for u1.
+    writers.forEach((w, i) => subscribeToUser("u1", w, closers[i]));
+
+    // 6th connection evicts the first one.
+    const newest = vi.fn();
+    subscribeToUser("u1", newest);
+
+    // Evicted stream got a reconnect hint + was closed.
+    expect(writers[0]).toHaveBeenCalledWith(expect.stringContaining("event: reconnect"));
+    expect(closers[0]).toHaveBeenCalled();
+
+    // Events reach the remaining 4 + the new one — never the zombie.
+    const delivered = pushToUser("u1", { type: "enrollment" });
+    expect(delivered).toBe(5);
+    expect(writers[0]).not.toHaveBeenCalledWith(
+      expect.stringContaining("event: enrollment"),
+    );
+  });
 });

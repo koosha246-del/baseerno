@@ -11,6 +11,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useState,
   type ReactNode,
 } from "react";
@@ -41,12 +42,22 @@ function getInitialLocale(): Locale {
 export function LocaleProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>(getInitialLocale);
 
+  // Sync <html lang/dir> with the restored locale on mount — a returning
+  // EN user would otherwise get English strings inside an RTL Persian
+  // document (and a hydration-visible mismatch for useT() consumers).
+  useEffect(() => {
+    try {
+      document.documentElement.lang = locale === "fa" ? "fa" : "en";
+      document.documentElement.dir = locale === "fa" ? "rtl" : "ltr";
+    } catch {
+      // SSR guard — noop on server
+    }
+  }, [locale]);
+
   const setLocale = useCallback((newLocale: Locale) => {
     setLocaleState(newLocale);
     try {
       localStorage.setItem(STORAGE_KEY, newLocale);
-      document.documentElement.lang = newLocale === "fa" ? "fa" : "en";
-      document.documentElement.dir = newLocale === "fa" ? "rtl" : "ltr";
     } catch {
       // localStorage might be unavailable
     }

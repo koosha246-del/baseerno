@@ -16,7 +16,7 @@ import {
 
 export const metadata: Metadata = {
   title: "تماس با ما",
-  description: `ارتباط با آکادمی ${siteConfig.name} — ${siteConfig.contact.address}. پشتیبانی ۲۴ ساعته.`,
+  description: `راه‌های ارتباط با آکادمی ${siteConfig.name} — ${siteConfig.contact.address}.`,
   alternates: {
     canonical: "/contact",
   },
@@ -26,12 +26,12 @@ export const metadata: Metadata = {
     url: `${siteConfig.url}/contact`,
     siteName: siteConfig.name,
     title: `تماس با ${siteConfig.name} | پشتیبانی و مشاوره`,
-    description: `ارتباط با آکادمی ${siteConfig.name} — ${siteConfig.contact.address}. پشتیبانی ۲۴ ساعته.`,
+    description: `راه‌های ارتباط با آکادمی ${siteConfig.name} — ${siteConfig.contact.address}.`,
   },
   twitter: {
     card: "summary_large_image",
     title: `تماس با ${siteConfig.name} | پشتیبانی و مشاوره`,
-    description: `ارتباط با آکادمی ${siteConfig.name} — ${siteConfig.contact.address}. پشتیبانی ۲۴ ساعته.`,
+    description: `راه‌های ارتباط با آکادمی ${siteConfig.name} — ${siteConfig.contact.address}.`,
   },
 };
 
@@ -45,13 +45,13 @@ const supportChannels = [
   {
     icon: MessageSquare,
     title: "چت آنلاین",
-    detail: "تو داشبورد، پاسخ کمتر از ۵ دقیقه",
+    detail: "پیام‌های داخل داشبورد",
     color: "bg-kid-mint-50 text-kid-mint-600",
   },
   {
     icon: Mail,
     title: "ایمیل",
-    detail: "پاسخ کمتر از ۲۴ ساعت",
+    detail: "برای پیام‌های غیرفوری",
     color: "bg-kid-coral-50 text-kid-coral-600",
   },
 ];
@@ -70,7 +70,7 @@ export default function ContactPage() {
         <section className="public-page-hero mb-16 text-right">
           <span className="mb-3 inline-flex items-center gap-2 rounded-pill bg-kid-mint-100 px-4 py-1.5 text-sm font-semibold text-kid-mint-600">
             <MessageSquare className="size-4" />
-            پشتیبانی ۲۴ ساعته
+            راه‌های ارتباطی
           </span>
           <h1 className="font-display text-3xl font-extrabold tracking-tight text-fg-primary sm:text-5xl">
             پیام بده، جواب می‌دیم
@@ -122,7 +122,7 @@ export default function ContactPage() {
                 >
                   {siteConfig.contact.email}
                 </a>
-                <p className="mt-1 text-xs text-fg-muted">پاسخ کمتر از ۲۴ ساعت</p>
+                <p className="mt-1 text-xs text-fg-muted">برای پیام‌های غیرفوری</p>
               </div>
             </div>
 

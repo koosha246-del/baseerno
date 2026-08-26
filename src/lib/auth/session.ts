@@ -14,8 +14,15 @@ import {
  */
 
 /** Set the session cookie on a successful login/register. */
-export async function setSession(user: Pick<SafeUser, "id" | "role" | "email">) {
-  const token = signToken({ sub: user.id, role: user.role, email: user.email });
+export async function setSession(
+  user: Pick<SafeUser, "id" | "role" | "email"> & { tokenVersion?: number },
+) {
+  const token = signToken({
+    sub: user.id,
+    role: user.role,
+    email: user.email,
+    ver: user.tokenVersion ?? 0,
+  });
   const store = await cookies();
   store.set(AUTH_COOKIE, token, {
     httpOnly: true,
@@ -61,7 +68,16 @@ export async function getCurrentUser(): Promise<SafeUser | null> {
   }
 
   try {
-    return await repository.findSafeUserById(token.sub);
+    const user = await repository.findSafeUserById(token.sub);
+
+    // Session revocation: if the token was issued before the user's
+    // password changed (tokenVersion bumped), reject it so the old
+    // session can't survive a credential change.
+    if (user && (token.ver ?? 0) !== user.tokenVersion) {
+      return null;
+    }
+
+    return user;
   } catch (err) {
     // DB unreachable: only demo tokens can resolve; real tokens rethrow
     // so callers can decide (layouts already catch and redirect).

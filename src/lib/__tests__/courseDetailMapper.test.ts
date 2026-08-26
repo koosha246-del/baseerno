@@ -5,7 +5,7 @@ vi.mock("@/lib/db/repository", () => ({
   repository: {
     findCourseById: vi.fn(),
     findSafeUserById: vi.fn(),
-    listEnrollmentsForCourse: vi.fn(),
+    countEnrollments: vi.fn(),
     listLessons: vi.fn(),
   },
 }));
@@ -123,9 +123,7 @@ describe("mapDbCourseDetail", () => {
       role: "TEACHER",
       image: null,
     });
-    (repository.listEnrollmentsForCourse as Mock).mockResolvedValue([
-      { id: "e1", userId: "u1", courseId: "c1", status: "ACTIVE", enrolledAt: new Date(), progress: 50 },
-    ]);
+    (repository.countEnrollments as Mock).mockResolvedValue(42);
     (repository.listLessons as Mock).mockResolvedValue([
       { id: "l1", title: "فعل to be", durationMinutes: 15, isFree: true, courseId: "c1", description: "", order: 1, slug: "to-be", published: true, createdAt: new Date(), updatedAt: new Date() },
     ]);
@@ -136,6 +134,8 @@ describe("mapDbCourseDetail", () => {
     expect(result?.title).toBe("گرامر پیشرفته B1");
     expect(result?.price).toBe(600_000);
     expect(result?.mentor).toBe("رضا کریمی");
+    // DB enrollment count wins over static
+    expect(result?.students).toBe(42);
     // Static fields complement
     expect(result?.outcomes).toHaveLength(1);
     expect(result?.longDescription).toBe("این دوره برای کسانی طراحی شده که می‌خواهند گرامر پایه را یاد بگیرند.");
@@ -149,9 +149,7 @@ describe("mapDbCourseDetail", () => {
       lessons: 0, published: true, createdAt: new Date(), updatedAt: new Date(),
     });
     (repository.findSafeUserById as Mock).mockResolvedValue(null);
-    (repository.listEnrollmentsForCourse as Mock).mockResolvedValue(
-      Array.from({ length: 42 }, (_, i) => ({ id: `e${i}`, userId: `u${i}`, courseId: "c1", status: "ACTIVE", enrolledAt: new Date(), progress: 0 })),
-    );
+    (repository.countEnrollments as Mock).mockResolvedValue(42);
     (repository.listLessons as Mock).mockResolvedValue([]);
 
     const result = await mapDbCourseDetail("grammar-a1");

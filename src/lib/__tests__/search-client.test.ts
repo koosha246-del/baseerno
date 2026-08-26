@@ -89,11 +89,22 @@ describe("search client (Meilisearch REST)", () => {
   });
 
   it("configureCourseIndex PATCHes Persian-optimized settings", async () => {
-    fetchMock.mockResolvedValue(jsonResponse({ taskUid: 2, status: "enqueued" }));
+    // PATCH returns an async task; configureCourseIndex then polls
+    // GET /tasks/:uid until it settles — return "succeeded" immediately.
+    fetchMock.mockImplementation(async (_url: unknown, init?: unknown) => {
+      const method = (init as RequestInit | undefined)?.method;
+      if (method === "PATCH") {
+        return jsonResponse({ taskUid: 2, status: "enqueued" });
+      }
+      return jsonResponse({ taskUid: 2, status: "succeeded" });
+    });
 
     await configureCourseIndex(COURSE_INDEX_SETTINGS);
 
-    const [url, init] = fetchMock.mock.calls[0] ?? [];
+    const patchCall = fetchMock.mock.calls.find(
+      ([, i]) => (i as RequestInit | undefined)?.method === "PATCH",
+    );
+    const [url, init] = patchCall ?? [];
     expect(url).toBe("http://localhost:7700/indexes/courses/settings");
     expect(init?.method).toBe("PATCH");
     const body = JSON.parse(String(init?.body));

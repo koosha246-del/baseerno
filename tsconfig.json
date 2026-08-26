@@ -16,6 +16,7 @@
     "forceConsistentCasingInFileNames": true,
     "noUncheckedIndexedAccess": true,
     "verbatimModuleSyntax": false,
+    "types": ["vitest/globals", "jest-axe"],
     "plugins": [
       {
         "name": "next"

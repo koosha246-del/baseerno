@@ -56,42 +56,15 @@ const values = [
   {
     icon: Award,
     title: "کیفیت‌محوری",
-    desc: "اساتید مجرب، کتاب‌های استاندارد Cambridge، بازخورد مستمر. هیچ بهانه‌ای برای کیفیت پایین قبول نمی‌کنیم.",
+    desc: "هدف روشن، منابع قابل مشاهده و بازخورد منظم معیارهایی هستند که کیفیت مسیر آموزشی را می‌سازند.",
   },
 ];
 
-const team = [
-  {
-    name: "سارا محمدی",
-    role: "بنیان‌گذار و مدیرعامل",
-    initial: "س",
-    bio: "۱۲ سال تجربه در آموزش زبان انگلیسی. مدرک کارشناسی ارشد آموزش زبان از دانشگاه تهران.",
-  },
-  {
-    name: "رضا کریمی",
-    role: "مدیر آکادمیک",
-    initial: "ر",
-    bio: "طراح دوره‌ها و سرفصل‌ها. سابقه تدریس در مدارس بین‌المللی تهران. علاقه‌مند به یادگیری زبان از طریق بازی.",
-  },
-  {
-    name: "نگار احمدی",
-    role: "مدرس ارشد",
-    initial: "ن",
-    bio: "متخصص آموزش مکالمه و تلفظ انگلیسی. تدریس در ۴ کشور مختلف. سازنده متد «مکالمه با قصه».",
-  },
-  {
-    name: "امیر حسینی",
-    role: "مدرس واژگان",
-    initial: "ا",
-    bio: "زبان‌شناس و مدرس. کمک به زبان‌آموزان برای حفظ لغات با تکنیک‌های حافظه بلندمدت.",
-  },
-];
-
-const stats = [
-  { value: "+۱۲٬۰۰۰", label: "دانش‌آموز فعال" },
-  { value: "+۸۰", label: "دوره تخصصی انگلیسی" },
-  { value: "٪۹۶", label: "رضایت والدین" },
-  { value: "۵+", label: "کتاب استاندارد بین‌المللی" },
+const approach = [
+  { value: "روشن", label: "هدف هر درس" },
+  { value: "مرحله‌ای", label: "مسیر یادگیری" },
+  { value: "عملی", label: "تمرین‌ها" },
+  { value: "قابل مرور", label: "منابع کتابخانه" },
 ];
 
 export default function AboutPage() {
@@ -108,9 +81,8 @@ export default function AboutPage() {
             {siteConfig.name}، جایی که انگلیسی قدم به قدم یاد گرفتنیه
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg leading-loose text-fg-secondary">
-            ما از سال {siteConfig.foundedYear} کارمون رو با یه ایده ساده شروع کردیم:
-            کمک کنیم هر کسی — کودک، نوجوان، بزرگسال — بتونه انگلیسی رو
-            با روش درست، کتاب‌های استاندارد و اساتید مجرب یاد بگیره.
+            ایده‌ی اصلی ساده است: کمک کنیم زبان‌آموز مسیر انگلیسی را
+            قدم‌به‌قدم، با منابع قابل مشاهده و تمرین‌های هدفمند پیش ببرد.
           </p>
         </section>
 
@@ -132,22 +104,12 @@ export default function AboutPage() {
               </p>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="rounded-2xl bg-white p-5 text-center shadow-sm">
-                <p className="text-3xl font-extrabold text-kid-sky-600">۱۲+</p>
-                <p className="mt-1 text-xs text-fg-secondary">سال تجربه</p>
-              </div>
-              <div className="rounded-2xl bg-white p-5 text-center shadow-sm">
-                <p className="text-3xl font-extrabold text-kid-coral-600">۹۶٪</p>
-                <p className="mt-1 text-xs text-fg-secondary">رضایت والدین</p>
-              </div>
-              <div className="rounded-2xl bg-white p-5 text-center shadow-sm">
-                <p className="text-3xl font-extrabold text-kid-mint-600">۸+</p>
-                <p className="mt-1 text-xs text-fg-secondary">مدرس متخصص</p>
-              </div>
-              <div className="rounded-2xl bg-white p-5 text-center shadow-sm">
-                <p className="text-3xl font-extrabold text-kid-sunny-600">۵+</p>
-                <p className="mt-1 text-xs text-fg-secondary">کتاب استاندارد Cambridge</p>
-              </div>
+              {approach.map((item) => (
+                <div key={item.label} className="rounded-2xl border border-app-border-subtle bg-surface p-5 text-center shadow-sm">
+                  <p className="text-xl font-extrabold text-accent sm:text-2xl">{item.value}</p>
+                  <p className="mt-1 text-xs text-fg-secondary">{item.label}</p>
+                </div>
+              ))}
             </div>
           </div>
         </section>
@@ -159,13 +121,12 @@ export default function AboutPage() {
             <p className="text-base leading-loose text-fg-secondary">
               ما باور داریم هر کسی می‌تواند انگلیسی یاد بگیرد—به شرطی که مسیر
               درست را قدم به قدم طی کند. ماموریت ما فراهم کردن همین مسیر است:
-              کتاب‌های استاندارد بین‌المللی، اساتید مجرب، و تمرین کافی.
+              هدف روشن، منابع قابل مرور و تمرین کافی.
             </p>
             <p className="text-base leading-loose text-fg-secondary">
-              ما از مجموعه‌های Cambridge (Interchange و Connect) استفاده می‌کنیم
-              — همان کتاب‌هایی که در بهترین آکادمی‌های زبان دنیا تدریس می‌شود.
-              <span className="font-bold text-fg-primary"> ۷۰٪ زمان هر دوره تمرین عملی است</span>،
-              نه فقط تماشای ویدیو.
+              منابع موجود در کتابخانه با اطلاعات سطح، نویسنده و توضیح معرفی
+              شده‌اند. ساختار دوره‌ها هم درس، تمرین و بازخورد را کنار هم قرار
+              می‌دهد تا مسیر فقط به تماشای ویدیو محدود نشود.
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
               <Button asChild variant="brand">
@@ -237,62 +198,23 @@ export default function AboutPage() {
             <p className="mt-4 text-base leading-loose text-fg-secondary">
               هر دوره روی تقویت همزمان چهار مهارت اصلی تمرکز دارد:
               خواندن (Reading)، نوشتن (Writing)، شنیدن (Listening) و مکالمه (Speaking).
-              با کتاب‌های استاندارد Cambridge و تمرین‌های هدفمند،
-              انگلیسی را اصولی و ماندگار یاد می‌گیری.
+              با منابع معرفی‌شده در کتابخانه و تمرین‌های هدفمند،
+              مسیر یادگیری منظم و قابل پیگیری می‌ماند.
             </p>
           </div>
         </section>
 
-        {/* Team */}
-        <section className="mb-16">
-          <h2 className="mb-3 text-center font-display text-2xl font-bold text-fg-primary sm:text-3xl">
-            تیم ما
+        {/* Learning promise */}
+        <section className="editorial-panel rounded-[2rem_0.75rem_2.5rem_1rem] p-8 sm:p-12">
+          <Quote className="size-10 text-accent" />
+          <h2 className="mt-4 font-display text-2xl font-bold text-fg-primary">
+            وعده‌ی ما، مسیر قابل‌فهم است
           </h2>
-          <p className="mx-auto mb-8 max-w-2xl text-center text-fg-secondary">
-            آدم‌هایی که پشت هر درس و هر بازخورد هستند
+          <p className="mt-3 max-w-3xl text-base leading-loose text-fg-secondary">
+            هدف هر درس، منابع مرتبط و قدم بعدی باید برای زبان‌آموز روشن باشد.
+            به‌جای عددهای تبلیغاتی، خود دوره‌ها، کتابخانه و ابزارهای یادگیری را
+            ببین و بر اساس نیازت انتخاب کن.
           </p>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {team.map((m) => (
-              <div
-                key={m.name}
-                className="flex flex-col items-center gap-3 rounded-2xl border border-app-border-subtle bg-surface p-6 text-center"
-              >
-                <span className="flex size-16 items-center justify-center rounded-2xl bg-brand-gradient text-xl font-extrabold text-white shadow-glow">
-                  {m.initial}
-                </span>
-                <div>
-                  <h3 className="font-display text-base font-bold text-fg-primary">{m.name}</h3>
-                  <p className="mt-0.5 text-xs text-kid-coral-600">{m.role}</p>
-                </div>
-                <p className="text-xs leading-relaxed text-fg-secondary">{m.bio}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Quote */}
-        <section className="mb-16 rounded-3xl bg-kid-sky-50 p-8 sm:p-12">
-          <Quote className="mx-auto size-10 text-kid-sky-500" />
-          <blockquote className="mt-4 text-center font-display text-xl font-bold leading-relaxed text-fg-primary sm:text-2xl">
-            «ما باور داریم هر کسی — در هر سنی — می‌تواند انگلیسی یاد بگیرد.
-            فقط کافی است مسیر درست را قدم به قدم طی کند.»
-          </blockquote>
-          <p className="mt-4 text-center text-sm text-fg-secondary">
-            — سارا محمدی، بنیان‌گذار بصیر نو
-          </p>
-        </section>
-
-        {/* Stats */}
-        <section className="rounded-3xl bg-brand-gradient p-8 text-center text-white sm:p-12">
-          <h2 className="mb-8 font-display text-2xl font-bold">به اعداد اعتماد کنید</h2>
-          <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
-            {stats.map((s) => (
-              <div key={s.label}>
-                <span className="block text-3xl font-extrabold sm:text-4xl">{s.value}</span>
-                <span className="mt-1 text-sm text-white/80">{s.label}</span>
-              </div>
-            ))}
-          </div>
         </section>
 
         {/* CTA */}

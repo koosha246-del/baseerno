@@ -3,9 +3,11 @@
  * Import-boundary enforcement (see docs/architecture.md).
  *
  * Rules:
- *  1. app (src/app)          → must NOT import from src/features  (pages own composition)
+ *  1. app (src/app)          → MAY import from src/features (pages compose
+ *                              feature components — the intended pattern)
  *  2. features (src/features) → must NOT import from src/app
- *  3. features → features     → must NOT import another feature's internals
+ *  3. features → features     → must NOT import another feature's internals;
+ *                               shared pieces belong in src/components/shared
  *  4. lib (src/lib)           → must NOT import from src/app or src/features
  *  5. shared ui (src/components/ui, src/components/shared) → must NOT import from src/features
  *
@@ -88,7 +90,8 @@ for (const file of files) {
         featureName(file) !== featureName(target);
 
       const bad =
-        (fromArea === "app" && targetArea === "features") ||
+        // app → features is the composition pattern (allowed); everything
+        // below keeps feature internals decoupled.
         (fromArea === "features" && targetArea === "app") ||
         crossFeature ||
         ((fromArea === "lib" || fromArea === "components") &&

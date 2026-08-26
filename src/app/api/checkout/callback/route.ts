@@ -1,16 +1,12 @@
 import { NextResponse } from "next/server";
-import { revalidateTag } from "next/cache";
 import { repository } from "@/lib/db/repository";
+import { prisma } from "@/lib/db/prisma-client";
 import { verifyPaymentSignature } from "@/lib/payment-signature";
-import { notifyEnrollment, notifyPaymentSuccess } from "@/lib/notifications";
-import { sendEmail } from "@/lib/email";
-import { paymentConfirmationEmail } from "@/lib/email-templates";
+import { publish } from "@/lib/events";
 import {
   isZarinpalEnabled,
   zarinpalVerifyPayment,
 } from "@/lib/payment/zarinpal";
-import { env } from "@/lib/env";
-import { enrollmentCacheTags } from "@/lib/cache-tags";
 import { incr } from "@/lib/metrics";
 
 /**
@@ -43,12 +39,10 @@ export async function GET(req: Request) {
     return NextResponse.redirect(new URL("/dashboard?error=no_payment", req.url));
   }
 
-  // Reject unsigned callbacks in production.
-  if (sig) {
-    if (!verifyPaymentSignature(paymentId, sig)) {
-      return NextResponse.redirect(new URL("/dashboard?error=invalid_signature", req.url));
-    }
-  } else if (env.isProduction) {
+  // Require a valid signature on every simulated callback. The signed
+  // callback is a dev-only affordance (checkout.ts refuses to mint one in
+  // production), so this path can never redeem a payment in production.
+  if (!sig || !verifyPaymentSignature(paymentId, sig)) {
     return NextResponse.redirect(new URL("/dashboard?error=invalid_signature", req.url));
   }
 
@@ -70,6 +64,16 @@ async function handleZarinpalCallback(
     if (payment.status === "PAID") {
       return NextResponse.redirect(
         new URL("/dashboard/courses?already_paid=true", req.url),
+      );
+    }
+
+    // A previously-FAILED payment must not be flipped to PAID by replaying
+    // this callback with a fresh Authority.
+    if (payment.status !== "PENDING") {
+      await repository.markPaymentFailed(payment.id);
+      incr("payment:failed");
+      return NextResponse.redirect(
+        new URL("/dashboard?error=payment_cancelled", req.url),
       );
     }
 
@@ -107,8 +111,11 @@ async function finalizePayment(req: Request, paymentId: string) {
       return NextResponse.redirect(new URL("/dashboard?error=payment_not_found", req.url));
     }
 
-    // Idempotency: a settled payment must not be re-confirmed or re-enroll.
-    if (payment.status === "PAID") {
+    // Idempotency + state machine guard: only a PENDING payment may be
+    // confirmed. A FAILED (or already-PAID) payment is never re-confirmed,
+    // so a previously-declined order cannot be flipped to PAID by replaying
+    // this callback.
+    if (payment.status !== "PENDING") {
       return NextResponse.redirect(
         new URL("/dashboard/courses?already_paid=true", req.url),
       );
@@ -130,34 +137,45 @@ async function ensureEnrollmentAndNotify(
   courseId: string,
   amount: number,
 ) {
-  const existing = await repository.findEnrollment(userId, courseId);
+  // Atomic upsert: prevents duplicate enrollment from concurrent callbacks.
+  // Uses a unique compound key (userId, courseId) so the DB enforces
+  // idempotency regardless of race conditions.
+  const existing = await prisma.enrollment.findFirst({
+    where: { userId, courseId },
+  });
   if (!existing) {
-    await repository.createEnrollment({ userId, courseId });
+    try {
+      await prisma.enrollment.create({
+        data: {
+          userId,
+          courseId,
+          progress: 0,
+          status: "ACTIVE",
+        },
+      });
+    } catch (err: unknown) {
+      // P2002 = unique constraint violation = another concurrent callback
+      // already created the enrollment — safe to ignore.
+      if (err && typeof err === "object" && "code" in err && (err as { code: string }).code === "P2002") {
+        // Enrollment already exists, continue with notifications
+      } else {
+        throw err;
+      }
+    }
   }
 
   const course = await repository.findCourseById(courseId);
-  if (course) {
-    await notifyEnrollment(userId, course.title);
-    await notifyPaymentSuccess(userId, course.title, amount);
-  }
 
-  // Send the payment confirmation email **fire-and-forget** — the
-  // callback must never block the redirect on an SMTP round-trip.
-  // sendEmail itself is non-blocking-friendly, but we don't await it.
-  try {
-    const user = await repository.findUserById(userId);
-    if (course && user) {
-      const content = paymentConfirmationEmail(user.name, course.title, amount);
-      void sendEmail({ to: user.email, ...content }).catch((err) => {
-        console.error("[checkout-callback] Payment confirmation email failed:", err);
-      });
-    }
-  } catch (err) {
-    // A failed confirmation email must never break the payment flow.
-    console.error("[checkout-callback] Payment confirmation email lookup failed:", err);
-  }
-
-  for (const tag of enrollmentCacheTags(userId, courseId)) {
-    revalidateTag(tag);
-  }
+  // Side effects (both notifications + SSE push + confirmation email +
+  // cache revalidation + ops metrics) all ride on the domain event —
+  // the single source of truth in events.ts. Publishing instead of
+  // inlining them here revived the permanently-zero «ثبت‌نام پولی»
+  // counter and removed the duplicated logic.
+  await publish({
+    type: "enrollment:completed",
+    userId,
+    courseId,
+    courseName: course?.title ?? "دوره",
+    amount,
+  });
 }

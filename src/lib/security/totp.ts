@@ -10,7 +10,7 @@
  * apps). Compatible with Google Authenticator / Authy.
  */
 
-import { createHmac, randomBytes } from "node:crypto";
+import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 
 const BASE32_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 
@@ -80,9 +80,9 @@ export function verifyCode(secret: string, code: string): boolean {
   for (let drift = -1; drift <= 1; drift++) {
     const candidate = generateCode(secret, now + drift * STEP_SECONDS * 1000);
     // Constant-time compare to avoid leaking timing on the code.
-    const a = Buffer.from(candidate);
-    const b = Buffer.from(code);
-    if (a.length === b.length && a.equals(b)) return true;
+    const a = Buffer.from(candidate, "utf8");
+    const b = Buffer.from(code, "utf8");
+    if (a.length === b.length && timingSafeEqual(a, b)) return true;
   }
   return false;
 }

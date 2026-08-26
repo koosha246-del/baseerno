@@ -14,6 +14,7 @@ export function useActiveSection(
   options?: { rootMargin?: string }
 ): string {
   const [active, setActive] = useState<string>(ids[0] ?? "");
+  const idsKey = ids.join(",");
 
   useEffect(() => {
     const elements = ids
@@ -41,7 +42,7 @@ export function useActiveSection(
 
     elements.forEach((el) => observer.observe(el));
     return () => observer.disconnect();
-  }, [ids, options?.rootMargin]);
+  }, [idsKey, options?.rootMargin]);
 
   return active;
 }

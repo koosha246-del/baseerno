@@ -25,9 +25,12 @@ interface SentryLike {
 
 let cached: SentryLike | null = null;
 let loadAttempted = false;
+const RECONNECT_COOLDOWN = 60_000;
+let lastFailedAt = 0;
 
 async function getSentry(): Promise<SentryLike | null> {
-  if (loadAttempted) return cached;
+  if (cached) return cached;
+  if (loadAttempted && Date.now() - lastFailedAt < RECONNECT_COOLDOWN) return null;
   loadAttempted = true;
 
   const dsn = process.env.SENTRY_DSN; // read lazily — avoid importing env in edge edge-cases
@@ -45,6 +48,7 @@ async function getSentry(): Promise<SentryLike | null> {
       cached = sentry;
     }
   } catch {
+    lastFailedAt = Date.now();
     // @sentry/node not installed — silently fall back to console.
   }
   return cached;

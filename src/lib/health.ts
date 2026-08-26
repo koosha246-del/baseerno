@@ -11,6 +11,7 @@
 import { prismaRaw } from "@/lib/db/prisma-client";
 import { getRedisClient } from "@/lib/redis-client";
 import { isSearchEnabled, pingSearch } from "@/lib/search/client";
+import { isTracingEnabled } from "@/lib/tracing";
 
 export interface HealthReport {
   status: "ok" | "degraded";
@@ -67,11 +68,13 @@ export async function getHealthReport(): Promise<HealthReport> {
   checks.redis = await checkRedis();
   checks.search = await checkSearch();
   checks.emailOutboxBacklog = await emailOutboxBacklog();
+  checks.tracing = isTracingEnabled() ? "enabled" : "disabled";
 
   const healthy = checks.db === "ok";
+  const degraded = checks.redis === "down" || checks.search === "down";
 
   return {
-    status: healthy ? "ok" : "degraded",
+    status: healthy ? (degraded ? "degraded" : "ok") : "degraded",
     service: "baseer-no",
     checks,
     timestamp: new Date().toISOString(),

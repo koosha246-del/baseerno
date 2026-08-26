@@ -19,7 +19,6 @@ interface LessonRow {
   sortOrder: number;
   isFree: boolean;
   published: boolean;
-  videoUrl: string | null;
 }
 
 /**
@@ -69,7 +68,10 @@ export default async function ContentPage() {
     courses.length > 0
       ? await repository.listLessonsForCourses(courses.map((c) => c.id))
       : [];
-  const lessonsByCourse = groupBy(allLessons, (l) => l.courseId);
+  const lessonsByCourse = groupBy(
+    allLessons.map(({ videoUrl: _, ...rest }) => rest),
+    (l) => l.courseId,
+  );
 
   return (
     <div className="flex flex-col gap-6">

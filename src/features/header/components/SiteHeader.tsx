@@ -3,8 +3,9 @@
 import { cn } from "@/lib/utils";
 import { useScrolled } from "@/hooks/useScrolled";
 import { Container } from "@/components/shared/Container";
+import { Logo } from "@/components/shared/Logo";
+import { PublicSearch } from "@/components/shared/PublicSearch";
 import { headerData } from "../constants";
-import { Logo } from "./Logo";
 import { MainNav } from "./MainNav";
 import { HeaderActions } from "./HeaderActions";
 import { ThemeToggle } from "./ThemeToggle";
@@ -42,6 +43,7 @@ export function SiteHeader() {
         </div>
 
         <div className="flex items-center gap-1">
+          <PublicSearch />
           <ThemeToggle />
           <HeaderActions />
           <MobileNav />

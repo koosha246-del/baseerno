@@ -79,7 +79,7 @@ export function HeroShowcase() {
             <TrendingUp className="size-5" />
           </span>
           <div className="flex flex-col leading-tight">
-            <span className="text-xs font-extrabold text-fg-primary">۹۶٪ پیشرفت</span>
+            <span className="text-xs font-extrabold text-fg-primary">ادامه‌ی مسیر</span>
             <span className="text-[0.65rem] text-fg-secondary">دوره‌ی گرامر</span>
           </div>
         </div>

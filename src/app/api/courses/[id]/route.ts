@@ -23,7 +23,7 @@ const updateSchema = z.object({
 });
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
@@ -31,6 +31,17 @@ export async function GET(
   if (!course) {
     return NextResponse.json({ error: "دوره یافت نشد." }, { status: 404 });
   }
+
+  // Draft/unpublished courses are only visible to the owning teacher or
+  // an admin — never to anonymous visitors or other roles.
+  if (!course.published) {
+    const user = await getCurrentUser();
+    const allowed = user && (user.role === "ADMIN" || course.mentorId === user.id);
+    if (!allowed) {
+      return NextResponse.json({ error: "دوره یافت نشد." }, { status: 404 });
+    }
+  }
+
   return NextResponse.json({ course });
 }
 
