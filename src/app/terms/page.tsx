@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { Container } from "@/components/shared/Container";
 import { siteConfig } from "@/config/site";
+import { buildPageMetadata, buildBreadcrumbLd, ldJson } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: "شرایط و قوانین",
   description: `شرایط استفاده از خدمات آکادمی ${siteConfig.name}`,
-};
+  path: "/terms",
+});
 
 const sections = [
   {
@@ -57,6 +59,17 @@ const sections = [
 export default function TermsPage() {
   return (
     <main className="bg-background pb-20 pt-[calc(var(--header-h)+2rem)]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: ldJson(
+            buildBreadcrumbLd([
+              { name: "خانه", url: siteConfig.url },
+              { name: "شرایط و قوانین", url: `${siteConfig.url}/terms` },
+            ]),
+          ),
+        }}
+      />
       <Container width="narrow">
         <header className="mb-10 text-center">
           <span className="mb-3 inline-flex items-center gap-2 rounded-pill bg-kid-coral-100 px-4 py-1.5 text-sm font-semibold text-kid-coral-600">

@@ -18,3 +18,16 @@ export interface HeaderData {
   nav: HeaderNavItem[];
   cta: HeaderCta;
 }
+
+export interface Announcement {
+  text: string;
+  href?: string;
+  /** Color tone for the announcement bar. */
+  tone: "sky" | "coral" | "mint" | "sunny" | "lavender";
+}
+
+export interface SocialLink {
+  label: string;
+  href: string;
+  iconKey: string;
+}

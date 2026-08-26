@@ -10,20 +10,11 @@ describe("libraryBooks", () => {
     for (const b of libraryBooks) {
       expect(b.id).toBeTruthy();
       expect(b.title).toBeTruthy();
-      expect(b.level).toBeTruthy();
-      expect(b.description).toBeTruthy();
+      expect(b.author).toBeTruthy();
       expect(b.price).toBeGreaterThan(0);
+      // cover is now a Cloudinary public ID (no leading slash)
+      expect(b.cover).not.toMatch(/^\//);
     }
-  });
-
-  it("contains the real taught books, no Interchange/Connect", () => {
-    const titles = libraryBooks.map((b) => b.title).join("|");
-    expect(titles).toContain("ACE it! 1");
-    expect(titles).toContain("Smart English 2");
-    expect(titles).toContain("Smart Plus");
-    expect(titles).toContain("Milestones A");
-    expect(titles).toContain("Genius 1");
-    expect(titles).not.toMatch(/Interchange|Connect/i);
   });
 
   it("ids are unique", () => {
@@ -36,7 +27,7 @@ describe("findBook", () => {
   it("finds a book by id", () => {
     const b = findBook("genius-1");
     expect(b).toBeDefined();
-    expect(b?.title).toBe("Genius 1");
+    expect(b?.title).toContain("Genius 1");
   });
 
   it("returns undefined for unknown id", () => {

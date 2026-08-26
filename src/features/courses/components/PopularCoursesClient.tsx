@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CourseCard } from "./CourseCard";
@@ -13,6 +13,13 @@ interface Props {
   courses: Course[];
   categories: CourseCategory[];
   accentClasses: Record<Course["accent"], string>;
+  /**
+   * Initial search-box value, e.g. seeded from the `?q=` URL param on
+   * /courses. The grid itself does NOT read the URL (that lives in
+   * `PopularCoursesCatalog`, isolated in a Suspense boundary) so the
+   * course grid stays fully server-rendered for SEO.
+   */
+  initialQuery?: string;
 }
 
 /**
@@ -21,11 +28,25 @@ interface Props {
  * Receives the course list from the server component (which fetches
  * from Prisma) and lets the user narrow it down without a round trip.
  * The grid re-keys on filter change so the entrance stagger replays.
+ *
+ * NOTE: this component intentionally avoids `useSearchParams` so it can
+ * be rendered statically without a Suspense boundary — the home page
+ * uses it directly. URL query seeding lives in `PopularCoursesCatalog`.
  */
-export function PopularCoursesClient({ courses, categories, accentClasses }: Props) {
+export function PopularCoursesClient({
+  courses,
+  categories,
+  accentClasses,
+  initialQuery = "",
+}: Props) {
   const [active, setActive] = useState("all");
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery);
   const [loading] = useState(false);
+
+  // Keep the box in sync when the ?q= seed arrives after hydration.
+  useEffect(() => {
+    setQuery(initialQuery);
+  }, [initialQuery]);
 
   const filtered = useMemo(() => {
     let result =
@@ -98,7 +119,7 @@ function EmptyState() {
     <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-app-border bg-surface-subtle py-16 text-center">
       <span className="text-4xl">📭</span>
       <p className="font-bold text-fg-primary">درسی در این بخش پیدا نشد</p>
-      <p className="text-sm text-fg-secondary">به‌زودی درس‌های جدید می‌آیند.</p>
+      <p className="text-sm text-fg-secondary">بهزودی درسهای جدید میآیند.</p>
     </div>
   );
 }

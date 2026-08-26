@@ -2,6 +2,8 @@ import { describe, it, expect } from "vitest";
 import {
   buildBaseMetadata,
   buildOrganizationLd,
+  buildWebSiteLd,
+  buildPageMetadata,
   buildFaqLd,
   buildCourseLd,
   buildBreadcrumbLd,
@@ -131,6 +133,55 @@ describe("buildBaseMetadata", () => {
     if (typeof meta.title !== "string" && meta.title && "template" in meta.title) {
       expect((meta.title as { template: string }).template).toContain("|");
     }
+  });
+});
+
+describe("buildWebSiteLd", () => {
+  it("returns a valid WebSite with SearchAction", () => {
+    const ld = buildWebSiteLd();
+    expect(ld["@type"]).toBe("WebSite");
+    expect(ld["@id"]).toContain("/#website");
+    expect(ld.publisher["@id"]).toContain("/#org");
+  });
+
+  it("SearchAction deep-links into the course catalog with ?q=", () => {
+    const ld = buildWebSiteLd();
+    const action = ld.potentialAction as {
+      "@type": string;
+      target: { urlTemplate: string };
+      "query-input": string;
+    };
+    expect(action["@type"]).toBe("SearchAction");
+    expect(action.target.urlTemplate).toContain("/courses?q={search_term_string}");
+    expect(action["query-input"]).toBe("required name=search_term_string");
+  });
+});
+
+describe("buildPageMetadata", () => {
+  it("builds title, description, canonical, OG and Twitter", () => {
+    const meta = buildPageMetadata({
+      title: "حریم خصوصی",
+      description: "توضیح",
+      path: "/privacy",
+    });
+    expect(meta.title).toBe("حریم خصوصی");
+    expect(meta.description).toBe("توضیح");
+    expect(meta.alternates?.canonical).toBe("/privacy");
+    expect(meta.openGraph?.title).toContain("بصیر نو");
+    expect(meta.openGraph?.url).toContain("/privacy");
+    expect(meta.openGraph?.images).toBeDefined();
+    expect((meta.twitter as { card?: string } | undefined)?.card).toBe("summary_large_image");
+    expect(meta.twitter?.images).toBeDefined();
+  });
+
+  it("uses the site name in social titles", () => {
+    const meta = buildPageMetadata({
+      title: "تماس با ما",
+      description: "د",
+      path: "/contact",
+    });
+    expect(meta.openGraph?.title).toBe("تماس با ما | بصیر نو");
+    expect(meta.twitter?.title).toBe("تماس با ما | بصیر نو");
   });
 });
 

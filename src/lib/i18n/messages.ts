@@ -37,7 +37,7 @@ export const messages = {
         eyebrow: "کتاب‌های آموزشی",
         title: "با کتاب‌های استاندارد دنیا یاد بگیر",
         description:
-          "کتاب‌های واقعی تدریس‌شده در آموزشگاه — ACE it!، Smart English، Smart Plus، Milestones و Genius؛ قدم به قدم تا سطح بالاتر.",
+          "مجموعه Milestones، Genius، Ace it!‌، Smart English و Smart plus از انتشارات Setayesh — کتاب‌های استاندارد آموزش زبان انگلیسی.",
       },
       courses: {
         eyebrow: "دوره‌های زبان انگلیسی",
@@ -56,7 +56,7 @@ export const messages = {
         reasons: {
           books: {
             title: "کتاب‌های استاندارد جهانی",
-            desc: "با کتاب‌های تدریس‌شده‌ی آموزشگاه پیش می‌روی — ACE it!، Smart English، Smart Plus، Milestones و Genius.",
+            desc: "از کتاب‌های استاندارد Setayesh (Milestones، Genius، Ace it!‌، Smart English، Smart plus) استفاده می‌کنیم — منابع معتبر آموزش زبان انگلیسی.",
           },
           teachers: {
             title: "اساتید متخصص زبان",
@@ -98,14 +98,6 @@ export const messages = {
       toman: "تومان",
       readMore: "بیشتر بخوانید",
       showLess: "نمایش کمتر",
-      page: "صفحه",
-      pageOf: "از",
-      prev: "قبلی",
-      next: "بعدی",
-      loginPrompt: "قبلاً ثبت‌نام کرده‌اید؟",
-      registerPrompt: "حساب ندارید؟",
-      forgotPassword: "رمز عبور را فراموش کرده‌اید؟",
-      submitting: "در حال ارسال...",
     },
     auth: {
       login: "ورود",
@@ -184,14 +176,6 @@ export const messages = {
       viewAll: "View All",
       free: "Free",
       toman: "Toman",
-      page: "Page",
-      pageOf: "of",
-      prev: "Previous",
-      next: "Next",
-      loginPrompt: "Already have an account?",
-      registerPrompt: "Don't have an account?",
-      forgotPassword: "Forgot your password?",
-      submitting: "Submitting...",
     },
     auth: {
       login: "Login",

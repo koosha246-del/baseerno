@@ -1,7 +1,19 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { Menu, Phone, ArrowLeft, GraduationCap } from "lucide-react";
+import { useState, useCallback, useEffect } from "react";
+import Link from "next/link";
+import {
+  Menu,
+  Phone,
+  ArrowLeft,
+  GraduationCap,
+  Search,
+  Globe,
+  LayoutDashboard,
+  BookOpen,
+  Award,
+  MessageSquare,
+} from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -33,10 +45,17 @@ interface MobileNavProps {
  */
 export function MobileNav({ className }: MobileNavProps) {
   const [open, setOpen] = useState(false);
+  const [authed, setAuthed] = useState(false);
   const { nav, cta } = headerData;
   const drawerRef = useFocusTrap(open);
 
   const closeNav = useCallback(() => setOpen(false), []);
+
+  useEffect(() => {
+    fetch("/api/auth/me", { cache: "no-store" })
+      .then((r) => setAuthed(r.ok))
+      .catch(() => setAuthed(false));
+  }, []);
 
   return (
     <div className={cn("md:hidden", className)}>
@@ -70,6 +89,19 @@ export function MobileNav({ className }: MobileNavProps) {
             aria-label="ناوبری موبایل"
             className="flex flex-1 flex-col gap-1 overflow-y-auto px-4 py-6"
           >
+            {/* Search */}
+            <Link
+              href="/courses"
+              onClick={closeNav}
+              className="flex items-center gap-3 rounded-xl px-4 py-3.5 text-base font-semibold text-fg-primary transition-colors hover:bg-surface-subtle"
+            >
+              <Search className="size-5 text-fg-muted" />
+              جستجوی دوره...
+            </Link>
+
+            <Separator className="my-2" />
+
+            {/* Nav Links */}
             {nav.map((item, idx) => (
               <a
                 key={item.id}
@@ -83,8 +115,48 @@ export function MobileNav({ className }: MobileNavProps) {
               </a>
             ))}
 
-            <Separator className="my-4" />
+            <Separator className="my-2" />
 
+            {/* User Links (when logged in) */}
+            {authed && (
+              <>
+                <a
+                  href="/dashboard"
+                  onClick={closeNav}
+                  className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-fg-secondary transition-colors hover:bg-surface-subtle"
+                >
+                  <LayoutDashboard className="size-4" />
+                  پنل کاربری
+                </a>
+                <a
+                  href="/dashboard"
+                  onClick={closeNav}
+                  className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-fg-secondary transition-colors hover:bg-surface-subtle"
+                >
+                  <BookOpen className="size-4" />
+                  دوره‌های من
+                </a>
+                <a
+                  href="/dashboard/certificates"
+                  onClick={closeNav}
+                  className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-fg-secondary transition-colors hover:bg-surface-subtle"
+                >
+                  <Award className="size-4" />
+                  گواهی‌نامه‌ها
+                </a>
+                <a
+                  href="/dashboard/messages"
+                  onClick={closeNav}
+                  className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-fg-secondary transition-colors hover:bg-surface-subtle"
+                >
+                  <MessageSquare className="size-4" />
+                  پیام‌ها
+                </a>
+                <Separator className="my-2" />
+              </>
+            )}
+
+            {/* Phone */}
             <Button asChild variant="ghost" className="justify-start">
               <a href={headerPhone.href} onClick={closeNav} dir="ltr">
                 <Phone className="size-4" />
@@ -92,6 +164,15 @@ export function MobileNav({ className }: MobileNavProps) {
               </a>
             </Button>
 
+            {/* Language */}
+            <Button asChild variant="ghost" className="justify-start">
+              <a href="#" onClick={closeNav}>
+                <Globe className="size-4" />
+                فارسی
+              </a>
+            </Button>
+
+            {/* CTA */}
             <Button
               asChild
               variant="brand"
@@ -103,6 +184,15 @@ export function MobileNav({ className }: MobileNavProps) {
                 {cta.label}
               </a>
             </Button>
+
+            {/* Logout (when logged in) */}
+            {authed && (
+              <Button asChild variant="ghost" className="mt-2 justify-start text-red-600">
+                <a href="/api/auth/logout" onClick={closeNav}>
+                  خروج
+                </a>
+              </Button>
+            )}
           </nav>
         </SheetContent>
       </Sheet>

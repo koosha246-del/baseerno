@@ -1,21 +1,16 @@
-# راهنمای Deploy به Railway (چند-سرویسه)
+# راهنمای Deploy به Railway
 
-از این به بعد پروژه با **سه سرویس مستقل** روی Railway اجرا میشود
-(تعریفشده در `railway.toml`):
+پروژه با **یک سرویس Docker** روی Railway اجرا میشود (تعریفشده در
+`railway.json`):
 
 | سرویس | نقش | Start Command |
 |---|---|---|
-| `web` | برنامه Next.js | `npm start` |
-| `worker` | صف ایمیل (پردازش EmailOutbox) | `npm run worker:email` |
-| `meili` | Meilisearch (جستجوی فارسی) | تصویر رسمی |
+| `web` | برنامه Next.js (Standalone) | `node server.js` (از داخل Dockerfile) |
 
-> ⚠️ `railway.toml` اولویت دارد؛ فایل قدیمی `railway.json` دیگر استفاده
-> نمیشود و قابل حذف است. Build Command ها از الان داخل `railway.toml`
-> هستند (web: `npx prisma generate && npm run build` — worker فقط
-> `npx prisma generate` چون Next را build نمیکند).
->
-> ⚠️ متغیرهای محیطی را نمیتوان داخل `railway.toml` تعریف کرد — باید در
-> داشبورد (Service → Variables) یا با `railway variables set` ست شوند.
+> ⚠️ پیکربندی از `railway.json` خوانده میشود و builder آن `DOCKERFILE` است.
+> فایل `railway.toml` (چند-سرویسه قدیمی) حذف شد چون نام سرویسهای آن
+> (`web`/`worker`/`meili`) با سرویس واقعی پروژه در Railway یکی نبود و
+> Railway تنظیمات را روی سرویس اصلی اعمال نمیکرد.
 
 ## مرحله ۱: Push به GitHub
 
@@ -31,16 +26,13 @@ git push -u origin main
 
 1. به https://railway.app بروید و با GitHub لاگین کنید.
 2. **New Project** → **Deploy from GitHub repo** → ریپازیتوری را انتخاب کنید.
-3. Railway با خواندن `railway.toml` سه سرویس `web`، `worker` و `meili`
-   را میسازد (سرویس meili از تصویر Docker رسمی بالا میآید).
-
-> ترتیب مهم: اول پروژه را بساز، بعد (در صورت نیاز) `railway link` بزن.
+3. Railway با خواندن `railway.json` و `Dockerfile` یک سرویس `web` میسازد.
+   (سرویسهای `worker` و `meili` فعلاً غیرفعال هستند؛ در صورت نیاز جداگانه
+   اضافه میشوند.)
 
 ## مرحله ۳: تنظیم متغیرهای محیطی
 
-در هر سرویس → Variables:
-
-**سرویس `web`:**
+در سرویس `web` → Variables:
 
 ```
 DATABASE_URL=postgresql://...?sslmode=require
@@ -49,7 +41,6 @@ REPLICA_URL=postgresql://...?sslmode=require
 
 JWT_SECRET=یک-رشته-تصادفی-طولانی-حداقل-32-کاراکتر
 PAYMENT_SIGNATURE_SECRET=یک-رشته-تصادفی-دیگر
-CRON_SECRET=یک-رشته-تصادفی-دیگر-برای-کرون-ها
 
 CLOUDINARY_CLOUD_NAME=...
 CLOUDINARY_API_KEY=...
@@ -60,88 +51,73 @@ SENTRY_DSN=...
 NEXT_PUBLIC_GA_ID=...
 NEXT_PUBLIC_SITE_URL=https://baseerno.ir
 
-# جستجو (آدرس داخلی سرویس meili در Railway):
+# جستجو (اختیاری):
 SEARCH_HOST=https://<meili-service>.up.railway.app
 SEARCH_API_KEY=<همان MEILI_MASTER_KEY>
-
-# (اختیاری) Redis برای rate limit و کش اشتراکی:
-REDIS_URL=redis://... یا rediss://...
 ```
 
-**سرویس `worker`:**
-
-> ⚠️ **مهم:** worker بهصورت غیرمستقیم `env.ts` را import میکند
-> (`email-queue → prisma-client → env`). `env.ts` در production به
-> `DATABASE_URL`، `JWT_SECRET` (≥۳۲ کاراکتر) و `PAYMENT_SIGNATURE_SECRET`
-> (≥۱۶ کاراکتر) نیاز دارد و در نبودشان **همان اول startup کرش میکند**.
-> پس این سه متغیر برای worker هم الزامی است، حتی اگر خودش مستقیم از
-> JWT استفاده نکند:
-
-```
-DATABASE_URL=postgresql://...?sslmode=require
-JWT_SECRET=همان-مقدار-web
-PAYMENT_SIGNATURE_SECRET=همان-مقدار-web
-RESEND_API_KEY=...
-```
-
-**سرویس `meili`:**
-
-```
-MEILI_MASTER_KEY=<یک-کلید-تصادفی-حداقل-16-کاراکتر>
-MEILI_ENV=production
-```
+> **مهم — متغیرهای build-time:** Railway متغیرهای سرویس را در زمان build فقط
+> وقتی به Dockerfile تزریق میکند که با `ARG` اعلان شده باشند. چون `next build`
+> هنگام «Collecting page data» ماژولهای route را اجرا میکند و `env.ts` در
+> production روی `DATABASE_URL`، `JWT_SECRET` و `PAYMENT_SIGNATURE_SECRET`
+> fail-fast است، این سه (بهعلاوه `NEXT_PUBLIC_SITE_URL` که در client bundle
+> درونریزی میشود) باید در Dockerfile به صورت `ARG`/`ENV` اعلان شده باشند —
+> الان این کار در Dockerfile انجام شده، پس فقط کافی است مقادیر در Variables
+> ست باشند.
 
 ## مرحله ۴: دامنه
 
 1. Railway → سرویس `web` → Settings → Domains → **Custom Domain** → `baseerno.ir`
 2. DNS: `CNAME @` → مقدار دادهشده توسط Railway.
-3. برای سرویس `meili` هم یک دامنه بگیر (Generate Domain) — همان میشود `SEARCH_HOST`.
 
 ## مرحله ۵: Build و Start
 
-Build Command ها از `railway.toml` میآیند — نیازی به تنظیم دستی نیست:
-- `web` → `npx prisma generate && npm run build` سپس `npm start`
-- `worker` → فقط `npx prisma generate` سپس `npm run worker:email`
-- healthcheck ی `web` روی `/api/health` و healthcheck ی `meili` روی `/health` است.
+Build به صورت خودکار با `Dockerfile` انجام میشود:
 
-## مرحله ۶: Migration و Seed جستجو
-
-بعد از اولین deploy، migration ها را اعمال کن — در Railway → سرویس `web`
-→ Deploy → **Run Command** (یا محلی: `railway run --service web npx prisma migrate deploy`):
-
-```bash
-npx prisma migrate deploy
-npm run db:seed          # فقط اگر دادهی نمونه میخواهی
+```
+# داخل Dockerfile (نیازی به تنظیم دستی نیست)
+npm ci && npx prisma generate && npm run build
 ```
 
-سپس جستجو را ایندکس کنید (وقتی meili بالا آمد):
-
-```bash
-npm run seed:search
+Start Command از CMD داخل Dockerfile میآید:
+```
+node server.js
 ```
 
-یا از داخل ادمین: `POST /api/admin/search-sync`.
+Healthcheck سرویس روی `/` است.
+
+## مرحله ۶: Migration
+
+بعد از اولین deploy، Migration را **از روی سیستم خودتان** با Railway CLI اجرا کنید
+(در داخل کانتینر تصویر standalone ابزار prisma CLI وجود ندارد):
+
+```bash
+railway run npx prisma db push
+```
+
+یا با `npx prisma migrate deploy` از روی پروژه محلی که `DATABASE_URL` تنظیم شده.
 
 ## مشکلات رایج
 
 **Build failed?**
-- همه متغیرهای محیطی تنظیم شده باشند؛ لاگها را بررسی کنید.
-- `next build` به `NEXT_PUBLIC_*` در زمان build نیاز دارد — آنها را قبل از اولین build ست کنید.
-
-**worker در startup کرش میکند؟**
-- `JWT_SECRET` و `PAYMENT_SIGNATURE_SECRET` را در سرویس worker ست کنید
-  (شرط سخت `env.ts` در production — رجوع به مرحله ۳).
+- همه متغیرهای محیطی ست شده باشند؛ لاگها را بررسی کنید (`railway logs --service baseerno`).
+- اگر خطای «Invalid production environment» در build دیدید: متغیرها در
+  Variables ست شدهاند ولی احتمالاً مشکل build-time بوده — Dockerfile را با
+  بخش `ARG` مقایسه کنید.
+- اگر خطای «Cannot find module» / «Type error» در build دیدید: نوع خطا از
+  پکیجهای جاافتاده است (مثل `jest-axe` که `@types/jest-axe` میخواهد).
 
 **Database connection failed?**
 - `DATABASE_URL` و `sslmode=require` را بررسی کنید.
 
-**502 در web اما worker سالم؟**
-- Start command و Healthcheck `/api/health` را بررسی کنید.
-
-**جستجو جواب نمیدهد؟**
-- `SEARCH_HOST`/`SEARCH_API_KEY` در web با `MEILI_MASTER_KEY` در meili یکی باشد.
-- `npm run verify:search:index` را روی پروژه محلی اجرا کنید تا ایندکس سالم باشد.
+**502 در web؟**
+- Start command و Healthcheck `/` را بررسی کنید.
 
 **ایمیل ارسال نمیشود؟**
-- `RESEND_API_KEY` در worker تنظیم باشد؛ لاگهای worker را ببینید.
+- `RESEND_API_KEY` در سرویس تنظیم باشد؛ لاگها را ببینید.
 - Rows ی `processing` گیرکرده بعد از ۱۰ دقیقه خودکار به `pending` برمیگردند.
+
+> اگر بعداً سرویس `worker` را اضافه کردید: `env.ts` در حالت production
+> علاوه بر `DATABASE_URL` و `RESEND_API_KEY` به `JWT_SECRET` و
+> `PAYMENT_SIGNATURE_SECRET` هم نیاز دارد؛ بدون آنها worker هنگام شروع
+> crash-loop میکند.

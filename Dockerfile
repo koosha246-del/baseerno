@@ -30,6 +30,21 @@ RUN npx prisma generate
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
+# Railway injects service variables at build time ONLY when declared as ARG.
+# `next build` runs route modules (env.ts validates in production), so the
+# build needs these three; NEXT_PUBLIC_SITE_URL is inlined into client
+# bundles. At runtime Railway injects the real values separately — these ENVs
+# stay inside this builder stage and do not leak into the runner image.
+ARG DATABASE_URL
+ARG JWT_SECRET
+ARG PAYMENT_SIGNATURE_SECRET
+ARG NEXT_PUBLIC_SITE_URL
+
+ENV DATABASE_URL=$DATABASE_URL
+ENV JWT_SECRET=$JWT_SECRET
+ENV PAYMENT_SIGNATURE_SECRET=$PAYMENT_SIGNATURE_SECRET
+ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
+
 RUN npm run build
 
 # ---------- Runner stage ----------
