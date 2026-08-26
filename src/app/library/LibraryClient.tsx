@@ -119,12 +119,14 @@ export function LibraryClient({ books }: Props) {
                       <span lang="en" dir="ltr">{book.subtitle}</span>
                     </p>
                   )}
-                  <p className="mt-1 text-xs text-fg-secondary">
-                    نویسنده:{" "}
-                    <span lang="en" dir="ltr">
-                      {book.author}
-                    </span>
-                  </p>
+                  {book.author && (
+                    <p className="mt-1 text-xs text-fg-secondary">
+                      نویسنده:{" "}
+                      <span lang="en" dir="ltr">
+                        {book.author}
+                      </span>
+                    </p>
+                  )}
                 </div>
 
                 <p className="line-clamp-3 text-sm leading-loose text-fg-secondary">

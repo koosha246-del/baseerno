@@ -37,7 +37,7 @@ export const messages = {
         eyebrow: "کتاب‌های آموزشی",
         title: "با کتاب‌های استاندارد دنیا یاد بگیر",
         description:
-          "مجموعه Interchange و Connect از انتشارات Cambridge — همان کتاب‌هایی که در بهترین آکادمی‌های زبان دنیا تدریس می‌شود.",
+          "کتاب‌های واقعی تدریس‌شده در آموزشگاه — ACE it!، Smart English، Smart Plus، Milestones و Genius؛ قدم به قدم تا سطح بالاتر.",
       },
       courses: {
         eyebrow: "دوره‌های زبان انگلیسی",
@@ -56,7 +56,7 @@ export const messages = {
         reasons: {
           books: {
             title: "کتاب‌های استاندارد جهانی",
-            desc: "از مجموعه‌های Cambridge (Interchange, Connect) استفاده می‌کنیم — همان کتاب‌هایی که در آکادمی‌های برتر دنیا تدریس می‌شود.",
+            desc: "با کتاب‌های تدریس‌شده‌ی آموزشگاه پیش می‌روی — ACE it!، Smart English، Smart Plus، Milestones و Genius.",
           },
           teachers: {
             title: "اساتید متخصص زبان",
@@ -98,6 +98,14 @@ export const messages = {
       toman: "تومان",
       readMore: "بیشتر بخوانید",
       showLess: "نمایش کمتر",
+      page: "صفحه",
+      pageOf: "از",
+      prev: "قبلی",
+      next: "بعدی",
+      loginPrompt: "قبلاً ثبت‌نام کرده‌اید؟",
+      registerPrompt: "حساب ندارید؟",
+      forgotPassword: "رمز عبور را فراموش کرده‌اید؟",
+      submitting: "در حال ارسال...",
     },
     auth: {
       login: "ورود",
@@ -176,6 +184,14 @@ export const messages = {
       viewAll: "View All",
       free: "Free",
       toman: "Toman",
+      page: "Page",
+      pageOf: "of",
+      prev: "Previous",
+      next: "Next",
+      loginPrompt: "Already have an account?",
+      registerPrompt: "Don't have an account?",
+      forgotPassword: "Forgot your password?",
+      submitting: "Submitting...",
     },
     auth: {
       login: "Login",

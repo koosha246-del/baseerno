@@ -59,7 +59,7 @@ describe("Marquee", () => {
     const { container } = render(
       <Marquee>
         <span>Cambridge University Press</span>
-        <span>Interchange Series</span>
+        <span>Smart Series</span>
         <span>TESOL Certified</span>
       </Marquee>
     );

@@ -12,7 +12,7 @@ export const siteConfig = {
   shortName: "بصیر نو",
   tagline: "یادگیری زبان انگلیسی، قدم به قدم",
   description:
-    "بصیر نو یک آکادمی زبان انگلیسی است. از سطح مبتدی تا آیلتس، با کتاب‌های استاندارد بین‌المللی (Interchange و Connect) و تدریس ساختارمند.",
+    "بصیر نو یک آموزشگاه زبان انگلیسی برای کودکان و نوجوانان است؛ از شروع مسیر تا سطوح بالاتر با کتاب‌های واقعی تدریس‌شده (ACE it!، Smart English، Smart Plus، Milestones، Genius).",
   url: "https://baseerno.ir",
   locale: "fa_IR",
   lang: "fa",

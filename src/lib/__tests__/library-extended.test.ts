@@ -10,13 +10,16 @@ describe("libraryBooks", () => {
     for (const book of libraryBooks) {
       expect(book.id).toBeTruthy();
       expect(book.title).toBeTruthy();
-      expect(book.author).toBeTruthy();
       expect(book.level).toBeTruthy();
       expect(book.description).toBeTruthy();
       expect(typeof book.price).toBe("number");
       expect(book.price).toBeGreaterThan(0);
-      // cover is now a Cloudinary public ID (no leading slash)
-      expect(book.cover).not.toMatch(/^\//);
+    }
+  });
+
+  it("covers point at real local scans", () => {
+    for (const book of libraryBooks) {
+      expect(book.cover).toMatch(/^\/images\/book-[a-z0-9-]+\.webp$/);
       expect(book.file).toMatch(/^\//);
     }
   });
@@ -26,18 +29,20 @@ describe("libraryBooks", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it("all books have positive page counts", () => {
+  it("page counts are optional but positive when present", () => {
     for (const book of libraryBooks) {
-      expect(book.pages).toBeGreaterThan(0);
+      if (book.pages !== undefined) {
+        expect(book.pages).toBeGreaterThan(0);
+      }
     }
   });
 });
 
 describe("findBook", () => {
   it("returns the correct book by id", () => {
-    const book = findBook("interchange-1");
+    const book = findBook("ace-it-1");
     expect(book).toBeDefined();
-    expect(book?.title).toBe("Interchange 1");
+    expect(book?.title).toBe("ACE it! 1");
   });
 
   it("returns undefined for unknown id", () => {
@@ -49,7 +54,7 @@ describe("findBook", () => {
   });
 
   it("is case-sensitive", () => {
-    expect(findBook("INTERCHANGE-1")).toBeUndefined();
+    expect(findBook("ACE-IT-1")).toBeUndefined();
   });
 });
 

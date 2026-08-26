@@ -4,15 +4,15 @@ import { signDownloadToken, verifyDownloadToken } from "../library-token";
 describe("signDownloadToken / verifyDownloadToken", () => {
   it("round-trips a payload", () => {
     const token = signDownloadToken({
-      bookId: "interchange-1",
+      bookId: "smart-english-2",
       purchaseId: "p-1",
-      amount: 280000,
+      amount: 300000,
     });
     const payload = verifyDownloadToken(token);
     expect(payload).not.toBeNull();
-    expect(payload?.bookId).toBe("interchange-1");
+    expect(payload?.bookId).toBe("smart-english-2");
     expect(payload?.purchaseId).toBe("p-1");
-    expect(payload?.amount).toBe(280000);
+    expect(payload?.amount).toBe(300000);
   });
 
   it("returns null for a tampered token", () => {
