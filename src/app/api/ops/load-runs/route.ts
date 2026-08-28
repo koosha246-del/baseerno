@@ -23,10 +23,12 @@ export async function GET(req: Request) {
   }
 
   const { searchParams } = new URL(req.url);
-  const rawLimit = Number(searchParams.get("limit") ?? 30);
-  const limit = Number.isFinite(rawLimit) ? Math.min(Math.max(1, rawLimit), 200) : 30;
-  const rawOffset = Number(searchParams.get("offset") ?? 0);
-  const offset = Number.isFinite(rawOffset) ? Math.max(0, rawOffset) : 0;
+  // Integers only — a float like ?limit=2.5 passes Number.isFinite but
+  // Prisma's take rejects it with a validation error (500).
+  const rawLimit = Number.parseInt(searchParams.get("limit") ?? "30", 10);
+  const limit = Number.isNaN(rawLimit) ? 30 : Math.min(Math.max(1, rawLimit), 200);
+  const rawOffset = Number.parseInt(searchParams.get("offset") ?? "0", 10);
+  const offset = Number.isNaN(rawOffset) || rawOffset < 0 ? 0 : rawOffset;
 
   const runs = await repository.listLoadRuns(limit, offset);
 

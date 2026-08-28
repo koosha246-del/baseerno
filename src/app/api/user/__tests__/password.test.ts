@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // ─── Module mocks (must come before importing the route) ───────────────
 const getCurrentUser = vi.fn();
+const clearSession = vi.fn();
 const findUserById = vi.fn();
 const updatePassword = vi.fn();
 const verifyPassword = vi.fn();
@@ -12,6 +13,7 @@ const getClientIdentifier = vi.fn(() => "client-1");
 
 vi.mock("@/lib/auth/session", () => ({
   getCurrentUser: () => getCurrentUser(),
+  clearSession: () => clearSession(),
 }));
 
 vi.mock("@/lib/db/repository", () => ({

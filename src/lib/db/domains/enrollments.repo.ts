@@ -101,17 +101,20 @@ export async function createEnrollment(input: {
 
 /** Count enrollments grouped by calendar month (raw SQL). */
 export async function enrollmentsByMonth(db: typeof prisma = prisma) {
+  // Label in SQL with to_char — a naive `timestamp` parsed by the pg driver
+  // is reinterpreted in the Node process's local timezone, which shifts
+  // buckets on any non-UTC host (e.g. Asia/Tehran reads "2025-12" for Jan).
   const rows = await db.$queryRaw<
-    Array<{ month: Date; count: bigint }>
+    Array<{ month: string; count: bigint }>
   >`
-    SELECT date_trunc('month', "enrolledAt") AS month, COUNT(*)::bigint AS count
+    SELECT to_char("enrolledAt", 'YYYY-MM') AS month, COUNT(*)::bigint AS count
     FROM "Enrollment"
     WHERE "deletedAt" IS NULL
-    GROUP BY date_trunc('month', "enrolledAt")
+    GROUP BY to_char("enrolledAt", 'YYYY-MM')
     ORDER BY month ASC
   `;
   return rows.map((r) => ({
-    month: r.month.toISOString().slice(0, 7),
+    month: r.month,
     count: Number(r.count),
   }));
 }

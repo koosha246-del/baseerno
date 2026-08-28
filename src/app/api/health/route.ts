@@ -16,7 +16,12 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   const report = await getHealthReport();
+  // Liveness is defined by the DATABASE only. A Redis/search outage sets
+  // the overall status to "degraded" (visible in the body / Ops page) but
+  // the app still serves — failing the probe here would make monitors
+  // restart a fully functional instance.
+  const alive = report.checks.db === "ok";
   return NextResponse.json(report, {
-    status: report.status === "ok" ? 200 : 503,
+    status: alive ? 200 : 503,
   });
 }

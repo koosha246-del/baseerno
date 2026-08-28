@@ -48,12 +48,21 @@ export async function sendEmail(options: SendEmailOptions): Promise<boolean> {
   try {
     const { siteConfig } = await import("@/config/site");
     const resend = new Resend(resendKey);
-    await resend.emails.send({
-      from: `${siteConfig.name} <noreply@baseerno.ir>`,
+    // The Resend SDK resolves with { data, error } — it does NOT throw on
+    // API rejections (invalid key, bad address, quota). Check `error`
+    // explicitly, exactly like email-queue.ts does, otherwise the email
+    // is silently lost with `true` reported to the caller.
+    const { error } = await resend.emails.send({
+      from: process.env.EMAIL_FROM ?? `${siteConfig.name} <noreply@baseerno.ir>`,
       to: options.to,
       subject: options.subject,
       html: options.html,
     });
+    if (error) {
+      console.error("[email] Resend API rejected send, enqueuing for retry:", error);
+      await enqueueEmail(options);
+      return true;
+    }
     return true;
   } catch (error) {
     // Direct send failed — enqueue for retry via worker

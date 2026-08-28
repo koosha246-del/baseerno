@@ -12,6 +12,10 @@ const schema = z.object({
   name: z.string().min(3, "نام باید حداقل ۳ حرف باشد.").optional(),
   phone: z.string().optional(),
   bio: z.string().max(500, "بیوگرافی حداکثر ۵۰۰ کاراکتر.").optional(),
+  // Cloudinary URL set by the avatar FileUpload on the settings page —
+  // without this the client sends it and zod silently strips it, so the
+  // user sees "ذخیره شد" while the avatar is discarded.
+  avatar: z.string().url().max(500).nullable().optional(),
 });
 
 async function updateProfileHandler(req: Request) {

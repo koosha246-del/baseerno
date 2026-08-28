@@ -15,7 +15,9 @@ export const headerData: HeaderData = {
   nav: navigation.map((item) => ({
     id: item.id,
     label: item.label,
-    href: `#${item.id}`,
+    // "home" is a route, not an anchor — the homepage has no #home
+    // section, so a bare `#home` href was a dead link.
+    href: item.id === "home" ? "/" : `#${item.id}`,
   })),
   cta: {
     label: headerCta.label,

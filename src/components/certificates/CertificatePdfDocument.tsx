@@ -1,4 +1,7 @@
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import { ensureCertificateFonts } from "./pdfFonts";
+
+ensureCertificateFonts();
 
 interface Props {
   studentName: string;
@@ -15,7 +18,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     padding: 40,
-    fontFamily: "Helvetica",
+    fontFamily: "Vazirmatn",
+    direction: "rtl",
   },
   border: {
     position: "absolute",
@@ -45,6 +49,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#1E3A5F",
     marginBottom: 8,
+    direction: "ltr",
   },
   subtitle: {
     fontSize: 12,
@@ -105,7 +110,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "bold",
     color: "#1E3A5F",
-    fontFamily: "Courier",
+    fontFamily: "Vazirmatn",
+    direction: "ltr",
   },
   line: {
     width: 120,

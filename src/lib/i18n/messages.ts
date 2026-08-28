@@ -98,6 +98,10 @@ export const messages = {
       toman: "تومان",
       readMore: "بیشتر بخوانید",
       showLess: "نمایش کمتر",
+      page: "صفحه",
+      pageOf: "از",
+      prev: "قبلی",
+      next: "بعدی",
     },
     auth: {
       login: "ورود",
@@ -176,6 +180,10 @@ export const messages = {
       viewAll: "View All",
       free: "Free",
       toman: "Toman",
+      page: "Page",
+      pageOf: "of",
+      prev: "Previous",
+      next: "Next",
     },
     auth: {
       login: "Login",

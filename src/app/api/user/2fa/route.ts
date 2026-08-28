@@ -70,6 +70,15 @@ async function enableHandler(req: Request) {
   }
 
   // The user must prove they hold the secret before we enable it.
+  // verifyCode decodes the secret as base32 and throws on invalid
+  // characters — validate the charset first so garbage input is a 422,
+  // not an unhandled 500.
+  if (!/^[A-Z2-7]+=*$/.test(parsed.data.secret.toUpperCase())) {
+    return NextResponse.json(
+      { error: "کلید ۲FA نامعتبر است." },
+      { status: 422 },
+    );
+  }
   if (!verifyCode(parsed.data.secret, parsed.data.code)) {
     return NextResponse.json({ error: "کد تأیید نادرست است." }, { status: 400 });
   }

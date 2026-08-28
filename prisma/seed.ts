@@ -10,7 +10,12 @@ const daysAgo = (d: number) => new Date(Date.now() - d * 86400000);
 async function main() {
   console.log("🌱 Seeding database...");
 
-  // Clean existing data
+  // Clean existing data (children first — required FKs are ON DELETE
+  // RESTRICT, so Notification/Conversation/ChatMessage must go before
+  // users or re-seeding on a used database fails with P2003).
+  await prisma.chatMessage.deleteMany();
+  await prisma.conversation.deleteMany();
+  await prisma.notification.deleteMany();
   await prisma.passwordReset.deleteMany();
   await prisma.message.deleteMany();
   await prisma.payment.deleteMany();

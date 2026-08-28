@@ -62,6 +62,10 @@ async function handleZarinpalCallback(
     }
 
     if (payment.status === "PAID") {
+      // Self-heal: if a previous attempt crashed between markPaymentPaid
+      // and enrollment creation, finish the job instead of leaving the
+      // user permanently unenrolled.
+      await healEnrollmentIfMissing(payment);
       return NextResponse.redirect(
         new URL("/dashboard/courses?already_paid=true", req.url),
       );
@@ -116,6 +120,10 @@ async function finalizePayment(req: Request, paymentId: string) {
     // so a previously-declined order cannot be flipped to PAID by replaying
     // this callback.
     if (payment.status !== "PENDING") {
+      // Self-heal an interrupted PAID payment (see healEnrollmentIfMissing).
+      if (payment.status === "PAID") {
+        await healEnrollmentIfMissing(payment);
+      }
       return NextResponse.redirect(
         new URL("/dashboard/courses?already_paid=true", req.url),
       );
@@ -129,6 +137,24 @@ async function finalizePayment(req: Request, paymentId: string) {
   } catch (error) {
     console.error("Payment callback error:", error);
     return NextResponse.redirect(new URL("/dashboard?error=callback_failed", req.url));
+  }
+}
+
+/**
+ * Retry-safe enrollment completion: if a crash happened between
+ * `markPaymentPaid` and enrollment creation, a PAID payment would
+ * previously short-circuit to `already_paid` forever — money taken, no
+ * enrollment. Any replay of the callback now completes the missing
+ * enrollment + side effects exactly once.
+ */
+async function healEnrollmentIfMissing(
+  payment: { userId: string; courseId: string; amount: number },
+) {
+  const existing = await prisma.enrollment.findFirst({
+    where: { userId: payment.userId, courseId: payment.courseId },
+  });
+  if (!existing) {
+    await ensureEnrollmentAndNotify(payment.userId, payment.courseId, payment.amount);
   }
 }
 

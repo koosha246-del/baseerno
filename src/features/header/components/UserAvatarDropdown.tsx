@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { LogOut, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { logoutAndRedirect } from "@/lib/client-logout";
 
 interface UserData {
   name: string;
@@ -96,13 +97,19 @@ export function UserAvatarDropdown() {
             پیام‌ها
           </a>
           <div className="border-t border-app-border" />
-          <a
-            href="/api/auth/logout"
-            className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-surface-subtle"
+          {/* Logout — the endpoint is POST-only; the old <a href> hit GET and
+              returned 405 without clearing the session cookie. */}
+          <button
+            type="button"
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-surface-subtle"
+            onClick={() => {
+              setMenuOpen(false);
+              void logoutAndRedirect("/");
+            }}
           >
             <LogOut className="size-4" />
             خروج
-          </a>
+          </button>
         </div>
       )}
     </div>

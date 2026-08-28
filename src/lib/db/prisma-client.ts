@@ -210,6 +210,7 @@ export function toSafe(user: {
   avatar: string | null;
   phone: string | null;
   bio: string | null;
+  tokenVersion: number;
   createdAt: Date;
   updatedAt: Date;
   deletedAt: Date | null;
@@ -222,6 +223,7 @@ export function toSafe(user: {
     avatar: user.avatar,
     phone: user.phone,
     bio: user.bio,
+    tokenVersion: user.tokenVersion,
     createdAt: user.createdAt.toISOString(),
     updatedAt: user.updatedAt.toISOString(),
   };

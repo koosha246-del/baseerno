@@ -59,11 +59,14 @@ export function createRedisRateLimiter(config: RateLimitConfig): RateLimiterInst
         const windowSeconds = Math.ceil(cfg.windowMs / 1000);
 
         const count = await client.incr(windowKey);
-        if (count === 1) {
+        let ttl = await client.ttl(windowKey);
+        if (count === 1 || ttl === -1) {
+          // (Re)arm the expiry. The ttl === -1 repair guards against a
+          // crash between incr and expire — without it the key persists
+          // forever and the identifier is permanently blocked.
           await client.expire(windowKey, windowSeconds);
+          ttl = windowSeconds;
         }
-
-        const ttl = await client.ttl(windowKey);
         const resetAt = now + Math.max(ttl, 1) * 1000;
 
         // Combined limit — the documented contract is `max + burst`
@@ -71,6 +74,10 @@ export function createRedisRateLimiter(config: RateLimitConfig): RateLimiterInst
         const combinedLimit = cfg.max + cfg.burst;
 
         if (count > combinedLimit) {
+          // Roll the increment back: blocked requests must not consume
+          // window budget (in-memory backend parity — otherwise a client
+          // hammering while blocked stays locked for the whole window).
+          await client.decr(windowKey).catch(() => {});
           const retryAfter = Math.max(1, ttl);
           return { success: false, retryAfter };
         }
@@ -83,11 +90,16 @@ export function createRedisRateLimiter(config: RateLimitConfig): RateLimiterInst
           const burstKey = buildBurstKey(identifier);
           const burstSeconds = Math.ceil(cfg.burstWindowMs / 1000);
           const burstCount = await client.incr(burstKey);
-          if (burstCount === 1) {
+          let burstTtl = await client.ttl(burstKey);
+          if (burstCount === 1 || burstTtl === -1) {
             await client.expire(burstKey, burstSeconds);
+            burstTtl = burstSeconds;
           }
           if (burstCount > cfg.burst) {
-            const burstTtl = await client.ttl(burstKey);
+            // Roll both counters back so burst-blocked requests don't
+            // burn the window budget either.
+            await client.decr(burstKey).catch(() => {});
+            await client.decr(windowKey).catch(() => {});
             const retryAfter = Math.max(1, burstTtl);
             return { success: false, retryAfter };
           }

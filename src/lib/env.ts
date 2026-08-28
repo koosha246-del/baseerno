@@ -102,6 +102,13 @@ const envSchema = z.object({
    * email (in-app notifications always fire). Default 50.
    */
   LOAD_REGRESSION_EMAIL_THRESHOLD: z.coerce.number().min(0).max(100).optional(),
+
+  /**
+   * Secret for /api/cron/* — sent as `Authorization: Bearer <CRON_SECRET>`
+   * (Vercel managed cron) or `x-cron-secret: <CRON_SECRET>` (external
+   * schedulers). When unset the cron endpoints fail closed (401).
+   */
+  CRON_SECRET: z.string().min(1).optional(),
 });
 
 export type Env = z.infer<typeof envSchema> & {
@@ -185,6 +192,7 @@ function loadEnv(): Env {
       NEXT_PUBLIC_SITE_URL: undefined,
       NEXT_PUBLIC_GA_ID: undefined,
       LOAD_REGRESSION_EMAIL_THRESHOLD: undefined,
+      CRON_SECRET: undefined,
       jwtSecret: process.env?.JWT_SECRET || "",
       paymentSignatureSecret: process.env?.PAYMENT_SIGNATURE_SECRET || "",
       isProduction: true,
@@ -220,6 +228,7 @@ function loadEnv(): Env {
     NEXT_PUBLIC_SITE_URL: normalizeUrl(emptyToUndef(process.env.NEXT_PUBLIC_SITE_URL)),
     NEXT_PUBLIC_GA_ID: emptyToUndef(process.env.NEXT_PUBLIC_GA_ID),
     LOAD_REGRESSION_EMAIL_THRESHOLD: process.env.LOAD_REGRESSION_EMAIL_THRESHOLD,
+    CRON_SECRET: emptyToUndef(process.env.CRON_SECRET),
   };
 
   const parsed = envSchema.safeParse(raw);

@@ -46,4 +46,11 @@ export interface CourseDetail {
   outcomes: CourseLearningOutcome[];
   requirements: CourseRequirement[];
   curriculum: CourseCurriculumItem[];
+  /**
+   * False when the course exists only in the static editorial catalog and
+   * has no matching row in the store database — payments/enrollments can
+   * only be created against DB rows, so CheckoutForm must not offer a form
+   * that could only fail. Set by `mapDbCourseDetail`.
+   */
+  purchasable?: boolean;
 }

@@ -27,8 +27,16 @@ export async function POST(req: Request) {
   } catch {
     // no body — sync all
   }
+  // `JSON.parse("null")` returns null (not an object) — guard before the
+  // property access, and reject non-string values instead of passing them
+  // into the sync query.
+  if (body === null || typeof body !== "object") body = {};
+  const courseId =
+    typeof body.courseId === "string" && body.courseId.length > 0
+      ? body.courseId
+      : undefined;
 
-  const count = await syncCourseSearch(body.courseId);
+  const count = await syncCourseSearch(courseId);
 
   return NextResponse.json({
     ok: true,

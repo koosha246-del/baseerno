@@ -108,5 +108,8 @@ export async function mapDbCourseDetail(
     outcomes: staticFallback?.outcomes ?? [],
     requirements: staticFallback?.requirements ?? [],
     curriculum,
+    // Only DB-backed courses can go through checkout / enrollment — a
+    // static-only editorial page must not render a payment form.
+    purchasable: dbRow != null,
   };
 }

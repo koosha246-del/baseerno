@@ -52,13 +52,28 @@ export async function registerUser(input: RegisterInput): Promise<RegisterRespon
   // Hash password
   const passwordHash = await hashPassword(input.password);
 
-  // Create user in database (role is defaulted by the schema when omitted)
-  const user = await repository.createUser({
-    name: input.name,
-    email: input.email,
-    passwordHash,
-    role: input.role ?? "STUDENT",
-  });
+  // Create user in database (role is defaulted by the schema when omitted).
+  // The pre-check above can lose a race against a concurrent signup with the
+  // same email — catch the unique violation so the loser gets 409, not 500.
+  let user;
+  try {
+    user = await repository.createUser({
+      name: input.name,
+      email: input.email,
+      passwordHash,
+      role: input.role ?? "STUDENT",
+    });
+  } catch (err: unknown) {
+    if (
+      err &&
+      typeof err === "object" &&
+      "code" in err &&
+      (err as { code: string }).code === "P2002"
+    ) {
+      return { ok: false, error: "این ایمیل قبلاً ثبت شده است.", status: 409 };
+    }
+    throw err;
+  }
 
   // Set session cookie
   await setSession(user);

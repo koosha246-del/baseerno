@@ -79,7 +79,10 @@ export async function checkout(
     });
   }
 
-  // For paid courses, create a pending payment
+  // For paid courses, create a pending payment. Reuse an existing open
+  // (PENDING) order for the same user+course so double submissions —
+  // two tabs, or a replay after the burst window — cannot mint two
+  // chargeable payments for one enrollment.
   const methodLabel =
     input.paymentMethod === "zarinpal"
       ? "زرین‌پال"
@@ -87,13 +90,19 @@ export async function checkout(
         ? "بانک سامان"
         : "کیف پول";
 
-  const payment = await repository.createPayment({
-    userId: input.userId,
-    courseId: input.courseId,
-    amount: course.price,
-    status: "PENDING",
-    method: methodLabel,
-  });
+  const existingPending = await repository
+    .findPendingPayment(input.userId, input.courseId)
+    .catch(() => null);
+
+  const payment = existingPending
+    ? existingPending
+    : await repository.createPayment({
+        userId: input.userId,
+        courseId: input.courseId,
+        amount: course.price,
+        status: "PENDING",
+        method: methodLabel,
+      });
 
   // Event bus: revalidates the payments cache tag.
   await publish({

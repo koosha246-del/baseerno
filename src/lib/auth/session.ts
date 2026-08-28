@@ -36,7 +36,10 @@ export async function setSession(
 /** Clear the session cookie (logout). */
 export async function clearSession() {
   const store = await cookies();
-  store.delete(AUTH_COOKIE);
+  // Must match the attributes the cookie was set with (path: "/") — a
+  // bare name-only delete is scoped to the request path by the browser
+  // and would leave the real "/" cookie alive.
+  store.delete({ name: AUTH_COOKIE, path: "/" });
 }
 
 /** Read + verify the current token, returning the decoded payload. */

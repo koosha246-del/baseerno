@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
+import { logoutAndRedirect } from "@/lib/client-logout";
 import { headerData, headerPhone } from "../constants";
 import { Logo } from "@/components/shared/Logo";
 
@@ -185,12 +186,17 @@ export function MobileNav({ className }: MobileNavProps) {
               </a>
             </Button>
 
-            {/* Logout (when logged in) */}
+            {/* Logout (when logged in) — POST endpoint, must not be an <a> */}
             {authed && (
-              <Button asChild variant="ghost" className="mt-2 justify-start text-red-600">
-                <a href="/api/auth/logout" onClick={closeNav}>
-                  خروج
-                </a>
+              <Button
+                variant="ghost"
+                className="mt-2 justify-start text-red-600"
+                onClick={() => {
+                  closeNav();
+                  void logoutAndRedirect("/");
+                }}
+              >
+                خروج
               </Button>
             )}
           </nav>

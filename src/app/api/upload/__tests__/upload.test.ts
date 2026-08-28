@@ -44,6 +44,16 @@ vi.mock("@/lib/rate-limit", () => ({
 
 import { POST } from "../route";
 
+// PNG signature: 89 50 4E 47 0D 0A 1A 0A + zero padding
+const PNG_HEADER = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+
+// MP4 ftyp box: size(4) + "ftyp"(4) + brand(4)
+const MP4_HEADER = new Uint8Array([0x00, 0x00, 0x00, 0x0c, 0x66, 0x74, 0x79, 0x70, 0x69, 0x73, 0x6f, 0x6d]);
+
+function makeFile(data: Uint8Array, name: string, type: string): File {
+  return new File([data], name, { type });
+}
+
 /**
  * jsdom's FormData/File don't round-trip through undici's multipart parser,
  * so we stub Request.prototype.formData with a plain lookup instead. The
@@ -73,7 +83,9 @@ describe("POST /api/upload", () => {
     getCurrentUser.mockResolvedValue(authenticatedUser);
     env.CLOUDINARY_CLOUD_NAME = "test-cloud";
 
-    uploadedFile = new File([new Uint8Array(1024)], "photo.png", { type: "image/png" });
+    const body = new Uint8Array(1024);
+    body.set(PNG_HEADER);
+    uploadedFile = makeFile(body, "photo.png", "image/png");
     uploadedFolder = "baseerno";
 
     vi.spyOn(Request.prototype, "formData").mockImplementation(async function () {
@@ -117,15 +129,15 @@ describe("POST /api/upload", () => {
   });
 
   it("returns 400 when the file exceeds 10MB", async () => {
-    uploadedFile = new File([new Uint8Array(11 * 1024 * 1024)], "big.png", {
-      type: "image/png",
-    });
+    const big = new Uint8Array(11 * 1024 * 1024);
+    big.set(PNG_HEADER);
+    uploadedFile = makeFile(big, "big.png", "image/png");
     const res = await POST(makeReq());
     expect(res.status).toBe(400);
   });
 
   it("returns 400 for a disallowed file type", async () => {
-    uploadedFile = new File([new Uint8Array(512)], "notes.txt", { type: "text/plain" });
+    uploadedFile = makeFile(new Uint8Array(512), "notes.txt", "text/plain");
     const res = await POST(makeReq());
     expect(res.status).toBe(400);
   });
@@ -155,7 +167,9 @@ describe("POST /api/upload", () => {
   });
 
   it("routes video uploads to the video resource type", async () => {
-    uploadedFile = new File([new Uint8Array(2048)], "clip.mp4", { type: "video/mp4" });
+    const vid = new Uint8Array(2048);
+    vid.set(MP4_HEADER);
+    uploadedFile = makeFile(vid, "clip.mp4", "video/mp4");
     cloudinaryUpload.mockResolvedValue({
       secure_url: "https://res.cloudinary.com/x/video.mp4",
       public_id: "baseerno/video",

@@ -9,6 +9,21 @@ import { siteConfig } from "@/config/site";
 
 type ApiError = { error: string };
 
+/**
+ * Resolve ?callbackUrl= to a safe in-app path. The middleware sets this on
+ * session-expiry redirects; honouring it returns users to the page they
+ * were on. Anything that is not a same-origin absolute path — external URLs
+ * and protocol-relative "//evil.com" forms — falls back to /dashboard, so
+ * the login page can never be turned into an open redirect.
+ */
+function safeCallbackUrl(raw: string | null): string {
+  const fallback = "/dashboard";
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//") || raw.startsWith("/\\")) {
+    return fallback;
+  }
+  return raw;
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -63,7 +78,9 @@ export default function LoginPage() {
         return;
       }
 
-      router.push("/dashboard");
+      router.push(
+        safeCallbackUrl(new URLSearchParams(window.location.search).get("callbackUrl")),
+      );
     } catch (err) {
       setError(
         err instanceof DOMException && err.name === "AbortError"

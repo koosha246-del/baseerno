@@ -179,6 +179,7 @@ export async function createLesson(input: {
   durationMinutes: number;
   sortOrder?: number;
   isFree?: boolean;
+  published?: boolean;
 }) {
   return prisma.lesson.create({
     data: {
@@ -189,6 +190,10 @@ export async function createLesson(input: {
       durationMinutes: input.durationMinutes,
       sortOrder: input.sortOrder ?? 0,
       isFree: input.isFree ?? false,
+      // Honor the client's draft/published intent — previously the field
+      // was validated but silently dropped, forcing every new lesson to
+      // the DB default (published=true).
+      published: input.published ?? true,
     },
   });
 }

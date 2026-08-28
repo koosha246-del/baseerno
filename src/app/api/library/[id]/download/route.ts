@@ -3,6 +3,7 @@ import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { findBook } from "@/lib/library";
 import { verifyDownloadToken } from "@/lib/library-token";
+import { getCurrentUser } from "@/lib/auth/session";
 import { withRateLimit } from "@/lib/api-middleware";
 import { RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
 
@@ -12,6 +13,10 @@ import { RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
  * Verifies the signed download token, then streams the file from the
  * public/ tree. Only files listed in the library catalog are served —
  * the book id is validated against `findBook()` before any disk access.
+ *
+ * Authorization: tokens are BOUND to their buyer (`userId` claim). A valid
+ * signature alone is not enough — the request must come from that user's
+ * session, so a leaked download URL is not a transferable credential.
  */
 async function downloadHandler(
   request: Request,
@@ -39,6 +44,30 @@ async function downloadHandler(
   if (payload.bookId !== id) {
     return NextResponse.json(
       { error: "توکن با کتاب درخواست‌شده مطابقت ندارد." },
+      { status: 403 },
+    );
+  }
+
+  // Buyer-binding: the token's userId claim must match the current session.
+  if (!payload.userId) {
+    // Tokens minted before buyer-binding existed are no longer accepted.
+    return NextResponse.json(
+      { error: "این توکن نامعتبر است؛ لطفاً دوباره خرید را انجام دهید." },
+      { status: 401 },
+    );
+  }
+  let sessionUser;
+  try {
+    sessionUser = await getCurrentUser();
+  } catch {
+    return NextResponse.json(
+      { error: "خطای سرویس. لطفاً دوباره تلاش کنید." },
+      { status: 503 },
+    );
+  }
+  if (!sessionUser || sessionUser.id !== payload.userId) {
+    return NextResponse.json(
+      { error: "این لینک دانلود به حساب کاربری دیگری مربوط است." },
       { status: 403 },
     );
   }

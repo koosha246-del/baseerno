@@ -29,7 +29,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "دسترسی غیرمجاز" }, { status: 403 });
     }
 
-    const body = await req.json();
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "بدنه درخواست نامعتبر است" }, { status: 400 });
+    }
     const parsed = createLessonSchema.safeParse(body);
     if (!parsed.success) {
       const first = parsed.error.issues[0];
@@ -58,6 +63,7 @@ export async function POST(req: NextRequest) {
       durationMinutes: parsed.data.durationMinutes,
       sortOrder: parsed.data.sortOrder,
       isFree: parsed.data.isFree,
+      published: parsed.data.published,
     });
 
     // Bust the Redis published-course keys AND the Next.js tags so the

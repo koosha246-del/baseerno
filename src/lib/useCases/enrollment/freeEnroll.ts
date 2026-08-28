@@ -32,10 +32,27 @@ export interface FreeEnrollResult {
 export type FreeEnrollResponse = FreeEnrollResult;
 
 export async function freeEnroll(input: FreeEnrollInput): Promise<FreeEnrollResponse> {
-  const enrollment = await repository.createEnrollment({
-    userId: input.userId,
-    courseId: input.courseId,
-  });
+  let enrollment;
+  try {
+    enrollment = await repository.createEnrollment({
+      userId: input.userId,
+      courseId: input.courseId,
+    });
+  } catch (err: unknown) {
+    // P2002 = unique (userId, courseId) violated — a concurrent request
+    // already enrolled the user. Return idempotent success with the
+    // existing enrollment instead of surfacing a 500.
+    if (err && typeof err === "object" && "code" in err && (err as { code: string }).code === "P2002") {
+      const existing = await repository.findEnrollment(input.userId, input.courseId);
+      if (existing) {
+        enrollment = existing;
+      } else {
+        throw err;
+      }
+    } else {
+      throw err;
+    }
+  }
 
   // Event bus: cache invalidation (enrollmentCacheTags) + notification.
   await publish({

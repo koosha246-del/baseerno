@@ -21,19 +21,24 @@ import { cn } from "@/lib/utils";
 import { toPersianDigits } from "@/lib/format";
 import { siteConfig } from "@/config/site";
 import { ldJson, buildCourseLd, buildBreadcrumbLd } from "@/lib/seo";
-import { getCourseDetail, courseDetailIds } from "@/features/course-detail/constants";
+import { courseDetailIds } from "@/features/course-detail/constants";
+import { mapDbCourseDetail } from "@/features/course-detail/courseDetailMapper";
 import { CourseCurriculum } from "@/features/course-detail/components/CourseCurriculum";
 import { CheckoutForm } from "@/features/course-detail/components/CheckoutForm";
 
-/** Statically pre-render all known course detail pages. */
+/**
+ * Statically pre-render the editorial (static-catalog) course pages. DB
+ * courses render on demand (`dynamicParams` defaults to true) and are
+ * then ISR-cached like any other id.
+ */
 export function generateStaticParams() {
   return courseDetailIds.map((id) => ({ id }));
 }
 
 /**
- * ISR: revalidate static detail pages hourly in the background, so new
- * courses added to `courseDetailIds`/constants are picked up without a
- * full rebuild while unvisited pages stay cached at the edge.
+ * ISR: revalidate static detail pages hourly in the background, so DB
+ * price/title/lesson changes are picked up without a full rebuild while
+ * unvisited pages stay cached at the edge.
  */
 export const revalidate = 3600;
 
@@ -43,7 +48,9 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const course = getCourseDetail(id);
+  // DB first with static-catalog fallback — DB ids (c_*) must resolve
+  // here too or every catalog/search link lands on a 404 metadata page.
+  const course = await mapDbCourseDetail(id);
   if (!course) return {};
   return {
     title: course.title,
@@ -80,7 +87,10 @@ export default async function CourseDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const course = getCourseDetail(id);
+  // DB first, static catalog fallback (see mapDbCourseDetail). Resolves
+  // both editorial ids (fundamentals, …) and DB row ids (c_fundamentals,
+  // …) so catalog/search links never 404 on a populated database.
+  const course = await mapDbCourseDetail(id);
   if (!course) notFound();
 
   return (

@@ -13,7 +13,9 @@ async function searchHandler(req: Request) {
   }
 
   const { searchParams } = new URL(req.url);
-  const q = searchParams.get("q")?.trim();
+  // Cap length (same contract as /api/search/courses): `q` becomes part of
+  // the cache key, so an unbounded string mints unbounded Redis keys.
+  const q = searchParams.get("q")?.trim().slice(0, 100);
 
   if (!q || q.length < 2) {
     return NextResponse.json({ results: [] });

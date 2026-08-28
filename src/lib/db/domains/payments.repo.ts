@@ -70,6 +70,19 @@ export async function findPayment(id: string) {
   return prisma.payment.findUnique({ where: { id } });
 }
 
+/**
+ * Open (PENDING) order for a user+course, if any. Checkout reuses it
+ * instead of minting another PENDING payment, so double submissions
+ * (two tabs / replay after the burst window) can't create two orders
+ * that would both be chargeable at the gateway.
+ */
+export async function findPendingPayment(userId: string, courseId: string) {
+  return prisma.payment.findFirst({
+    where: { userId, courseId, status: "PENDING", deletedAt: null },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
 export async function findPaymentByAuthority(authority: string) {
   return prisma.payment.findFirst({
     where: { gatewayAuthority: authority },
@@ -172,17 +185,19 @@ export async function revenueByTeacher(): Promise<
 
 /** Sum paid payment amounts grouped by month (raw SQL). */
 export async function revenueByMonth(db: typeof prisma = prisma) {
+  // Label in SQL with to_char — see enrollmentsByMonth for the timezone bug
+  // this avoids on non-UTC hosts.
   const rows = await db.$queryRaw<
-    Array<{ month: Date; total: bigint }>
+    Array<{ month: string; total: bigint }>
   >`
-    SELECT date_trunc('month', "paidAt") AS month, SUM(amount)::bigint AS total
+    SELECT to_char("paidAt", 'YYYY-MM') AS month, SUM(amount)::bigint AS total
     FROM "Payment"
     WHERE status = 'PAID' AND "paidAt" IS NOT NULL AND "deletedAt" IS NULL
-    GROUP BY date_trunc('month', "paidAt")
+    GROUP BY to_char("paidAt", 'YYYY-MM')
     ORDER BY month ASC
   `;
   return rows.map((r) => ({
-    month: r.month.toISOString().slice(0, 7),
+    month: r.month,
     total: Number(r.total),
   }));
 }

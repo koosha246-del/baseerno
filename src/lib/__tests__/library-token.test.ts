@@ -7,6 +7,8 @@ describe("signDownloadToken / verifyDownloadToken", () => {
       bookId: "genius-1",
       purchaseId: "p-1",
       amount: 280000,
+      userId: "u_student_1",
+
     });
     const payload = verifyDownloadToken(token);
     expect(payload).not.toBeNull();
@@ -20,6 +22,8 @@ describe("signDownloadToken / verifyDownloadToken", () => {
       bookId: "b-1",
       purchaseId: "p-1",
       amount: 1000,
+      userId: "u_student_1",
+
     });
     const tampered = token.slice(0, -3) + "AAA";
     expect(verifyDownloadToken(tampered)).toBeNull();
@@ -31,7 +35,7 @@ describe("signDownloadToken / verifyDownloadToken", () => {
   });
 
   it("produces tokens with three dot-separated segments", () => {
-    const token = signDownloadToken({ bookId: "x", purchaseId: "y", amount: 1 });
+    const token = signDownloadToken({ bookId: "x", purchaseId: "y", amount: 1, userId: "u_1" });
     expect(token.split(".")).toHaveLength(3);
   });
 });

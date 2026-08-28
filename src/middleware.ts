@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { AUTH_COOKIE } from "@/lib/auth/constants";
 import { publicPageCacheControl } from "@/lib/cache-control";
+import { verifyTokenEdge } from "@/lib/auth/jwt-edge";
 
 /**
  * Edge middleware — two responsibilities:
@@ -26,21 +27,6 @@ const ADMIN_ROUTES = ["/dashboard/users", "/dashboard/reports"];
 const TEACHER_ROUTES = ["/dashboard/content"];
 
 /**
- * Decode the JWT payload without verifying the signature.
- * Works in Edge runtime because we only read the base64 body.
- */
-function decodeTokenPayload(token: string): { role?: string } | null {
-  try {
-    const parts = token.split(".");
-    if (parts.length !== 3) return null;
-    const payload = JSON.parse(atob(parts[1]!));
-    return payload;
-  } catch {
-    return null;
-  }
-}
-
-/**
  * Build the response with the cache-control policy for the path.
  * Auth-gated and API paths are left untouched by the policy helper.
  */
@@ -62,7 +48,7 @@ function securityResponse(req: NextRequest): NextResponse {
   return response;
 }
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   if (!pathname.startsWith("/dashboard")) {
@@ -76,20 +62,28 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Role-based route guarding (Edge-compatible: decode without verify)
-  const payload = decodeTokenPayload(token);
-  const role = payload?.role;
+  // Role-based route guarding — the token's HMAC signature and expiry are
+  // verified at the edge (Web Crypto), so a forged `{"role":"ADMIN"}`
+  // payload can no longer pass the gate. Pages re-check roles server-side
+  // as defense in depth.
+  const payload = await verifyTokenEdge(token);
+  if (!payload) {
+    // Invalid/expired/forged token — bounce to login.
+    const loginUrl = new URL("/login", req.url);
+    loginUrl.searchParams.set("callbackUrl", pathname);
+    return NextResponse.redirect(loginUrl);
+  }
 
-  if (role) {
-    for (const route of ADMIN_ROUTES) {
-      if (pathname.startsWith(route) && role !== "ADMIN") {
-        return NextResponse.redirect(new URL("/dashboard", req.url));
-      }
+  const role = payload.role;
+
+  for (const route of ADMIN_ROUTES) {
+    if (pathname.startsWith(route) && role !== "ADMIN") {
+      return NextResponse.redirect(new URL("/dashboard", req.url));
     }
-    for (const route of TEACHER_ROUTES) {
-      if (pathname.startsWith(route) && role !== "TEACHER" && role !== "ADMIN") {
-        return NextResponse.redirect(new URL("/dashboard", req.url));
-      }
+  }
+  for (const route of TEACHER_ROUTES) {
+    if (pathname.startsWith(route) && role !== "TEACHER" && role !== "ADMIN") {
+      return NextResponse.redirect(new URL("/dashboard", req.url));
     }
   }
 

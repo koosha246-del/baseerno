@@ -23,6 +23,13 @@ export interface DownloadToken extends JwtPayload {
   purchaseId: string;
   /** Authoritative cost at time of purchase, prevents price tampering. */
   amount: number;
+  /**
+   * Buyer's user id. The download route requires the session user to
+   * match, so a leaked download URL is useless without the buyer's login
+   * (previously tokens were pure bearer credentials valid for anyone for
+   * 30 days, and buyBook issued them to anonymous visitors).
+   */
+  userId: string;
 }
 
 export function signDownloadToken(

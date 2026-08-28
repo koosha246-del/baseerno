@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -9,6 +11,7 @@ import {
   Wallet,
   Landmark,
   Loader2,
+  Store,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -26,6 +29,7 @@ interface CheckoutFormProps {
  * Shows price summary (with discount) and a success state after submit.
  */
 export function CheckoutForm({ course }: CheckoutFormProps) {
+  const [formError, setFormError] = useState("");
   const {
     register,
     handleSubmit,
@@ -43,8 +47,11 @@ export function CheckoutForm({ course }: CheckoutFormProps) {
     },
   });
 
-  const selectedMethod = watch("paymentMethod");
-  const isFree = course.price == null || course.price === 0;
+  const selectedMethod = watch("paymentMethod");  const isFree = course.price == null || course.price === 0;
+  // The course has no row in the store database (static-only editorial
+  // catalog entry) — checkout/enrollment would always 404 there, so show
+  // an honest notice instead of a payment form that cannot succeed.
+  const inStore = course.purchasable !== false;
   const hasDiscount =
     course.originalPrice != null && !isFree && course.originalPrice > (course.price ?? 0);
   const discountAmount = hasDiscount
@@ -60,12 +67,20 @@ export function CheckoutForm({ course }: CheckoutFormProps) {
       paymentMethod: data.paymentMethod,
     };
 
+    setFormError("");
     return fetch("/api/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     })
       .then(async (res) => {
+        // Guest → send them to login and come back to this course.
+        if (res.status === 401) {
+          window.location.assign(
+            `/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`,
+          );
+          return { redirecting: true } as const;
+        }
         const result = await res.json().catch(() => ({}));
         if (!res.ok || result.error) {
           throw new Error(result.error ?? "خطایی در فرآیند پرداخت رخ داد.");
@@ -76,9 +91,11 @@ export function CheckoutForm({ course }: CheckoutFormProps) {
           redirectUrl?: string;
           free?: boolean;
           gateway?: string;
+          redirecting?: boolean;
         };
       })
       .then((result) => {
+        if (result.redirecting) return;
         // Paid flow: redirect to Zarinpal (or simulated callback URL).
         const target = result.redirectUrl || result.callbackUrl;
         if (target && !result.free) {
@@ -88,10 +105,31 @@ export function CheckoutForm({ course }: CheckoutFormProps) {
         // Free enrollment: success handled by isSubmitSuccessful.
       })
       .catch((err: Error) => {
-        // Surface the error so the user isn't left on a spinning button.
+        // Inline error — an alert() would block the UI and can't be styled
+        // for the RTL layout.
         console.error("Checkout error:", err.message);
-        alert(err.message || "خطایی در فرآیند پرداخت رخ داد.");
+        setFormError(err.message || "خطایی در فرآیند پرداخت رخ داد.");
       });
+  }
+
+  if (!inStore) {
+    return (
+      <div className="flex flex-col items-center gap-4 rounded-2xl border border-app-border-subtle bg-surface p-8 text-center shadow-md">
+        <span className="flex size-12 items-center justify-center rounded-2xl bg-accent-soft text-accent">
+          <Store className="size-6" />
+        </span>
+        <h3 className="font-display text-lg font-bold text-fg-primary">
+          ثبت‌نام این دوره به‌زودی فعال می‌شود
+        </h3>
+        <p className="max-w-xs text-sm leading-relaxed text-fg-secondary">
+          این صفحه هنوز به فروشگاه متصل نشده. برای اطلاع از زمان شروع ثبت‌نام
+          یا کمک در انتخاب دوره، با پشتیبانی تماس بگیرید.
+        </p>
+        <Button asChild variant="outline" size="sm">
+          <Link href="/contact">تماس با پشتیبانی</Link>
+        </Button>
+      </div>
+    );
   }
 
   if (isSubmitSuccessful) {
@@ -248,6 +286,15 @@ export function CheckoutForm({ course }: CheckoutFormProps) {
       </label>
       {errors.agreeTerms && (
         <p className="-mt-2 text-xs text-status-danger">{errors.agreeTerms.message}</p>
+      )}
+
+      {formError && (
+        <div
+          role="alert"
+          className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300"
+        >
+          {formError}
+        </div>
       )}
 
       {/* Submit */}

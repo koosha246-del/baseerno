@@ -12,7 +12,7 @@ cloudinary.config({
 });
 
 /** Folders the client may write into — anything else is rejected. */
-const ALLOWED_FOLDER_PREFIXES = ["baseerno/", "avatars/", "lessons/"];
+const ALLOWED_FOLDERS = ["baseerno", "avatars", "lessons"];
 
 const MIME_MAGIC_BYTES: Array<{ mime: string; magic: (buf: Buffer) => boolean }> = [
   // JPEG: FF D8 FF
@@ -63,7 +63,13 @@ async function uploadHandler(req: Request) {
     return NextResponse.json({ error: "احراز هویت نشده." }, { status: 401 });
   }
 
-  const formData = await req.formData();
+  let formData: FormData;
+  try {
+    formData = await req.formData();
+  } catch {
+    // Malformed multipart body — same 400 contract as every other bad input.
+    return NextResponse.json({ error: "بدنه درخواست نامعتبر است." }, { status: 400 });
+  }
   const file = formData.get("file") as File | null;
   const folder = (formData.get("folder") as string) ?? "baseerno";
 
@@ -72,8 +78,15 @@ async function uploadHandler(req: Request) {
   }
 
   // Restrict the Cloudinary folder to a known allowlist — never let the
-  // client invent arbitrary folder paths.
-  if (!ALLOWED_FOLDER_PREFIXES.some((p) => folder === p || folder.startsWith(p))) {
+  // client invent arbitrary folder paths. The `lessons/` folder holds
+  // course authoring assets billed to our account, so it additionally
+  // requires TEACHER/ADMIN (matches every lesson-management route).
+  if (folder === "lessons" || folder.startsWith("lessons/")) {
+    if (user.role !== "TEACHER" && user.role !== "ADMIN") {
+      return NextResponse.json({ error: "دسترسی غیرمجاز." }, { status: 403 });
+    }
+  }
+  if (!ALLOWED_FOLDERS.some((p) => folder === p || folder.startsWith(`${p}/`))) {
     return NextResponse.json({ error: "پوشه مجاز نیست." }, { status: 400 });
   }
 
