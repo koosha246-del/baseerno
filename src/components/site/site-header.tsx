@@ -4,8 +4,6 @@ import * as React from "react";
 import Link from "next/link";
 import { Menu, X, ArrowLeft } from "lucide-react";
 import { Logo } from "./logo";
-import { AuthActions } from "./AuthActions";
-import { PublicSearch } from "@/components/shared/PublicSearch";
 import { Button } from "@/components/ui/button";
 import { navItems, siteConfig } from "@/lib/site-config";
 import { cn } from "@/lib/utils";
@@ -15,7 +13,9 @@ import { cn } from "@/lib/utils";
  */
 export function SiteHeader() {
   const [scrolled, setScrolled] = React.useState(false);
-  const [menuOpen, setMenuOpen] = React.useState(false);  React.useEffect(() => {
+  const [menuOpen, setMenuOpen] = React.useState(false);
+
+  React.useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -53,7 +53,7 @@ export function SiteHeader() {
         {/* برند — سمت راست */}
         <Link
           href="#top"
-          aria-label={`بازگشت به ابتدای صفحه — ${siteConfig.name}`}
+          aria-label="بازگشت به ابتدای صفحه — آموزشگاه زبان بصیر"
           className="shrink-0 rounded-xl outline-none focus-visible:ring-[3px] focus-visible:ring-brand/40"
         >
           <Logo />
@@ -75,10 +75,8 @@ export function SiteHeader() {
           </ul>
         </nav>
 
-        {/* اقدام اصلی + جستجو + ورود/پنل + دکمه منو */}
+        {/* اقدام اصلی + دکمه منو */}
         <div className="flex items-center gap-2">
-          <PublicSearch />
-          <AuthActions />
           <Button
             asChild
             variant="brand"
@@ -109,7 +107,7 @@ export function SiteHeader() {
         id="mobile-menu"
         className={cn(
           "overflow-hidden border-t border-navy/5 bg-white/98 backdrop-blur-md transition-[max-height,opacity] duration-300 ease-out lg:hidden",
-          menuOpen ? "max-h-[420px] opacity-100" : "max-h-0 opacity-0"
+          menuOpen ? "max-h-[420px] opacity-100" : "invisible max-h-0 opacity-0"
         )}
       >
         <nav aria-label="منوی موبایل" className="px-4 py-4 sm:px-6">
@@ -132,18 +130,6 @@ export function SiteHeader() {
               <ArrowLeft aria-hidden="true" />
             </a>
           </Button>
-
-          {/* دسترسی به اپلیکیشن: دوره‌ها + ورود/پنل */}
-          <div className="mt-3 flex gap-2 border-t border-navy/5 pt-3">
-            <Link
-              href="/courses"
-              onClick={() => setMenuOpen(false)}
-              className="flex flex-1 items-center justify-center rounded-xl border border-navy/15 px-4 py-3 text-[15px] font-semibold text-navy transition-colors hover:border-brand hover:text-brand"
-            >
-              همه دوره‌ها
-            </Link>
-            <AuthActions variant="mobile" />
-          </div>
         </nav>
       </div>
     </header>

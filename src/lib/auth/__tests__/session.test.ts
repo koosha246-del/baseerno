@@ -76,9 +76,15 @@ describe("session", () => {
   });
 
   describe("clearSession", () => {
-    it("deletes the session cookie", async () => {
+    it("deletes the session cookie with matching path", async () => {
       await clearSession();
-      expect(mockCookieStore.delete).toHaveBeenCalledWith("bn_session");
+      // The implementation deletes with `{ name, path: "/" }` so the
+      // browser removes the cookie actually set at the root path (a
+      // name-only delete would be scoped to the request path and fail).
+      expect(mockCookieStore.delete).toHaveBeenCalledWith({
+        name: "bn_session",
+        path: "/",
+      });
     });
   });
 

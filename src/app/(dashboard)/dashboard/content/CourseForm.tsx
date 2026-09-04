@@ -24,35 +24,40 @@ export function CourseForm({ onCreated }: Props) {
   async function handleSubmit() {
     setMsg("");
     setLoading(true);
-    const res = await fetch("/api/courses", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title,
-        subtitle,
-        description,
-        price: price ? Number(price) : null,
-        level,
-        category,
-        durationHours: Number(durationHours),
-        lessons: Number(lessons),
-        glyph,
-        accent: "blue",
-        published: true,
-      }),
-    });
-    setLoading(false);
-    if (res.ok) {
-      setMsg("دوره با موفقیت ایجاد شد.");
-      setTimeout(() => {
-        setOpen(false);
-        setMsg("");
-        onCreated?.();
-        window.location.reload();
-      }, 1000);
-    } else {
-      const data = await res.json();
-      setMsg(data.error ?? "خطایی رخ داد.");
+    try {
+      const res = await fetch("/api/courses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title,
+          subtitle,
+          description,
+          price: price ? Number(price) : null,
+          level,
+          category,
+          durationHours: Number(durationHours),
+          lessons: Number(lessons),
+          glyph,
+          accent: "blue",
+          published: true,
+        }),
+      });
+      if (res.ok) {
+        setMsg("دوره با موفقیت ایجاد شد.");
+        setTimeout(() => {
+          setOpen(false);
+          setMsg("");
+          onCreated?.();
+          window.location.reload();
+        }, 1000);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setMsg(data.error ?? "خطایی رخ داد.");
+      }
+    } catch {
+      setMsg("اتصال به سرور برقرار نشد. دوباره تلاش کنید.");
+    } finally {
+      setLoading(false);
     }
   }
 

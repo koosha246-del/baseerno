@@ -64,6 +64,23 @@ export async function checkout(
     return { ok: false, error: "دوره یافت نشد.", status: 404 };
   }
 
+  // Drafts are not purchasable — 404 (not 403) so the existence of an
+  // unpublished course is never leaked, matching /api/courses/[id].
+  if (!course.published) {
+    return { ok: false, error: "دوره یافت نشد.", status: 404 };
+  }
+
+  // Only Zarinpal has a backend implementation. In production, saman /
+  // wallet would fall through to the "no gateway" branch, mark the payment
+  // FAILED and 503 — reject up front with a clear message instead.
+  if (env.isProduction && input.paymentMethod !== "zarinpal") {
+    return {
+      ok: false,
+      error: "در این نسخه فقط پرداخت با زرین‌پال فعال است.",
+      status: 422,
+    };
+  }
+
   // Check if already enrolled
   const existingEnrollment = await repository.findEnrollment(input.userId, input.courseId);
   if (existingEnrollment) {
@@ -94,15 +111,44 @@ export async function checkout(
     .findPendingPayment(input.userId, input.courseId)
     .catch(() => null);
 
-  const payment = existingPending
-    ? existingPending
-    : await repository.createPayment({
+  let payment = existingPending;
+
+  // A reused order must carry the CURRENT price — the gateway is asked for
+  // course.price while the callback verifies payment.amount. If the price
+  // changed since the open order, retire it and mint a fresh one, or the
+  // verify would mismatch and strand the payment after money moved.
+  if (payment && payment.amount !== course.price) {
+    await repository.markPaymentFailed(payment.id);
+    payment = null;
+  }
+
+  if (!payment) {
+    try {
+      payment = await repository.createPayment({
         userId: input.userId,
         courseId: input.courseId,
         amount: course.price,
         status: "PENDING",
         method: methodLabel,
       });
+    } catch (err: unknown) {
+      // Partial unique index (one PENDING per user+course) lost the race
+      // against a concurrent checkout — reuse the winner's order instead
+      // of surfacing a 500.
+      if (
+        err &&
+        typeof err === "object" &&
+        "code" in err &&
+        (err as { code: string }).code === "P2002"
+      ) {
+        const raced = await repository.findPendingPayment(input.userId, input.courseId);
+        if (!raced) throw err;
+        payment = raced;
+      } else {
+        throw err;
+      }
+    }
+  }
 
   // Event bus: revalidates the payments cache tag.
   await publish({

@@ -17,7 +17,13 @@ export default async function CertificatePrintPage({ params }: PageProps) {
   if (!user) return null;
 
   const { id } = await params;
-  const certs = await repository.listCertificates(user.id);
+  let certs: Awaited<ReturnType<typeof repository.listCertificates>>;
+  try {
+    certs = await repository.listCertificates(user.id);
+  } catch {
+    // DB unreachable — render the 404 instead of crashing the print view.
+    notFound();
+  }
   const cert = certs.find((c) => c.id === id);
 
   if (!cert) {

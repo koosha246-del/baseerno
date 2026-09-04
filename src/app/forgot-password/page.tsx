@@ -17,24 +17,34 @@ export default function ForgotPasswordPage() {
     setError("");
     setLoading(true);
 
-    const res = await fetch("/api/auth/forgot-password", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    });
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
 
-    const data = await res.json();
-    setLoading(false);
+      // A gateway/proxy error page is not JSON — never trust res.json()
+      // to resolve, or the button would stay stuck on "loading" forever.
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        _devToken?: string;
+      };
 
-    if (res.ok) {
-      setSent(true);
-      // The API only returns _devToken outside production. We additionally
-      // guard here so the token box can never appear in a production build.
-      if (data._devToken && process.env.NODE_ENV !== "production") {
-        setDevToken(data._devToken);
+      if (res.ok) {
+        setSent(true);
+        // The API only returns _devToken outside production. We additionally
+        // guard here so the token box can never appear in a production build.
+        if (data._devToken && process.env.NODE_ENV !== "production") {
+          setDevToken(data._devToken);
+        }
+      } else {
+        setError(data.error ?? "خطایی رخ داد.");
       }
-    } else {
-      setError(data.error ?? "خطایی رخ داد.");
+    } catch {
+      setError("اتصال به سرور برقرار نشد. دوباره تلاش کنید.");
+    } finally {
+      setLoading(false);
     }
   }
 

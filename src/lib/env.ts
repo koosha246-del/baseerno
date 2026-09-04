@@ -159,12 +159,13 @@ function loadEnv(): Env {
   const isBuildTime =
     (argv.length > 1 && argv[1] !== undefined && argv[1].includes("next")) ||
     argv.some((a) => a.includes("next/dist/bin/next")) ||
-    process.env?.NEXT_PHASE === "phase-production-build" ||
-    process.env?.__NEXT_PRIVATE_RENDER_RUNTIME === "edge" ||
-    process.env?.__NEXT_PRIVATE_RENDER_RUNTIME === "nodejs";
+    process.env?.NEXT_PHASE === "phase-production-build";
 
   // In Edge runtime (middleware), skip heavy validation entirely.
-  if (process.env?.__NEXT_PRIVATE_RENDER_RUNTIME === "edge") {
+  // NEXT_RUNTIME is the variable Next.js actually sets ("edge" | "nodejs");
+  // the previous __NEXT_PRIVATE_RENDER_RUNTIME check never matched, making
+  // this branch dead code.
+  if (process.env?.NEXT_RUNTIME === "edge") {
     return {
       NODE_ENV: "production",
       DATABASE_URL: undefined,

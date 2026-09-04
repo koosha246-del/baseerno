@@ -42,7 +42,19 @@ export async function verifyCaptcha(token: string | undefined): Promise<boolean>
       }).toString(),
     });
     const data = await response.json();
-    return data.success === true;
+    if (data.success !== true) return false;
+    // reCAPTCHA v3 returns a 0.0–1.0 confidence score. Without checking it,
+    // a low-score bot token passes and the captcha is decorative. 0.5 is
+    // Google's documented "likely human" midpoint; tune per false-positive
+    // rate once real traffic is observed.
+    if (typeof data.score === "number" && data.score < 0.5) {
+      logger.warn("CAPTCHA score below threshold", {
+        module: "captcha",
+        score: data.score,
+      });
+      return false;
+    }
+    return true;
   } catch (error) {
     logger.error("CAPTCHA verification request failed", { module: "captcha", error });
     return false;

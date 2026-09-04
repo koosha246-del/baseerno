@@ -104,7 +104,7 @@ export function BooksShowcase() {
                       alt={book.imageAlt}
                       width={300}
                       height={300}
-                      sizes="(max-width: 1024px) 0px, 240px"
+                      sizes="(max-width: 1023px) 0px, 240px"
                       className="aspect-square w-full object-cover"
                     />
                   </div>

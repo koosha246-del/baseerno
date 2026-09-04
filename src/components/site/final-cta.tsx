@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -16,7 +15,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
 import { siteConfig } from "@/lib/site-config";
 import { cn } from "@/lib/utils";
 
@@ -66,10 +64,17 @@ const ageOptions = [
 
 /**
  * CTA اصلی — فرم واقعی درخواست تعیین سطح و ثبت‌نام
+ *
+ * نکته: بازخورد فرم با پیام درون‌خطی (inline) داده می‌شود نه toast —
+ * چون radix <Toaster> در React 19 استریم reveal را می‌شکند و کل
+ * صفحه‌ی اصلی را خالی نشان می‌دهد.
  */
 export function FinalCta() {
-  const { toast } = useToast();
   const [submitted, setSubmitted] = React.useState(false);
+  const [feedback, setFeedback] = React.useState<{
+    kind: "success" | "error";
+    message: string;
+  } | null>(null);
 
   const {
     register,
@@ -91,28 +96,32 @@ export function FinalCta() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
       });
-      const data = (await res.json()) as { ok: boolean; message: string };
+      const data = (await res.json()) as {
+        ok: boolean;
+        message?: string;
+        error?: string;
+      };
 
       if (!res.ok || !data.ok) {
-        toast({
-          variant: "destructive",
-          title: "ثبت درخواست انجام نشد",
-          description: data.message ?? "لطفاً دوباره تلاش کنید.",
+        setFeedback({
+          kind: "error",
+          // CSRF/500 paths return { error }, the 422 path { message } —
+          // read both so the real cause reaches the user.
+          message: data.message ?? data.error ?? "لطفاً دوباره تلاش کنید.",
         });
         return;
       }
 
       setSubmitted(true);
-      reset();
-      toast({
-        title: "درخواست شما ثبت شد",
-        description: "برای هماهنگی تعیین سطح، با شما تماس می‌گیریم.",
+      setFeedback({
+        kind: "success",
+        message: "درخواست شما ثبت شد؛ برای هماهنگی تعیین سطح، با شما تماس می‌گیریم.",
       });
+      reset();
     } catch {
-      toast({
-        variant: "destructive",
-        title: "خطای ارتباط با سرور",
-        description: "اتصال اینترنت را بررسی کنید و دوباره تلاش کنید.",
+      setFeedback({
+        kind: "error",
+        message: "خطای ارتباط با سرور — اتصال اینترنت را بررسی کنید.",
       });
     }
   };
@@ -188,18 +197,20 @@ export function FinalCta() {
                   ممنون از اعتمادتان. به‌زودی برای هماهنگی تعیین سطح، با شما
                   تماس می‌گیریم.
                 </p>
-                <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-                  <Button asChild variant="brand" size="lg">
-                    <Link href="/register">ساخت حساب کاربری</Link>
-                  </Button>
-                  <Button
-                    variant="outline-navy"
-                    size="lg"
-                    onClick={() => setSubmitted(false)}
-                  >
-                    ثبت درخواست جدید
-                  </Button>
-                </div>
+                <Button
+                  variant="outline-navy"
+                  size="lg"
+                  className="mt-8"
+                  onClick={() => {
+                    setSubmitted(false);
+                    // Clear the stale success banner — otherwise the green
+                    // "ثبت شد" message reappears over an empty form (and is
+                    // re-announced to screen readers via role="status").
+                    setFeedback(null);
+                  }}
+                >
+                  ثبت درخواست جدید
+                </Button>
               </div>
             ) : (
               <form onSubmit={handleSubmit(onSubmit)} noValidate>
@@ -226,8 +237,6 @@ export function FinalCta() {
                           key={opt.value}
                           className={cn(
                             "flex cursor-pointer flex-col items-center rounded-2xl border-2 px-4 py-3.5 text-center transition-all duration-200",
-                            // Keyboard focus ring on the card (input is sr-only)
-                            "has-focus-visible:border-brand has-focus-visible:ring-2 has-focus-visible:ring-brand/40",
                             selectedGroup === opt.value
                               ? "border-brand bg-brand-tint shadow-sm"
                               : "border-navy/10 bg-white hover:border-brand/40"
@@ -357,6 +366,19 @@ export function FinalCta() {
                     )}
                   </Button>
                 </div>
+                {/* بازخورد درون‌خطی — جایگزین toast */}
+                {feedback ? (
+                  <p
+                    role="status"
+                    className={
+                      feedback.kind === "success"
+                        ? "rounded-xl bg-leaf-soft px-4 py-3 text-sm font-bold text-leaf"
+                        : "rounded-xl bg-white/15 px-4 py-3 text-sm font-bold text-white"
+                    }
+                  >
+                    {feedback.message}
+                  </p>
+                ) : null}
               </form>
             )}
           </div>

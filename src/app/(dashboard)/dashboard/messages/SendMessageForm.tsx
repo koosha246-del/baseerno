@@ -25,20 +25,25 @@ export function SendMessageForm({ currentUserId, allUsers }: Props) {
   async function handleSend() {
     setMsg("");
     setLoading(true);
-    const res = await fetch("/api/messages", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ receiverId, body }),
-    });
-    setLoading(false);
-    if (res.ok) {
-      setMsg("پیام با موفقیت ارسال شد.");
-      setBody("");
-      setReceiverId("");
-      setTimeout(() => { setOpen(false); setMsg(""); }, 1500);
-    } else {
-      const data = await res.json();
-      setMsg(data.error ?? "خطایی رخ داد.");
+    try {
+      const res = await fetch("/api/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ receiverId, body }),
+      });
+      if (res.ok) {
+        setMsg("پیام با موفقیت ارسال شد.");
+        setBody("");
+        setReceiverId("");
+        setTimeout(() => { setOpen(false); setMsg(""); }, 1500);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setMsg(data.error ?? "خطایی رخ داد.");
+      }
+    } catch {
+      setMsg("اتصال به سرور برقرار نشد. دوباره تلاش کنید.");
+    } finally {
+      setLoading(false);
     }
   }
 

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { repository } from "@/lib/db/repository";
+import { hashResetToken } from "@/lib/db/domains/users.repo";
 import { prisma } from "@/lib/db/prisma-client";
 import { hashPassword } from "@/lib/auth/password";
 import { clearSession } from "@/lib/auth/session";
@@ -38,15 +39,27 @@ async function resetPasswordHandler(req: Request) {
   }
 
   // Atomic + race-safe: the token is claimed INSIDE the transaction via a
-  // conditional updateMany (`used: false`) — two concurrent requests with
-  // the same token can't both succeed; the loser gets count=0 and 400.
+  // conditional updateMany (`used: false` AND not yet expired) — two
+  // concurrent requests with the same token can't both succeed; the loser
+  // gets count=0 and 400. The expiresAt re-check closes the check-then-act
+  // gap where a token could expire between the lookup and the claim.
   const newHash = await hashPassword(parsed.data.newPassword);
   const claimed = await prisma.$transaction(async (tx) => {
     const claim = await tx.passwordReset.updateMany({
-      where: { token: parsed.data.token, used: false },
+      where: {
+        token: hashResetToken(parsed.data.token),
+        used: false,
+        expiresAt: { gt: new Date() },
+      },
       data: { used: true },
     });
     if (claim.count === 0) return false;
+    // Burn every other outstanding reset token for this user — an older
+    // leaked token must not be able to re-reset the fresh password.
+    await tx.passwordReset.updateMany({
+      where: { userId: reset.userId, used: false },
+      data: { used: true },
+    });
     await tx.user.update({
       where: { id: reset.userId },
       data: {

@@ -53,6 +53,7 @@ vi.mock("@/lib/auth/session", () => ({
 
 import { POST } from "../reset-password/route";
 import { clearSession } from "@/lib/auth/session";
+import { hashResetToken } from "@/lib/db/domains/users.repo";
 
 function makeReq(body: unknown, origin = "https://baseerno.ir") {
   return new Request("https://baseerno.ir/api/auth/reset-password", {
@@ -124,9 +125,16 @@ describe("POST /api/auth/reset-password", () => {
 
     expect(hashPassword).toHaveBeenCalledWith("newpass123");
     expect(txCommit).toHaveBeenCalledTimes(1);
-    // Conditional claim — only an unused token can be marked used.
+    // Conditional claim — only an unused, unexpired token can be marked
+    // used. The DB stores only the SHA-256 digest, so the claim must key
+    // on the hash.
     expect(markTokenUsedUpdate).toHaveBeenCalledWith({
-      where: { token: "tok", used: false },
+      where: { token: hashResetToken("tok"), used: false, expiresAt: { gt: expect.any(Date) } },
+      data: { used: true },
+    });
+    // Every other outstanding token for the user is burned in the same tx.
+    expect(markTokenUsedUpdate).toHaveBeenCalledWith({
+      where: { userId: "u-1", used: false },
       data: { used: true },
     });
     // Session revocation rides along in the same tx.

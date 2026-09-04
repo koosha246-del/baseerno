@@ -176,7 +176,7 @@ export function buildOrganizationLd() {
 /**
  * WebSite + SearchAction JSON-LD — emitted once in the root layout.
  * Gives Google a site-wide search box that deep-links into the course
- * catalog (which reads the ?q= query param — see /courses).
+ * catalog (which seeds its search box from ?q= — see PopularCoursesCatalog).
  */
 export function buildWebSiteLd() {
   return {

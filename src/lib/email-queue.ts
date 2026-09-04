@@ -147,7 +147,10 @@ async function sendViaResend(input: SendEmailFnInput): Promise<void> {
     from: `${siteConfig.name} <noreply@baseerno.ir>`,
     ...input,
   });
-  if (error) throw error;
+  // Resend surfaces API rejections as a plain { name, message } object, not
+  // an Error — wrap it so the queue's `lastError` column records the real
+  // reason instead of "Unknown error".
+  if (error) throw new Error(`Resend API error: ${error.name ?? "unknown"} — ${error.message ?? JSON.stringify(error)}`);
 }
 
 /**

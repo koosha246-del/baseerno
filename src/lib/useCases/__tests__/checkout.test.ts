@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // ─── Module mocks ────────────────────────────────────────────────
 const findCourseById = vi.fn();
 const findEnrollment = vi.fn();
+const findPendingPayment = vi.fn();
 const createPayment = vi.fn();
 const setPaymentAuthority = vi.fn();
 const markPaymentFailed = vi.fn();
@@ -18,6 +19,8 @@ vi.mock("@/lib/db/repository", () => ({
   repository: {
     findCourseById: (id: string) => findCourseById(id),
     findEnrollment: (userId: string, courseId: string) => findEnrollment(userId, courseId),
+    findPendingPayment: (userId: string, courseId: string) =>
+      findPendingPayment(userId, courseId),
     createPayment: (input: unknown) => createPayment(input),
     setPaymentAuthority: (id: string, a: string) => setPaymentAuthority(id, a),
     markPaymentFailed: (id: string) => markPaymentFailed(id),
@@ -43,7 +46,7 @@ vi.mock("@/lib/useCases/enrollment/freeEnroll", () => ({
 
 import { checkout, checkoutSchema, buildUseCaseResponse } from "../enrollment/checkout";
 
-const paidCourse = { id: "c-1", title: "دوره پیشرفته", price: 250000, mentorId: "m-1" };
+const paidCourse = { id: "c-1", title: "دوره پیشرفته", price: 250000, mentorId: "m-1", published: true };
 const ctx = { userId: "u-1", userEmail: "ali@example.com" };
 const baseInput = { courseId: "c-1", studentName: "علی رضایی", studentEmail: "ali@example.com", paymentMethod: "zarinpal" as const };
 
@@ -52,6 +55,7 @@ describe("checkout use case", () => {
     vi.clearAllMocks();
     findCourseById.mockResolvedValue(paidCourse);
     findEnrollment.mockResolvedValue(null);
+    findPendingPayment.mockResolvedValue(null);
     createPayment.mockResolvedValue({ id: "pay-1", status: "PENDING", amount: 250000 });
     buildCallbackUrl.mockReturnValue("/api/checkout/callback?sign=abc");
     isZarinpalEnabled.mockReturnValue(false);
@@ -64,6 +68,14 @@ describe("checkout use case", () => {
 
   it("returns 404 when the course does not exist", async () => {
     findCourseById.mockResolvedValue(null);
+    const result = await checkout({ ...baseInput, ...ctx });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.status).toBe(404);
+    expect(createPayment).not.toHaveBeenCalled();
+  });
+
+  it("returns 404 for unpublished (draft) courses", async () => {
+    findCourseById.mockResolvedValue({ ...paidCourse, published: false });
     const result = await checkout({ ...baseInput, ...ctx });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.status).toBe(404);

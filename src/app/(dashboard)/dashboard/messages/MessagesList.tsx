@@ -121,7 +121,12 @@ export function MessagesList({ messages, currentUserId, allUsers, onReadChange }
                   <span className="text-xs font-semibold text-slate-300">
                     {isMine ? "شما" : other?.name ?? "ناشناس"}
                   </span>
-                  <span className="text-[0.65rem] text-slate-500">
+                  {/* Locale-formatted date: server (SSR) and client timezones
+                      can differ near midnight — tolerate the mismatch. */}
+                  <span
+                    className="text-[0.65rem] text-slate-500"
+                    suppressHydrationWarning
+                  >
                     {new Date(m.sentAt).toLocaleDateString("fa-IR")}
                   </span>
                 </div>

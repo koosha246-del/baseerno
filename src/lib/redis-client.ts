@@ -18,6 +18,7 @@ export interface RedisClient {
   del(key: string): Promise<unknown>;
   ttl(key: string): Promise<number>;
   incr(key: string): Promise<number>;
+  decr(key: string): Promise<number>;
   expire(key: string, seconds: number): Promise<unknown>;
   quit(): Promise<void>;
   on(event: string, handler: (...args: unknown[]) => void): void;

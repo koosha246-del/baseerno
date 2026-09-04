@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 const getCurrentUser = vi.fn();
 const findCourseById = vi.fn();
 const findEnrollment = vi.fn();
+const findPendingPayment = vi.fn();
 const createEnrollment = vi.fn();
 const createPayment = vi.fn();
 const setPaymentAuthority = vi.fn();
@@ -22,6 +23,7 @@ vi.mock("@/lib/db/repository", () => ({
   repository: {
     findCourseById: (id: string) => findCourseById(id),
     findEnrollment: (uid: string, cid: string) => findEnrollment(uid, cid),
+    findPendingPayment: (uid: string, cid: string) => findPendingPayment(uid, cid),
     createEnrollment: (input: unknown) => createEnrollment(input),
     createPayment: (input: unknown) => createPayment(input),
     setPaymentAuthority: (pid: string, auth: string) => setPaymentAuthority(pid, auth),
@@ -100,12 +102,14 @@ const freeCourse = {
   id: "c-free",
   title: "دوره رایگان",
   price: null,
+  published: true,
 };
 
 const paidCourse = {
   id: "c-paid",
   title: "دوره حرفه‌ای",
   price: 500000,
+  published: true,
 };
 
 const validInput = {
@@ -124,6 +128,7 @@ describe("POST /api/checkout", () => {
       resetAt: Date.now() + 120_000,
     });
     getCurrentUser.mockResolvedValue(authenticatedUser);
+    findPendingPayment.mockResolvedValue(null);
   });
 
   it("returns 401 when user is not authenticated", async () => {

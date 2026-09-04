@@ -66,7 +66,16 @@ async function main() {
   }
 
   const { pass, verdicts } = analyzeLoad(result);
-  const durationSeconds = Number(process.env.LOAD_DURATION?.replace(/s$/, "") ?? 60);
+  // k6 accepts "60s" AND "1m" — parse both; the old `replace(/s$/)` turned
+  // "1m" into NaN, which then failed the Prisma Int write and lost the run.
+  const rawDuration = (process.env.LOAD_DURATION ?? "60").trim();
+  const durationMatch = /^(\d+(?:\.\d+)?)(s|m|h)?$/.exec(rawDuration);
+  const durationSeconds = durationMatch
+    ? Math.round(
+        Number(durationMatch[1] ?? 60) *
+          (durationMatch[2] === "m" ? 60 : durationMatch[2] === "h" ? 3600 : 1),
+      )
+    : 60;
 
   // Baseline BEFORE inserting the current run — the fresh run must never
   // skew its own comparison window.

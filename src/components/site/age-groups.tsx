@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Blocks, TrendingUp, ArrowLeft, type LucideIcon } from "lucide-react";
 import { SectionHeading } from "./section-heading";
 import { Reveal } from "./reveal";
@@ -114,8 +113,8 @@ export function AgeGroups() {
                   {audience.description}
                 </p>
 
-                <Link
-                  href="/courses"
+                <a
+                  href="#journey"
                   className="relative mt-7 inline-flex w-fit items-center gap-2 rounded-xl py-2 text-[15px] font-bold text-navy underline decoration-2 decoration-navy/20 underline-offset-8 transition-colors hover:decoration-current"
                 >
                   {audience.link}
@@ -123,7 +122,7 @@ export function AgeGroups() {
                     aria-hidden="true"
                     className="size-4 transition-transform duration-300 group-hover:-translate-x-1"
                   />
-                </Link>
+                </a>
               </article>
             </Reveal>
           ))}

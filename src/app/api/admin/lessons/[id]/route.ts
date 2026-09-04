@@ -1,8 +1,10 @@
-import { type NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/session";
 import { repository } from "@/lib/db/repository";
 import { z } from "zod";
 import { isSameOriginRequest, csrfRejectedResponse } from "@/lib/csrf";
+import { withRateLimit } from "@/lib/api-middleware";
+import { RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
 import { invalidateCache, invalidateSearchCourseCache } from "@/lib/cache";
 import { CACHE_TAGS, publishedCoursesCacheKeys } from "@/lib/cache-tags";
 
@@ -26,8 +28,8 @@ async function assertTeacherOwnsLesson(
   return course?.mentorId === user.id;
 }
 
-export async function PATCH(
-  req: NextRequest,
+async function updateLessonHandler(
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -55,7 +57,12 @@ export async function PATCH(
       );
     }
 
-    const body = await req.json();
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "بدنه درخواست نامعتبر است" }, { status: 400 });
+    }
     const parsed = updateLessonSchema.safeParse(body);
     if (!parsed.success) {
       const first = parsed.error.issues[0];
@@ -89,8 +96,14 @@ export async function PATCH(
   }
 }
 
-export async function DELETE(
-  _req: NextRequest,
+export const PATCH = withRateLimit(
+  updateLessonHandler,
+  RATE_LIMIT_PRESETS.API,
+  { keyPrefix: "admin:lessons:update" },
+);
+
+async function deleteLessonHandler(
+  _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -125,3 +138,10 @@ export async function DELETE(
     return NextResponse.json({ error: "خطای سرور" }, { status: 500 });
   }
 }
+
+/** DELETE is ADMIN-only — still throttle it per client. */
+export const DELETE = withRateLimit(
+  deleteLessonHandler,
+  RATE_LIMIT_PRESETS.API,
+  { keyPrefix: "admin:lessons:delete" },
+);

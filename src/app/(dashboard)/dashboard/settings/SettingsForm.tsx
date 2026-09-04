@@ -20,17 +20,22 @@ export function SettingsForm({ user }: Props) {
   async function handleSave() {
     setMsg("");
     setLoading(true);
-    const res = await fetch("/api/user/profile", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, phone, bio, avatar }),
-    });
-    setLoading(false);
-    if (res.ok) {
-      setMsg("تغییرات با موفقیت ذخیره شد.");
-    } else {
-      const data = await res.json();
-      setMsg(data.error ?? "خطایی رخ داد.");
+    try {
+      const res = await fetch("/api/user/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, phone, bio, avatar }),
+      });
+      if (res.ok) {
+        setMsg("تغییرات با موفقیت ذخیره شد.");
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setMsg(data.error ?? "خطایی رخ داد.");
+      }
+    } catch {
+      setMsg("اتصال به سرور برقرار نشد. دوباره تلاش کنید.");
+    } finally {
+      setLoading(false);
     }
   }
 

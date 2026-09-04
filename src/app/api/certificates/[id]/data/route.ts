@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/session";
 import { repository } from "@/lib/db/repository";
+import { withRateLimit } from "@/lib/api-middleware";
+import { RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
 
-export async function GET(
+async function certificateDataHandler(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -42,3 +44,10 @@ export async function GET(
     mentorName: mentor?.name ?? "—",
   });
 }
+
+/** API: max=20/min — parity with the /pdf sibling which is already limited. */
+export const GET = withRateLimit(
+  certificateDataHandler,
+  RATE_LIMIT_PRESETS.API,
+  { keyPrefix: "certificates:data" },
+);

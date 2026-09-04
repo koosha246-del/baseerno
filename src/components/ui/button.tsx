@@ -14,7 +14,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         brand:
-          "bg-accent text-white shadow-sm hover:bg-accent-hover",
+          "bg-brand text-white rounded-xl font-bold shadow-lg shadow-brand/25 hover:bg-brand-dark hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]",
         solid:
           "bg-accent text-white shadow-sm hover:bg-accent-hover",
         soft: "bg-accent-soft text-accent hover:bg-accent-softHover",
@@ -22,10 +22,14 @@ const buttonVariants = cva(
           "border border-app-border bg-surface text-fg-primary hover:bg-surface-subtle hover:border-app-border-strong",
         ghost: "text-fg-primary hover:bg-surface-subtle",
         link: "text-accent underline-offset-4 hover:underline",
-        // Landing-page palette variants (Basir Academy branding)
+        // بصیر homepage palette variants
         "outline-navy":
-          "border-2 border-navy bg-transparent text-navy hover:bg-navy hover:text-white",
-        sun: "bg-sun text-navy shadow-sm hover:bg-sun/90",
+          "bg-white text-navy border border-navy/15 rounded-xl font-bold hover:border-brand hover:text-brand hover:-translate-y-0.5 active:translate-y-0",
+        sun: "bg-sun text-navy rounded-xl font-extrabold shadow-lg shadow-navy/20 hover:-translate-y-0.5 hover:brightness-105 active:translate-y-0",
+        "white-ink":
+          "bg-white text-navy rounded-xl font-bold shadow-lg hover:-translate-y-0.5 active:translate-y-0",
+        "ghost-light":
+          "text-white/90 rounded-xl font-semibold hover:bg-white/10 hover:text-white",
       },
       size: {
         sm: "h-9 px-4 text-sm",

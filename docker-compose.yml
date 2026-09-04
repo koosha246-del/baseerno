@@ -17,6 +17,14 @@ services:
       DIRECT_URL: ${DIRECT_URL:-}
       NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
+      # Shared rate-limit counters + cache (without it the limiter silently
+      # degrades to per-process memory on multi-instance deploys).
+      REDIS_URL: ${REDIS_URL:-}
+      # /api/cron/* is fail-closed without this — cron jobs would 401 forever.
+      CRON_SECRET: ${CRON_SECRET:-}
+      # Paid checkout 503s (and marks payments FAILED) without these.
+      ZARINPAL_MERCHANT_ID: ${ZARINPAL_MERCHANT_ID:-}
+      ZARINPAL_SANDBOX: ${ZARINPAL_SANDBOX:-false}
       CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
       CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
       CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
@@ -43,13 +51,19 @@ services:
     container_name: bayan-worker
     restart: unless-stopped
     command: npm run worker:email
+    # PID 1 (npm→npx→tsx chain) doesn't reliably forward SIGTERM to the
+    # worker's graceful-shutdown handler; docker's init reaps and forwards.
+    init: true
+    # A full batch (10 sends + rate-limiter waits + Resend latency) can take
+    # longer than Docker's 10s default — without this the worker is SIGKILLed
+    # mid-batch and rows are re-sent after the 10-min claim timeout.
+    stop_grace_period: 60s
     environment:
       NODE_ENV: production
       DATABASE_URL: ${DATABASE_URL}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
       PAYMENT_SIGNATURE_SECRET: ${PAYMENT_SIGNATURE_SECRET:?PAYMENT_SIGNATURE_SECRET must be set}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
-      REDIS_URL: ${REDIS_URL:-}
     depends_on:
       db:
         condition: service_healthy

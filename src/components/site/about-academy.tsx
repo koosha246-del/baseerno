@@ -48,7 +48,7 @@ export function AboutAcademy() {
 
             <Reveal delay={100}>
               <p className="mt-6 text-base leading-9 text-ink-soft md:text-lg md:leading-10">
-                بصیر نو بستری برای یادگیری زبان انگلیسی کودکان و
+                آموزشگاه زبان بصیر بستری برای یادگیری زبان انگلیسی کودکان و
                 نوجوانان فراهم کرده است؛ جایی که یادگیری زبان از یک کلاس درس
                 فراتر می‌رود و به یک تجربه‌ی واقعی تبدیل می‌شود.
               </p>
@@ -108,7 +108,7 @@ export function AboutAcademy() {
               <div className="relative overflow-hidden rounded-[28px] shadow-2xl shadow-navy/20 ring-1 ring-navy/10">
                 <Image
                   src="/images/building.webp"
-                  alt="ساختمان بصیر نو — محل برگزاری کلاس‌ها"
+                  alt="ساختمان آموزشگاه زبان بصیر — محل برگزاری کلاس‌ها"
                   width={1280}
                   height={772}
                   sizes="(max-width: 1024px) 92vw, 560px"
@@ -117,7 +117,7 @@ export function AboutAcademy() {
                 {/* برچسب روی تصویر */}
                 <figcaption className="absolute bottom-4 right-4 flex items-center gap-2 rounded-xl bg-white/95 px-4 py-2.5 text-sm font-extrabold text-navy shadow-lg backdrop-blur-sm">
                   <span aria-hidden="true" className="size-2 rounded-full bg-leaf" />
-                  محل آموزش بصیر نو
+                  محل آموزشگاه زبان بصیر
                 </figcaption>
               </div>
             </figure>

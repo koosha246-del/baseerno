@@ -40,10 +40,15 @@ export async function forgotPassword(
   const reset = await repository.createPasswordReset(user.id);
 
   // Send reset email via the event bus (user:password-reset handler).
-  // Fire-and-forget: the response must never wait on SMTP. publish() never
-  // rejects (handler errors are caught and logged inside the event bus).
-  const resetUrl = `${siteConfig.url}/reset-password?token=${reset.token}`;
-  void publish({
+  // Awaited on purpose: on serverless platforms a fire-and-forget promise
+  // can be frozen the moment the response returns, losing the email. The
+  // handler itself never rejects (errors are caught inside the bus), and
+  // sendEmail falls back to the outbox queue, so awaiting is safe.
+  // Prefer the deployment's own URL so staging/preview links never point
+  // at production (leaking live reset tokens into prod logs).
+  const baseUrl = env.NEXT_PUBLIC_SITE_URL ?? siteConfig.url;
+  const resetUrl = `${baseUrl}/reset-password?token=${reset.token}`;
+  await publish({
     type: "user:password-reset",
     userId: user.id,
     email: user.email,

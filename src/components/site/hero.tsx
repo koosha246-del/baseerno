@@ -128,7 +128,7 @@ export function Hero() {
                 <figure className="relative overflow-hidden rounded-[28px] shadow-2xl shadow-navy/25 ring-1 ring-navy/10">
                   <Image
                     src="/images/hero-classroom.webp"
-                    alt="کلاس بصیر نو؛ دو زبان‌آموز جلوی تخته در حال یادگیری"
+                    alt="کلاس آموزشگاه زبان بصیر؛ دو زبان‌آموز جلوی تخته در حال یادگیری"
                     width={1122}
                     height={1402}
                     priority

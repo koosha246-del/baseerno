@@ -6,13 +6,15 @@ import { isSameOriginRequest, csrfRejectedResponse } from "@/lib/csrf";
 import { invalidateCache, invalidateSearchCourseCache } from "@/lib/cache";
 import { CACHE_TAGS, publishedCoursesCacheKeys } from "@/lib/cache-tags";
 import { publish } from "@/lib/events";
+import { withRateLimit } from "@/lib/api-middleware";
+import { RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
 
 const schema = z.object({
   action: z.enum(["publish", "unpublish", "delete"]),
   reason: z.string().max(500).optional(),
 });
 
-export async function POST(
+async function moderateCourseHandler(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -74,3 +76,10 @@ export async function POST(
   };
   return NextResponse.json({ ok: true, message: messages[parsed.data.action] });
 }
+
+/** API: max=20/min — moderation actions must not be unthrottled. */
+export const POST = withRateLimit(
+  moderateCourseHandler,
+  RATE_LIMIT_PRESETS.API,
+  { keyPrefix: "admin:courses:moderate" },
+);

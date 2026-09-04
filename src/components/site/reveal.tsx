@@ -14,7 +14,15 @@ interface RevealProps extends React.ComponentProps<"div"> {
 
 /**
  * نمایان‌سازی نرم هنگام اسکرول — سبک و سریع.
- * از IntersectionObserver استفاده می‌کند و فقط یک‌بار اجرا می‌شود.
+ *
+ * الگوی «فول‌بک امن»:
+ *  - محتوا به‌صورت پیش‌فرض نمایان رندر می‌شود (SSR و hydration هر دو
+ *    markup یکسان تولید می‌کنند → هیچ اختلافی و هیچ Reveal گیرافتاده‌ای
+ *    باقی نمی‌ماند).
+ *  - فقط بعد از mount، اگر مرورگر پشتیبانی کند، المان برای یک فریم مخفی
+ *    و سپس با ورود به viewport نمایان می‌شود.
+ *  - اگر IntersectionObserver غیرفعال/خطا بدهد یا hydration ناقص بماند،
+ *    هیچ‌وقت محتوای مخفی نمی‌ماند — بدترین حالت، نمایش بدون انیمیشن است.
  */
 export function Reveal({
   className,
@@ -25,31 +33,59 @@ export function Reveal({
   ...props
 }: RevealProps) {
   const ref = React.useRef<HTMLDivElement>(null);
+  const [armed, setArmed] = React.useState(false);
   const [visible, setVisible] = React.useState(false);
 
   React.useEffect(() => {
     const el = ref.current;
     if (!el) return;
 
-    if (typeof IntersectionObserver === "undefined") {
-      setVisible(true);
-      return;
+    if (
+      typeof IntersectionObserver === "undefined" ||
+      typeof window.matchMedia !== "function"
+    ) {
+      return; // بدون انیمیشن — محتوا از ابتدا نمایان است
     }
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            setVisible(true);
-            observer.disconnect();
-          }
-        }
-      },
-      { threshold: 0.12, rootMargin: "0px 0px -40px 0px" }
-    );
+    let observer: IntersectionObserver | null = null;
+    let revealTimer: ReturnType<typeof setTimeout> | null = null;
 
-    observer.observe(el);
-    return () => observer.disconnect();
+    try {
+      // فول‌بک زمانی: حتی اگر observer هرگز فایر نشود، بعد از ۲.۵ ثانیه
+      // پس از ورود به viewport (یا به‌طور مطلق) نمایان می‌شود.
+      const r = el.getBoundingClientRect();
+      const alreadyInView = r.top < window.innerHeight && r.bottom > 0;
+      if (alreadyInView) {
+        revealTimer = setTimeout(() => setVisible(true), delay + 100);
+      }
+
+      observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) {
+              setVisible(true);
+              if (revealTimer) clearTimeout(revealTimer);
+              observer?.disconnect();
+            }
+          }
+        },
+        { threshold: 0.12, rootMargin: "0px 0px -40px 0px" }
+      );
+      observer.observe(el);
+    } catch {
+      setVisible(true); // هر خطایی → نمایش بدون انیمیشن
+    }
+
+    return () => {
+      observer?.disconnect();
+      if (revealTimer) clearTimeout(revealTimer);
+    };
+  }, [delay]);
+
+  // بعد از mount، برای شروع انیمیشن «مسلح» می‌شویم؛ تا قبل از آن محتوا
+  // نمایان است (SSR-safe) و صفحه هرگز خالی دیده نمی‌شود.
+  React.useEffect(() => {
+    setArmed(true);
   }, []);
 
   const hiddenTransform =
@@ -59,28 +95,19 @@ export function Reveal({
         ? `translateY(-${offset}px)`
         : "none";
 
-  // Respect prefers-reduced-motion: skip the inline transform entirely so
-  // the motion-reduce:transform-none class isn't overridden by inline style.
-  const [prefersReducedMotion, setPrefersReducedMotion] = React.useState(false);
-  React.useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setPrefersReducedMotion(mq.matches);
-    const onChange = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
+  const hidden = armed && !visible;
 
   return (
     <div
       ref={ref}
       className={cn(
         "transition-[opacity,transform] duration-500 ease-out will-change-transform motion-reduce:transition-none motion-reduce:transform-none",
-        visible ? "translate-y-0 opacity-100" : "opacity-0",
+        hidden ? "opacity-0" : "translate-y-0 opacity-100",
         className
       )}
       style={{
         transitionDelay: `${delay}ms`,
-        ...(visible || prefersReducedMotion ? {} : { transform: hiddenTransform }),
+        ...(hidden ? { transform: hiddenTransform } : {}),
         ...style,
       }}
       {...props}

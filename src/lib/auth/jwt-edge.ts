@@ -39,11 +39,11 @@ export interface EdgeAuthToken {
 
 // ─── Secret import ─────────────────────────────────────────────────
 
-let cachedKey: CryptoKey | null = null;
-let cachedSecret: string | null = null;
+const keyCache = new Map<string, CryptoKey>();
 
 async function getKey(secret: string): Promise<CryptoKey> {
-  if (cachedKey && cachedSecret === secret) return cachedKey;
+  const cached = keyCache.get(secret);
+  if (cached) return cached;
 
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
@@ -54,9 +54,8 @@ async function getKey(secret: string): Promise<CryptoKey> {
     ["verify"],
   );
 
-  cachedKey = key;
-  cachedSecret = secret;
-  return cachedKey;
+  keyCache.set(secret, key);
+  return key;
 }
 
 // ─── Verify ────────────────────────────────────────────────────────
@@ -88,18 +87,19 @@ export async function verifyTokenEdge(
     const header = JSON.parse(atob(base64UrlToBase64(headerB64)));
     if (header.alg !== "HS256") return null;
 
-    // 3. Read the secret from environment
-    //    In edge runtime, process.env is available but only for
-    //    vars prefixed with NEXT_PUBLIC_ or explicitly opted-in.
-    //    JWT_SECRET must be available at the edge — Next.js handles this
-    //    when the variable is read in middleware.
-    const secret = process.env.JWT_SECRET;
-    if (!secret) return null;
+    // 3. Read the secrets from environment. Dual-verify (current + old)
+    //    mirrors src/lib/auth/jwt.ts so tokens survive a key-rotation
+    //    window — without JWT_SECRET_OLD here, every existing session
+    //    would fail the edge gate mid-rotation and get bounced to /login
+    //    even though getCurrentUser() still accepts the token.
+    //    In edge runtime, process.env is available for vars read in
+    //    middleware (Next.js inlines/bundles them).
+    const secrets = [process.env.JWT_SECRET, process.env.JWT_SECRET_OLD].filter(
+      (s): s is string => Boolean(s),
+    );
+    if (secrets.length === 0) return null;
 
-    // 4. Import the HMAC key
-    const key = await getKey(secret);
-
-    // 5. Verify signature
+    // 4-5. Import the HMAC key(s) and verify the signature
     const encoder = new TextEncoder();
     // Copy through a plain ArrayBuffer so both arrays are
     // `Uint8Array<ArrayBuffer>` (BufferSource-compatible) under
@@ -109,7 +109,12 @@ export async function verifyTokenEdge(
     data.set(rawData);
     const signature = base64UrlToUint8Array(signatureB64);
 
-    const valid = await crypto.subtle.verify("HMAC", key, signature, data);
+    let valid = false;
+    for (const secret of secrets) {
+      const key = await getKey(secret);
+      valid = await crypto.subtle.verify("HMAC", key, signature, data);
+      if (valid) break;
+    }
     if (!valid) return null;
 
     // 6. Decode and validate payload

@@ -19,21 +19,32 @@ function ResetPasswordForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+
+    if (newPassword.length < 6) {
+      setError("رمز جدید باید حداقل ۶ کاراکتر باشد.");
+      return;
+    }
     setLoading(true);
 
-    const res = await fetch("/api/auth/reset-password", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token, newPassword }),
-    });
+    try {
+      const res = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, newPassword }),
+      });
 
-    const data = await res.json();
-    setLoading(false);
+      // Non-JSON error pages (proxy 502, etc.) must not stall the button.
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
 
-    if (res.ok) {
-      setSuccess(true);
-    } else {
-      setError(data.error ?? "خطایی رخ داد.");
+      if (res.ok) {
+        setSuccess(true);
+      } else {
+        setError(data.error ?? "خطایی رخ داد.");
+      }
+    } catch {
+      setError("اتصال به سرور برقرار نشد. دوباره تلاش کنید.");
+    } finally {
+      setLoading(false);
     }
   }
 

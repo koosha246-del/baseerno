@@ -13,15 +13,6 @@ const quickLinks = [
   { label: "سوالات متداول", href: "#faq" },
 ];
 
-/** لینک‌های اپلیکیشن — مسیرهای واقعی سایت */
-const appLinks = [
-  { label: "همه دوره‌ها", href: "/courses" },
-  { label: "کتابخانه", href: "/library" },
-  { label: "تماس با ما", href: "/contact" },
-  { label: "ورود به حساب", href: "/login" },
-  { label: "ثبت‌نام", href: "/register" },
-];
-
 /**
  * فوتر — ساده، تمیز و جمع‌وجمور
  */
@@ -33,7 +24,7 @@ export function SiteFooter() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid gap-12 py-16 md:grid-cols-12 md:gap-8">
           {/* برند */}
-          <div className="md:col-span-4">
+          <div className="md:col-span-5">
             <Logo tone="light" />
             <p className="mt-5 max-w-xs text-[15px] leading-8 text-blue-100/80">
               آموزش زبان انگلیسی برای کودکان و نوجوانان؛ با مسیر آموزشی
@@ -71,27 +62,8 @@ export function SiteFooter() {
             </ul>
           </nav>
 
-          {/* اپلیکیشن — مسیرهای واقعی */}
-          <nav aria-label="اپلیکیشن" className="md:col-span-2">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-blue-100/50">
-              اپلیکیشن
-            </h3>
-            <ul className="mt-5 space-y-3.5">
-              {appLinks.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-[15px] font-semibold text-blue-100/85 transition-colors hover:text-white"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
-
           {/* تماس و ثبت‌نام */}
-          <div className="md:col-span-3">
+          <div className="md:col-span-4">
             <h3 className="text-sm font-bold uppercase tracking-wider text-blue-100/50">
               شروع یادگیری
             </h3>
@@ -104,13 +76,8 @@ export function SiteFooter() {
             <ul className="mt-4 space-y-2.5">
               {contact.phone ? (
                 <li className="flex items-center gap-2 text-[15px] font-semibold text-blue-100/85">
-                  <Phone aria-hidden="true" className="size-4 shrink-0 text-sun" />
-                  <a
-                    href={`tel:${contact.phoneHref ?? contact.phone.replace(/[^+\d]/g, "")}`}
-                    className="transition-colors hover:text-white"
-                  >
-                    <span dir="ltr">{contact.phone}</span>
-                  </a>
+                  <Phone aria-hidden="true" className="size-4 text-sun" />
+                  <span dir="ltr">{contact.phone}</span>
                 </li>
               ) : null}
               {contact.address ? (
@@ -132,7 +99,7 @@ export function SiteFooter() {
 
         {/* نوار پایانی */}
         <div className="flex flex-col items-center justify-between gap-3 border-t border-white/10 py-6 text-sm text-blue-100/70 sm:flex-row">
-          <p>© {siteConfig.name} — تمامی حقوق محفوظ است.</p>
+          <p>© آموزشگاه زبان بصیر — تمامی حقوق محفوظ است.</p>
           <Link
             href="#top"
             className="rounded-lg px-2 py-1 font-semibold transition-colors hover:text-white"

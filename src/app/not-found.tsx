@@ -79,7 +79,7 @@ export default function NotFound() {
 
           <div className="mt-10 flex items-center gap-2 text-xs text-fg-muted">
             <Search className="size-3.5" />
-            می‌تونی از جستجوی بالای صفحه هم استفاده کنی
+            یا از یکی از لینک‌های بالا برای بازگشت استفاده کن
           </div>
         </div>
       </Container>

@@ -40,24 +40,33 @@ export function TopBar({ onMenuToggle, userName, role, userId }: TopBarProps) {
     if (query.length < 2) {
       setResults([]);
       setOpen(false);
+      setLoading(false);
       return;
     }
 
+    // Abort the in-flight request on every keystroke so two overlapping
+    // fetches can't resolve out of order and paint stale results.
+    const controller = new AbortController();
     const timer = setTimeout(async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`, {
+          signal: controller.signal,
+        });
         const data = await res.json();
         setResults(data.results ?? []);
         setOpen(true);
       } catch {
-        setResults([]);
+        if (!controller.signal.aborted) setResults([]);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     }, 300);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, [query]);
 
   useEffect(() => {

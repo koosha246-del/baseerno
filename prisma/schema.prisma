@@ -234,6 +234,9 @@ model Payment {
   @@index([userId, status])
   @@index([status])
   @@index([deletedAt])
+  // NOTE: a PARTIAL unique index also exists in SQL (one PENDING order per
+  // user+course — see migration 20260829000000). Prisma cannot express
+  // partial indexes in the schema; do not remove it via `migrate dev`.
 }
 
 model Message {

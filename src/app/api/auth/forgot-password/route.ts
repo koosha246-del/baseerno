@@ -7,6 +7,14 @@ import {
 import { isSameOriginRequest, csrfRejectedResponse } from "@/lib/csrf";
 import { withRateLimit } from "@/lib/api-middleware";
 import { RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
+import { checkRateLimitAsync } from "@/lib/rate-limit-async";
+
+/**
+ * Per-EMAIL budget on top of the per-IP AUTH preset: without it, an
+ * attacker rotating source IPs (especially when X-Forwarded-For is
+ * spoofable) could mail-bomb a single target mailbox indefinitely.
+ */
+const PER_EMAIL_LIMIT = { windowMs: 60 * 60_000, max: 3, burst: 1, burstWindowMs: 60_000 };
 
 async function forgotPasswordHandler(req: Request) {
   // CSRF: prevents triggering password resets for arbitrary emails from a
@@ -27,6 +35,25 @@ async function forgotPasswordHandler(req: Request) {
   const parsed = forgotPasswordSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "ایمیل معتبر وارد کنید." }, { status: 422 });
+  }
+
+  // Per-email throttle (see PER_EMAIL_LIMIT). Deliberately returns the same
+  // shape as a success to the outside world? No — a 429 for a *requested*
+  // address only leaks that the address is active under load, which is an
+  // acceptable trade against mailbox-bombing; the primary response still
+  // never confirms existence for unknown emails.
+  const emailLimit = await checkRateLimitAsync(
+    `auth:forgot-email:${parsed.data.email.toLowerCase().trim()}`,
+    PER_EMAIL_LIMIT,
+  );
+  if (!emailLimit.success) {
+    return NextResponse.json(
+      { error: "تعداد درخواست‌ها برای این ایمیل زیاد است. لطفاً بعداً تلاش کنید." },
+      {
+        status: 429,
+        headers: { "Retry-After": String(Math.max(1, emailLimit.retryAfter)) },
+      },
+    );
   }
 
   // Execute business logic

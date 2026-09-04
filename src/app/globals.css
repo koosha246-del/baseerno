@@ -176,10 +176,10 @@
     border-radius: 4px;
   }
 
-  /* Selection */
+  /* Selection — بصیر brand sun-yellow on navy text */
   ::selection {
-    background-color: rgba(27, 79, 212, 0.18);
-    color: #111827;
+    background-color: #ffc53d;
+    color: #0e2a54;
   }
 
   /* Custom scrollbar — warm, premium */

@@ -98,6 +98,10 @@ export function pushToUser(userId: string, event: RealtimeEvent): number {
       set.delete(conn);
     }
   }
+  // Don't leave an empty Set behind in the registry (matches the
+  // unsubscribe cleanup) — otherwise every user whose streams ever broke
+  // leaks a map entry for the lifetime of the process.
+  if (set.size === 0) connections.delete(userId);
   return delivered;
 }
 

@@ -85,8 +85,16 @@ if (!env.isProduction) {
  *   - findFirst / findFirstOrThrow / findUnique / findUniqueOrThrow
  *   - findMany
  *   - count
- *   - aggregate / groupBy (filters the `where` and rewrites the resulting
- *     `where` so soft-deleted rows don't surface)
+ *
+ * NOT covered (do not rely on this plugin for them):
+ *   - aggregate / groupBy — their `where` is passed through untouched, so
+ *     soft-deleted rows ARE counted. Repos that aggregate must filter
+ *     `deletedAt` explicitly.
+ *   - nested relation counts (`_count`) and `include`d relations — the
+ *     filter applies to the top-level model only.
+ *   - findUnique with a `select` that omits `deletedAt` — the post-query
+ *     check can't see the column; avoid `select` on findUnique for
+ *     soft-delete models.
  *
  * Models without a `deletedAt` column (EmailOutbox, CourseSearch) are
  * passed through untouched.

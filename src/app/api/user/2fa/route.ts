@@ -83,10 +83,18 @@ async function enableHandler(req: Request) {
     return NextResponse.json({ error: "کد تأیید نادرست است." }, { status: 400 });
   }
 
-  await repository.updateUser(user.id, {
+  const enabled = await repository.updateUser(user.id, {
     twoFactorSecret: parsed.data.secret,
     twoFactorEnabled: true,
   });
+  if (!enabled) {
+    // A silent write failure here would tell the user 2FA is ON when it
+    // isn't — a security downgrade they'd never notice.
+    return NextResponse.json(
+      { error: "فعال‌سازی ۲FA با خطا مواجه شد. لطفاً دوباره تلاش کنید." },
+      { status: 500 },
+    );
+  }
 
   return NextResponse.json({ ok: true, enabled: true });
 }
@@ -124,10 +132,16 @@ async function disableHandler(req: Request) {
     return NextResponse.json({ error: "رمز عبور فعلی اشتباه است." }, { status: 400 });
   }
 
-  await repository.updateUser(user.id, {
+  const disabled = await repository.updateUser(user.id, {
     twoFactorSecret: null,
     twoFactorEnabled: false,
   });
+  if (!disabled) {
+    return NextResponse.json(
+      { error: "غیرفعال‌سازی ۲FA با خطا مواجه شد. لطفاً دوباره تلاش کنید." },
+      { status: 500 },
+    );
+  }
 
   return NextResponse.json({ ok: true, enabled: false });
 }

@@ -30,24 +30,29 @@ export function GradeForm({ courses, students }: Props) {
   async function handleSubmit() {
     setMsg("");
     setLoading(true);
-    const res = await fetch("/api/grades", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userId,
-        courseId,
-        score: Number(score),
-        feedback: feedback || undefined,
-      }),
-    });
-    setLoading(false);
-    if (res.ok) {
-      setMsg("نمره با موفقیت ثبت شد.");
-      setScore("");
-      setFeedback("");
-    } else {
-      const data = await res.json();
-      setMsg(data.error ?? "خطایی رخ داد.");
+    try {
+      const res = await fetch("/api/grades", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          courseId,
+          score: Number(score),
+          feedback: feedback || undefined,
+        }),
+      });
+      if (res.ok) {
+        setMsg("نمره با موفقیت ثبت شد.");
+        setScore("");
+        setFeedback("");
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setMsg(data.error ?? "خطایی رخ داد.");
+      }
+    } catch {
+      setMsg("اتصال به سرور برقرار نشد. دوباره تلاش کنید.");
+    } finally {
+      setLoading(false);
     }
   }
 

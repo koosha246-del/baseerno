@@ -54,14 +54,24 @@ export default function NotificationsPage() {
   }, [filter]);
 
   async function markAsRead(id: string) {
-    await fetch(`/api/notifications/${id}/read`, { method: "PATCH" });
+    try {
+      const res = await fetch(`/api/notifications/${id}/read`, { method: "PATCH" });
+      if (!res.ok) return;
+    } catch {
+      return;
+    }
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
     );
   }
 
   async function markAllAsRead() {
-    await fetch("/api/notifications/read-all", { method: "PATCH" });
+    try {
+      const res = await fetch("/api/notifications/read-all", { method: "PATCH" });
+      if (!res.ok) return;
+    } catch {
+      return;
+    }
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   }
 

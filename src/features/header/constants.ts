@@ -17,7 +17,13 @@ export const headerData: HeaderData = {
     label: item.label,
     // "home" is a route, not an anchor — the homepage has no #home
     // section, so a bare `#home` href was a dead link.
-    href: item.id === "home" ? "/" : `#${item.id}`,
+    //
+    // Anchors use the `/#section` form (not bare `#section`): the header
+    // also renders on /courses and other pages where a bare hash pointed
+    // at a non-existent element and did nothing. From the homepage the
+    // browser still scrolls to the fragment; from any other page it
+    // navigates home and scrolls there.
+    href: item.id === "home" ? "/" : `/#${item.id}`,
   })),
   cta: {
     label: headerCta.label,

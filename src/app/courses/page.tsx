@@ -4,7 +4,7 @@ import { Container } from "@/components/shared/Container";
 import { ScrollReveal } from "@/components/shared/ScrollReveal";
 import { SectionHeading } from "@/components/shared/SectionHeading";
 import { GradientText } from "@/components/shared/GradientText";
-import { PopularCoursesClient } from "@/features/courses/components/PopularCoursesClient";
+import { PopularCoursesCatalog } from "@/features/courses/components/PopularCoursesCatalog";
 import { courseCategories, accentClasses } from "@/features/courses/constants";
 import { mapDbCourse } from "@/features/courses/courseMapper";
 import {
@@ -93,7 +93,10 @@ export default async function CoursesPage() {
 
           <ScrollReveal delay={0.1}>
             <div className="mt-10">
-              <PopularCoursesClient
+              {/* Catalog (not the bare client) so the Google site-search
+                  deep-link /courses?q=… advertised in the SearchAction
+                  JSON-LD actually seeds the search box. */}
+              <PopularCoursesCatalog
                 courses={courseList}
                 categories={courseCategories}
                 accentClasses={accentClasses}

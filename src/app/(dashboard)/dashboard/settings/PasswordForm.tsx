@@ -14,21 +14,27 @@ export function PasswordForm() {
     setMsg("");
     setError(false);
     setLoading(true);
-    const res = await fetch("/api/user/password", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ currentPassword, newPassword }),
-    });
-    setLoading(false);
-    const data = await res.json();
-    if (res.ok) {
-      setMsg("رمز عبور با موفقیت تغییر کرد.");
-      setError(false);
-      setCurrentPassword("");
-      setNewPassword("");
-    } else {
-      setMsg(data.error ?? "خطایی رخ داد.");
+    try {
+      const res = await fetch("/api/user/password", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setMsg("رمز عبور با موفقیت تغییر کرد.");
+        setError(false);
+        setCurrentPassword("");
+        setNewPassword("");
+      } else {
+        setMsg(data.error ?? "خطایی رخ داد.");
+        setError(true);
+      }
+    } catch {
+      setMsg("اتصال به سرور برقرار نشد. دوباره تلاش کنید.");
       setError(true);
+    } finally {
+      setLoading(false);
     }
   }
 

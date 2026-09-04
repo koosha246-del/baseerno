@@ -20,19 +20,27 @@ export function resolveMessage(
   locale: Locale = "fa",
 ): string {
   const keys = path.split(".");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let value: any = messages[locale];
 
-  for (const key of keys) {
-    if (value == null || typeof value !== "object") {
-      console.warn(`[i18n] Invalid path: "${path}" for locale "${locale}"`);
-      return path;
+  const lookup = (loc: Locale): string | null => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let value: any = messages[loc];
+    for (const key of keys) {
+      if (value == null || typeof value !== "object") return null;
+      value = value[key as keyof typeof value];
     }
-    value = value[key as keyof typeof value];
+    return typeof value === "string" ? value : null;
+  };
+
+  // Fall back to the source-of-truth locale (fa) when a key is missing in
+  // the requested one — the `en` tree lags behind `fa`, and rendering a
+  // raw dotted path ("home.why.title") is worse than showing Persian.
+  let value = lookup(locale);
+  if (value === null && locale !== "fa") {
+    value = lookup("fa");
   }
 
-  if (typeof value !== "string") {
-    console.warn(`[i18n] Path "${path}" resolved to non-string value`);
+  if (value === null) {
+    console.warn(`[i18n] Invalid path: "${path}" for locale "${locale}"`);
     return path;
   }
 

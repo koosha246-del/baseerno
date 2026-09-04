@@ -8,6 +8,7 @@ import { CardSkeleton } from "@/components/shared/Skeletons";
 import { env } from "@/lib/env";
 import { DemoUnavailableCard } from "@/components/shared/DemoUnavailableCard";
 import { DownloadCertificateButton } from "./DownloadCertificateButton";
+import { PrintCertificateLink } from "./PrintCertificateLink";
 
 export default async function CertificatesPage() {
   const user = await getCurrentUser();
@@ -63,12 +64,15 @@ async function CertificatesBody({ userId }: { userId: string }) {
                     <span className="text-xs text-slate-400">شماره: {c.certificateNumber}</span>
                   </div>
                 </div>
-                <div className="flex items-center justify-between text-xs text-slate-400">
+                <div className="flex items-center justify-between gap-2 text-xs text-slate-400">
                   <span>تاریخ صدور: {formatDate(c.issueDate, "long")}</span>
-                  <DownloadCertificateButton
-                    certificateId={c.id}
-                    certificateNumber={c.certificateNumber}
-                  />
+                  <div className="flex items-center gap-2">
+                    <PrintCertificateLink certificateId={c.id} />
+                    <DownloadCertificateButton
+                      certificateId={c.id}
+                      certificateNumber={c.certificateNumber}
+                    />
+                  </div>
                 </div>
               </div>
             );

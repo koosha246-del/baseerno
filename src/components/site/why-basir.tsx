@@ -1,11 +1,11 @@
-import { Users, Route, BookOpen, MessagesSquare, ArrowLeft } from "lucide-react";
+import { Users, Route, BookOpen, MessagesSquare, ArrowLeft, type LucideIcon } from "lucide-react";
 import { SectionHeading } from "./section-heading";
 import { Reveal } from "./reveal";
 import { cn } from "@/lib/utils";
 
 interface Feature {
   faNumber: string;
-  icon: React.ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
+  icon: LucideIcon;
   title: string;
   description: string;
   /** رنگ تأکیدی */
@@ -118,7 +118,7 @@ export function WhyBasir() {
                         )}
                       >
                         <feature.icon
-                          aria-hidden
+                          aria-hidden="true"
                           className={cn("size-6", feature.text)}
                         />
                       </span>

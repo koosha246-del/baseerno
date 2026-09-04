@@ -9,16 +9,20 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/session";
 import { isSameOriginRequest, csrfRejectedResponse } from "@/lib/csrf";
 import { syncCourseSearch } from "@/lib/db/domains/search.repo";
+import { withRateLimit } from "@/lib/api-middleware";
+import { RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
 
-export async function POST(req: Request) {
+async function searchSyncHandler(req: Request) {
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json({ error: "احراز هویت نشده." }, { status: 401 });
+  }
+  if (user.role !== "ADMIN") {
+    return NextResponse.json({ error: "دسترسی محدود شده." }, { status: 403 });
+  }
   // CSRF: search re-sync mutates the search index on behalf of the admin session.
   if (!isSameOriginRequest(req)) {
     return csrfRejectedResponse();
-  }
-
-  const user = await getCurrentUser();
-  if (!user || user.role !== "ADMIN") {
-    return NextResponse.json({ error: "دسترسی محدود شده." }, { status: 403 });
   }
 
   let body: { courseId?: string } = {};
@@ -44,3 +48,11 @@ export async function POST(req: Request) {
     message: `${count} دوره همگام‌سازی شدند.`,
   });
 }
+
+/**
+ * WRITE+ burst: a re-sync is a heavy index rebuild — throttle it per
+ * client even though only ADMIN can pass the guard (defence in depth).
+ */
+export const POST = withRateLimit(searchSyncHandler, RATE_LIMIT_PRESETS.API, {
+  keyPrefix: "admin:search-sync",
+});

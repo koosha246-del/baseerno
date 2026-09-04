@@ -25,7 +25,12 @@ export function Sidebar({ role, userName, collapsed = false, onToggle }: Sidebar
   const items = getSidebarForRole(role as Role);
 
   async function handleLogout() {
-    await fetch("/api/auth/logout", { method: "POST" });
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {
+      // Network failure — still leave the UI; the cookie/session check
+      // on the next page load is the source of truth.
+    }
     router.push("/login");
   }
 

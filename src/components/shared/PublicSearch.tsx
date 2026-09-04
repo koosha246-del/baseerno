@@ -44,6 +44,10 @@ export function PublicSearch() {
   useEffect(() => {
     if (query.length < 2) {
       setResults([]);
+      // An in-flight request aborted by this transition skips the
+      // `finally` reset below — clear the spinner here so the dropdown
+      // can't get stuck on "در حال جستجو..." forever.
+      setLoading(false);
       return;
     }
     const controller = new AbortController();

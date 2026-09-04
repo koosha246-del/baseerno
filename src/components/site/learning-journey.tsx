@@ -6,16 +6,11 @@ import { cn } from "@/lib/utils";
 
 const bookById = new Map<string, Book>(books.map((b) => [b.id, b]));
 
-/** رنگ هر مرحله */
-interface AccentStyle {
-  dot: string;
-  dotText: string;
-  chip: string;
-  chipText: string;
-}
-
-// Keyed by the Book accent union → lookups are total (never undefined).
-const stageStyles: Record<Book["accent"], AccentStyle> = {
+/** رنگ هر مرحله — کلیدها همان اتحاد accent کتاب‌هاست تا دسترسی تایپ‌امن باشد */
+const stageStyles: Record<
+  Book["accent"],
+  { dot: string; dotText: string; chip: string; chipText: string }
+> = {
   brand: {
     dot: "bg-brand",
     dotText: "text-white",
@@ -121,7 +116,7 @@ export function LearningJourney() {
             {/* نقطه‌های ایستگاه */}
             {journeyStages.map((stage, i) => {
               const s = stageStyles[stage.accent];
-              const spot = dotSpots[i] ?? { x: 50, y: 60 };
+              const spot = dotSpots[i] ?? { x: 50, y: 50 };
               return (
                 <span
                   key={stage.id}
@@ -152,7 +147,7 @@ export function LearningJourney() {
                   <div
                     className={cn(
                       "relative h-44 transition-transform duration-300 group-hover:-translate-y-1.5 group-hover:rotate-0",
-                      tilts[i % tilts.length] ?? ""
+                      tilts[i]
                     )}
                   >
                     <Image
@@ -198,7 +193,7 @@ export function LearningJourney() {
             {journeyStages.map((stage, i) => {
               const book = bookById.get(stage.bookId);
               if (!book) return null;
-              const s = stageStyles[stage.accent]!;
+              const s = stageStyles[stage.accent];
               return (
                 <li key={stage.id} className="relative flex gap-5 pb-10 last:pb-0">
                   {/* خط اتصال عمودی */}

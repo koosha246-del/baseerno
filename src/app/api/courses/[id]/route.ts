@@ -6,6 +6,8 @@ import { isSameOriginRequest, csrfRejectedResponse } from "@/lib/csrf";
 import { invalidateCache, invalidateSearchCourseCache } from "@/lib/cache";
 import { CACHE_TAGS, publishedCoursesCacheKeys } from "@/lib/cache-tags";
 import { publish } from "@/lib/events";
+import { withRateLimit } from "@/lib/api-middleware";
+import { RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
 
 const updateSchema = z.object({
   title: z.string().min(3).optional(),
@@ -22,7 +24,7 @@ const updateSchema = z.object({
   published: z.boolean().optional(),
 });
 
-export async function GET(
+async function getCourseHandler(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -45,7 +47,12 @@ export async function GET(
   return NextResponse.json({ course });
 }
 
-export async function PATCH(
+/** READ: same throttle as the catalog listing for the same data. */
+export const GET = withRateLimit(getCourseHandler, RATE_LIMIT_PRESETS.READ, {
+  keyPrefix: "courses:detail",
+});
+
+async function patchCourseHandler(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -94,7 +101,12 @@ export async function PATCH(
   return NextResponse.json({ course: updated });
 }
 
-export async function DELETE(
+/** API: mutations on the catalog must be throttled (parity with POST /api/courses). */
+export const PATCH = withRateLimit(patchCourseHandler, RATE_LIMIT_PRESETS.API, {
+  keyPrefix: "courses:patch",
+});
+
+async function deleteCourseHandler(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -128,3 +140,8 @@ export async function DELETE(
   await publish({ type: "search:needs-sync", courseId: id });
   return NextResponse.json({ ok: true });
 }
+
+/** API: catalog mutation, same throttle as PATCH. */
+export const DELETE = withRateLimit(deleteCourseHandler, RATE_LIMIT_PRESETS.API, {
+  keyPrefix: "courses:delete",
+});

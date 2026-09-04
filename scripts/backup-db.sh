@@ -38,7 +38,7 @@ pg_dump "$DB_URL" | gzip > "$BACKUP_FILE"
 
 echo "Backup saved to: $BACKUP_FILE"
 
-find "$BACKUP_DIR" -name "backup_*.sql.gz" -mtime +$RETENTION_DAYS -delete
+find "$BACKUP_DIR" -name "backup_*.sql.gz" -mtime +"$RETENTION_DAYS" -delete
 
 echo "Old backups cleaned up (retention: $RETENTION_DAYS days)"
 echo "Backup completed successfully"

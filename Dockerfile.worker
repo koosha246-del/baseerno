@@ -26,4 +26,7 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # The worker runs the outbox poller as a long-lived process.
-CMD ["npx", "tsx", "worker/email-worker.ts"]
+# Exec form + direct tsx binary: `npx` would be PID 1 and does not reliably
+# forward SIGTERM to the worker, so in-flight email batches would be killed
+# mid-send instead of draining gracefully.
+CMD ["node_modules/.bin/tsx", "worker/email-worker.ts"]

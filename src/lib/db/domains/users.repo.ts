@@ -70,7 +70,9 @@ export async function updateUser(
     name: string;
     phone: string;
     bio: string;
-    avatar: string;
+    // `null` clears the avatar — the profile route's Zod schema accepts a
+    // nullable avatar so users can remove their photo.
+    avatar: string | null;
     twoFactorSecret: string | null;
     twoFactorEnabled: boolean;
   }>,
@@ -106,23 +108,48 @@ export async function updatePassword(id: string, passwordHash: string): Promise<
 
 /* ─── Password Resets ─────────────────────────────────────────── */
 
-export async function createPasswordReset(userId: string) {
+/**
+ * Reset tokens are high-entropy (256-bit) single-use secrets, but storing
+ * them in PLAINTEXT means a DB read/dump hands over live account-takeover
+ * links. We persist a SHA-256 digest instead; the raw token is returned
+ * ONCE (for the email link) and never stored. Lookup/claim hash the
+ * presented token and compare — same pattern as a password hash.
+ *
+ * Column type is unchanged (a 64-char hex digest fits the existing
+ * String @unique), so this needs no schema migration; pre-existing
+ * plaintext rows are single-use and expire within the hour anyway.
+ */
+export function hashResetToken(token: string): string {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+export async function createPasswordReset(userId: string): Promise<{ token: string }> {
   const token = crypto.randomBytes(32).toString("hex");
-  return prisma.passwordReset.create({
+  await prisma.passwordReset.create({
     data: {
       userId,
-      token,
+      token: hashResetToken(token),
       expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+    },
+  });
+  // Return the RAW token — it is the only copy that ever leaves this
+  // function, and it belongs in the emailed reset link / dev log.
+  return { token };
+}
+
+export async function findValidResetToken(rawToken: string) {
+  return prisma.passwordReset.findFirst({
+    where: {
+      token: hashResetToken(rawToken),
+      used: false,
+      expiresAt: { gt: new Date() },
     },
   });
 }
 
-export async function findValidResetToken(token: string) {
-  return prisma.passwordReset.findFirst({
-    where: { token, used: false, expiresAt: { gt: new Date() } },
+export async function markResetTokenUsed(rawToken: string): Promise<void> {
+  await prisma.passwordReset.updateMany({
+    where: { token: hashResetToken(rawToken) },
+    data: { used: true },
   });
-}
-
-export async function markResetTokenUsed(token: string): Promise<void> {
-  await prisma.passwordReset.updateMany({ where: { token }, data: { used: true } });
 }

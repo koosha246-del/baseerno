@@ -85,6 +85,9 @@ describe("2FA status / enable / disable", () => {
     findUserById.mockResolvedValue({ id: "u-1", twoFactorEnabled: false, passwordHash: "h" });
     verifyPassword.mockResolvedValue(true);
     verifyCode.mockReturnValue(true);
+    // The routes now surface write failures — a successful mock must
+    // resolve to a truthy SafeUser-shaped result.
+    updateUser.mockResolvedValue({ id: "u-1", twoFactorEnabled: true });
   });
 
   // ─── GET status ─────────────────────────────────────────────────

@@ -4,6 +4,8 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { repository } from "@/lib/db/repository";
 import { isSameOriginRequest } from "@/lib/csrf";
 import { publish } from "@/lib/events";
+import { withRateLimit } from "@/lib/api-middleware";
+import { RATE_LIMIT_PRESETS } from "@/lib/rate-limit";
 
 const issueSchema = z.object({
   userId: z.string().min(1),
@@ -19,7 +21,7 @@ const issueSchema = z.object({
  * cache invalidation — fire via the `certificate:issued` event so the
  * route stays thin.
  */
-export async function POST(req: Request) {
+async function issueCertificateHandler(req: Request) {
   if (!isSameOriginRequest(req)) {
     return NextResponse.json({ error: "CSRF" }, { status: 403 });
   }
@@ -77,3 +79,10 @@ export async function POST(req: Request) {
 
   return NextResponse.json({ certificate }, { status: 201 });
 }
+
+/** API: max=20/min — privileged issuance must not be unthrottled. */
+export const POST = withRateLimit(
+  issueCertificateHandler,
+  RATE_LIMIT_PRESETS.API,
+  { keyPrefix: "admin:certificates" },
+);

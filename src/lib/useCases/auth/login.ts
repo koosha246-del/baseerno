@@ -56,6 +56,14 @@ export type LoginResponse = LoginResult | LoginError | LoginTwoFactorRequired;
 
 type DbUser = Awaited<ReturnType<typeof repository.findUserByEmail>>;
 
+/**
+ * Bcrypt hash of a random string nobody knows. Unknown emails still run a
+ * full bcrypt compare against this so the response time of "no such user"
+ * matches "wrong password" — otherwise the identical Persian error message
+ * is defeated by a stopwatch (account enumeration).
+ */
+const DUMMY_PASSWORD_HASH = "$2b$12$qaB6xA6T1QeycvOATepgbe4wd3V/EWFNuikplEHZks2euir74whaS";
+
 export async function loginUser(input: LoginInput): Promise<LoginResponse> {
   let user: DbUser = null;
   try {
@@ -93,6 +101,8 @@ export async function loginUser(input: LoginInput): Promise<LoginResponse> {
       }
     }
     incr("auth:failed");
+    // Burn the same bcrypt time as the real wrong-password path below.
+    await verifyPassword(input.password, DUMMY_PASSWORD_HASH);
     return { ok: false, error: "ایمیل یا رمز عبور اشتباه است.", status: 401 };
   }
 

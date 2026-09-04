@@ -13,7 +13,7 @@ describe("Button", () => {
   it("renders with brand variant classes", () => {
     render(<Button variant="brand">برند</Button>);
     const btn = screen.getByRole("button");
-    expect(btn.className).toContain("bg-accent");
+    expect(btn.className).toContain("bg-brand");
     expect(btn.className).toContain("text-white");
   });
 
